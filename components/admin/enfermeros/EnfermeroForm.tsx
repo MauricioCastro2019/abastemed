@@ -1,0 +1,216 @@
+'use client'
+
+import { useTransition, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { crearEnfermero, actualizarEnfermero } from '@/lib/actions/enfermeros'
+import { createClient } from '@/lib/supabase/client'
+import type { Enfermero } from '@/types'
+import { Upload, FileText, X, ExternalLink } from 'lucide-react'
+
+const INPUT = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#2AABBF] transition-all bg-white"
+const LABEL = "block text-xs font-medium text-gray-500 mb-1"
+
+interface Props { enfermero?: Enfermero }
+
+export function EnfermeroForm({ enfermero }: Props) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvUrl, setCvUrl] = useState<string>(enfermero?.cv_url ?? '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.type !== 'application/pdf') {
+      setError('Solo se aceptan archivos PDF')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('El archivo no puede superar 5 MB')
+      return
+    }
+    setError(null)
+    setCvFile(file)
+  }
+
+  async function uploadCv(): Promise<string | null> {
+    if (!cvFile) return cvUrl || null
+    setUploading(true)
+    const supabase = createClient()
+    const ext = 'pdf'
+    const path = `cv/${Date.now()}-${cvFile.name.replace(/\s/g, '_')}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('documentos')
+      .upload(path, cvFile, { upsert: true })
+
+    if (uploadError) {
+      setError('Error al subir el CV: ' + uploadError.message)
+      setUploading(false)
+      return null
+    }
+
+    const { data } = supabase.storage.from('documentos').getPublicUrl(path)
+    setUploading(false)
+    return data.publicUrl
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    const form = e.currentTarget
+
+    startTransition(async () => {
+      try {
+        const uploadedUrl = await uploadCv()
+        const formData = new FormData(form)
+        formData.set('cv_url', uploadedUrl ?? '')
+
+        if (enfermero) {
+          await actualizarEnfermero(enfermero.id, formData)
+        } else {
+          await crearEnfermero(formData)
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && !err.message.includes('NEXT_REDIRECT')) {
+          setError(err.message)
+        }
+      }
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* Datos personales */}
+      <section className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1B2B4B] mb-4">Datos personales</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL}>Nombre *</label>
+            <input name="nombre" defaultValue={enfermero?.nombre} required className={INPUT} placeholder="Ana" />
+          </div>
+          <div>
+            <label className={LABEL}>Apellido *</label>
+            <input name="apellido" defaultValue={enfermero?.apellido} required className={INPUT} placeholder="Martínez" />
+          </div>
+          <div>
+            <label className={LABEL}>Cédula *</label>
+            <input name="cedula" defaultValue={enfermero?.cedula} required className={INPUT} placeholder="V-12345678" />
+          </div>
+          <div>
+            <label className={LABEL}>Disponibilidad</label>
+            <select name="disponible" defaultValue={enfermero ? String(enfermero.disponible) : 'true'} className={INPUT}>
+              <option value="true">Disponible</option>
+              <option value="false">No disponible</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* Contacto */}
+      <section className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1B2B4B] mb-4">Contacto</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL}>Teléfono *</label>
+            <input name="telefono" defaultValue={enfermero?.telefono} required className={INPUT} placeholder="+58 412 000 0000" />
+          </div>
+          <div>
+            <label className={LABEL}>Email *</label>
+            <input name="email" type="email" defaultValue={enfermero?.email} required className={INPUT} placeholder="ana@correo.com" />
+          </div>
+        </div>
+      </section>
+
+      {/* Profesional */}
+      <section className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1B2B4B] mb-4">Información profesional</h2>
+        <div className="space-y-4">
+          <div>
+            <label className={LABEL}>Especialidades (una por línea)</label>
+            <textarea name="especialidades" defaultValue={enfermero?.especialidades?.join('\n')} rows={3}
+              className={INPUT} placeholder={"Cuidados intensivos\nGeriatría\nPediatría"} />
+          </div>
+          <div>
+            <label className={LABEL}>Biografía / Notas</label>
+            <textarea name="bio" defaultValue={enfermero?.bio ?? ''} rows={3}
+              className={INPUT} placeholder="Experiencia, formación, observaciones..." />
+          </div>
+        </div>
+      </section>
+
+      {/* Currículum */}
+      <section className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1B2B4B] mb-4">Currículum vitae</h2>
+
+        {/* CV actual */}
+        {cvUrl && !cvFile && (
+          <div className="flex items-center justify-between p-3 rounded-lg border border-[#2AABBF] bg-[#EBF8FB] mb-4">
+            <div className="flex items-center gap-2 text-sm text-[#1B2B4B]">
+              <FileText size={16} style={{ color: '#2AABBF' }} />
+              <span>CV adjunto</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a href={cvUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-[#2AABBF] hover:underline">
+                <ExternalLink size={12} />
+                Ver
+              </a>
+              <button type="button" onClick={() => { setCvUrl(''); if (fileRef.current) fileRef.current.value = '' }}
+                className="text-gray-400 hover:text-red-500 transition-colors">
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Archivo seleccionado */}
+        {cvFile && (
+          <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50 mb-4">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <FileText size={16} style={{ color: '#2AABBF' }} />
+              <span className="truncate max-w-xs">{cvFile.name}</span>
+              <span className="text-xs text-gray-400">({(cvFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+            </div>
+            <button type="button" onClick={() => { setCvFile(null); if (fileRef.current) fileRef.current.value = '' }}
+              className="text-gray-400 hover:text-red-500 transition-colors">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Zona de upload */}
+        <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#2AABBF] hover:bg-[#EBF8FB] transition-all group">
+          <Upload size={20} className="text-gray-300 group-hover:text-[#2AABBF] mb-2 transition-colors" />
+          <span className="text-sm text-gray-400 group-hover:text-[#2AABBF] transition-colors">
+            {cvFile ? 'Cambiar archivo' : 'Subir CV en PDF'}
+          </span>
+          <span className="text-xs text-gray-300 mt-0.5">Máx. 5 MB</span>
+          <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
+        </label>
+
+        <input type="hidden" name="cv_url" value={cvUrl} />
+      </section>
+
+      {error && (
+        <div className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-3">{error}</div>
+      )}
+
+      <div className="flex gap-3 justify-end">
+        <button type="button" onClick={() => router.back()}
+          className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
+          Cancelar
+        </button>
+        <button type="submit" disabled={isPending || uploading}
+          className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all"
+          style={{ backgroundColor: isPending || uploading ? '#94a3b8' : '#2AABBF' }}>
+          {uploading ? 'Subiendo CV...' : isPending ? 'Guardando...' : enfermero ? 'Guardar cambios' : 'Registrar enfermero/a'}
+        </button>
+      </div>
+    </form>
+  )
+}
