@@ -7,7 +7,7 @@ export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Si no hay credenciales reales, dejar pasar sin validar sesión
+  // Sin credenciales reales, dejar pasar (entorno de desarrollo)
   if (!supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey.includes('placeholder')) {
     return supabaseResponse
   }
@@ -29,12 +29,44 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedPaths = ['/dashboard', '/admin', '/enfermero', '/familiar']
-  const isProtected = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p))
+  const { pathname } = request.nextUrl
+
+  // Rutas que requieren auth
+  const protectedPrefixes = [
+    '/dashboard',
+    '/pacientes',
+    '/enfermeros',
+    '/casos',
+    '/turnos',
+    '/cobranza',
+    '/enfermero',
+    '/familiar',
+  ]
+
+  const isProtected = protectedPrefixes.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // Redirigir desde /login si ya está autenticado
+  if (user && pathname === '/login') {
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', user.id)
+      .single()
+
+    const url = request.nextUrl.clone()
+    if (perfil?.rol === 'enfermero') {
+      url.pathname = '/enfermero/dashboard'
+    } else if (perfil?.rol === 'familiar') {
+      url.pathname = '/familiar/dashboard'
+    } else {
+      url.pathname = '/dashboard'
+    }
     return NextResponse.redirect(url)
   }
 

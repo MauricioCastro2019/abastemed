@@ -1,19 +1,30 @@
 import { getCaso } from '@/lib/actions/casos'
+import { getTurnosByCaso, cambiarStatusTurno } from '@/lib/actions/turnos'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus } from 'lucide-react'
+import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Paciente } from '@/types'
 
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
+const STATUS_CASO: Record<string, { label: string; color: string; bg: string; border: string }> = {
   activo:  { label: 'Activo',  color: '#2AABBF', bg: '#EBF8FB', border: '#2AABBF' },
   pausado: { label: 'Pausado', color: '#D97706', bg: '#FFFBEB', border: '#D97706' },
   cerrado: { label: 'Cerrado', color: '#6b7280', bg: 'transparent', border: '#e5e7eb' },
 }
 
+const STATUS_TURNO: Record<string, { label: string; color: string; bg: string }> = {
+  programado: { label: 'Programado', color: '#2AABBF', bg: '#EBF8FB' },
+  activo:     { label: 'En curso',   color: '#059669', bg: '#ECFDF5' },
+  completado: { label: 'Completado', color: '#6b7280', bg: '#f3f4f6' },
+}
+
 function formatDate(date: string) {
-  return new Date(date).toLocaleDateString('es-VE', {
-    day: 'numeric', month: 'long', year: 'numeric'
+  return new Date(date).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatFechaCorta(f: string) {
+  return new Date(f).toLocaleString('es-VE', {
+    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
   })
 }
 
@@ -25,7 +36,10 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
     notFound()
   }
 
-  const st = STATUS_STYLE[caso.status]
+  let turnos: Awaited<ReturnType<typeof getTurnosByCaso>> = []
+  try { turnos = await getTurnosByCaso(params.id) } catch { /* sin datos */ }
+
+  const st = STATUS_CASO[caso.status]
   const paciente = caso.paciente as Paciente | undefined
   const diasActivo = Math.floor(
     (Date.now() - new Date(caso.fecha_inicio).getTime()) / (1000 * 60 * 60 * 24)
@@ -86,8 +100,7 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
               <User size={15} style={{ color: '#2AABBF' }} />
               <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Paciente</h2>
             </div>
-            <Link href={`/pacientes/${paciente.id}`}
-              className="text-xs text-[#2AABBF] hover:underline">
+            <Link href={`/pacientes/${paciente.id}`} className="text-xs text-[#2AABBF] hover:underline">
               Ver perfil →
             </Link>
           </div>
@@ -106,7 +119,7 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
         </div>
       )}
 
-      {/* Fechas y dirección */}
+      {/* Detalles */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <h2 className="text-sm font-semibold mb-4" style={{ color: '#1B2B4B' }}>Detalles</h2>
         <div className="space-y-3">
@@ -123,8 +136,7 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
               <p className="text-xs text-gray-400 mb-0.5">Período</p>
               <p className="text-sm text-gray-700">
                 {formatDate(caso.fecha_inicio)}
-                {caso.fecha_fin && ` → ${formatDate(caso.fecha_fin)}`}
-                {!caso.fecha_fin && ' → Por definir'}
+                {caso.fecha_fin ? ` → ${formatDate(caso.fecha_fin)}` : ' → Por definir'}
               </p>
             </div>
           </div>
@@ -142,10 +154,12 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
         </div>
       )}
 
-      {/* Turnos — próximo módulo */}
+      {/* Turnos */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Turnos asignados</h2>
+          <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+            Turnos asignados ({turnos.length})
+          </h2>
           <Link href={`/turnos/nuevo?caso_id=${caso.id}`}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-white"
             style={{ backgroundColor: '#2AABBF' }}>
@@ -153,9 +167,56 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
             Asignar turno
           </Link>
         </div>
-        <p className="text-sm text-gray-400 text-center py-4">
-          Los turnos aparecerán aquí una vez construido el módulo.
-        </p>
+
+        {turnos.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Sin turnos asignados aún</p>
+        ) : (
+          <div className="space-y-3">
+            {turnos.map(turno => {
+              const tst = STATUS_TURNO[turno.status] ?? STATUS_TURNO.programado
+              const enfermero = turno.enfermero as { nombre: string; apellido: string; telefono: string } | null
+              const durH = ((new Date(turno.fecha_fin).getTime() - new Date(turno.fecha_inicio).getTime()) / 3600000).toFixed(1)
+
+              return (
+                <div key={turno.id} className="border border-gray-100 rounded-lg p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      {enfermero && (
+                        <p className="text-sm font-medium" style={{ color: '#1B2B4B' }}>
+                          {enfermero.nombre} {enfermero.apellido}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <Clock size={11} />
+                          {formatFechaCorta(turno.fecha_inicio)}
+                        </span>
+                        <span className="text-xs text-gray-400">{durH}h</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs"
+                        style={{ borderColor: tst.color, color: tst.color, backgroundColor: tst.bg }}>
+                        {tst.label}
+                      </Badge>
+                      {turno.status !== 'completado' && (
+                        <form action={async () => {
+                          'use server'
+                          await cambiarStatusTurno(turno.id, 'completado')
+                        }}>
+                          <button type="submit"
+                            className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-500 hover:border-[#1B2B4B] hover:text-[#1B2B4B] transition-all">
+                            Completar
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
