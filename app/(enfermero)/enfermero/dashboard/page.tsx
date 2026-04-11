@@ -1,6 +1,7 @@
 import { getMiPerfil, getMisTurnos } from '@/lib/actions/enfermero-portal'
 import { Calendar, Star, Briefcase, Clock, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import type { Turno } from '@/types'
 
 const STATUS_TURNO: Record<string, { label: string; color: string; bg: string }> = {
   programado: { label: 'Programado', color: '#2AABBF', bg: '#EBF8FB' },
@@ -16,7 +17,7 @@ function formatFecha(fecha: string) {
 
 export default async function EnfermeroDashboardPage() {
   let enfermero = null
-  let turnos: any[] = []
+  let turnos: Turno[] = []
 
   try {
     const data = await getMiPerfil()
@@ -71,7 +72,7 @@ export default async function EnfermeroDashboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {proximos.map((turno: any) => {
+            {proximos.map((turno: Turno) => {
               const st = STATUS_TURNO[turno.status] ?? STATUS_TURNO.programado
               const caso = turno.caso
               return (

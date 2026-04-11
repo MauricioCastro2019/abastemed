@@ -1,6 +1,7 @@
 import { getMisTurnos } from '@/lib/actions/enfermero-portal'
 import { Calendar, Clock, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import type { Turno } from '@/types'
 
 const STATUS_TURNO: Record<string, { label: string; color: string; bg: string; border: string }> = {
   programado: { label: 'Programado', color: '#2AABBF', bg: '#EBF8FB', border: '#2AABBF' },
@@ -21,7 +22,7 @@ function duracion(inicio: string, fin: string) {
 }
 
 export default async function MisTurnosPage() {
-  let turnos: any[] = []
+  let turnos: Turno[] = []
   try {
     turnos = await getMisTurnos()
   } catch {
@@ -50,7 +51,7 @@ export default async function MisTurnosPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {proximos.map((t: any) => <TurnoCard key={t.id} turno={t} />)}
+            {proximos.map((t: Turno) => <TurnoCard key={t.id} turno={t} />)}
           </div>
         )}
       </section>
@@ -60,7 +61,7 @@ export default async function MisTurnosPage() {
         <section>
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Historial</h2>
           <div className="space-y-3">
-            {historial.map((t: any) => <TurnoCard key={t.id} turno={t} />)}
+            {historial.map((t: Turno) => <TurnoCard key={t.id} turno={t} />)}
           </div>
         </section>
       )}
@@ -68,7 +69,7 @@ export default async function MisTurnosPage() {
   )
 }
 
-function TurnoCard({ turno }: { turno: any }) {
+function TurnoCard({ turno }: { turno: Turno }) {
   const st = STATUS_TURNO[turno.status] ?? STATUS_TURNO.programado
   const caso = turno.caso
 
