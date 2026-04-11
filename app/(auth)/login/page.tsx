@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError(null)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('Credenciales incorrectas. Verifica tu email y contraseña.')
@@ -26,7 +26,19 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/dashboard')
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', data.user.id)
+      .single()
+
+    if (perfil?.rol === 'enfermero') {
+      router.push('/enfermero/dashboard')
+    } else if (perfil?.rol === 'familiar') {
+      router.push('/familiar/dashboard')
+    } else {
+      router.push('/dashboard')
+    }
     router.refresh()
   }
 
