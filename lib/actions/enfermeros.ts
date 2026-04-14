@@ -80,3 +80,14 @@ export async function actualizarEnfermero(id: string, formData: FormData) {
   revalidatePath(`/enfermeros/${id}`)
   redirect(`/enfermeros/${id}`)
 }
+
+export async function aprobarEnfermero(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('enfermeros')
+    .update({ disponible: true })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/enfermeros')
+  revalidatePath(`/enfermeros/${id}`)
+}

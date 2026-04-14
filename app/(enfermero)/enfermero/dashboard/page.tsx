@@ -42,6 +42,19 @@ export default async function EnfermeroDashboardPage() {
         </p>
       </div>
 
+      {/* Banner pendiente de aprobación */}
+      {enfermero && !enfermero.disponible && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Cuenta pendiente de aprobación</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              El administrador revisará tu perfil pronto. Una vez aprobado, comenzarás a recibir turnos asignados.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
