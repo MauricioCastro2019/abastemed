@@ -10,6 +10,7 @@ import {
   FolderOpen,
   Calendar,
   Receipt,
+  Heart,
   LogOut,
   Menu,
   X,
@@ -19,12 +20,13 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/pacientes', label: 'Pacientes', icon: Users },
-  { href: '/enfermeros', label: 'Enfermeros', icon: Stethoscope },
-  { href: '/casos', label: 'Casos', icon: FolderOpen },
-  { href: '/turnos', label: 'Turnos', icon: Calendar },
-  { href: '/cobranza', label: 'Cobranza', icon: Receipt },
+  { href: '/dashboard',   label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/pacientes',   label: 'Pacientes',  icon: Users },
+  { href: '/enfermeros',  label: 'Enfermeros', icon: Stethoscope },
+  { href: '/casos',       label: 'Casos',      icon: FolderOpen },
+  { href: '/turnos',      label: 'Turnos',     icon: Calendar },
+  { href: '/familiares',  label: 'Familiares', icon: Heart },
+  { href: '/cobranza',    label: 'Cobranza',   icon: Receipt },
 ]
 
 export function Sidebar() {

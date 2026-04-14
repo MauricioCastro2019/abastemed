@@ -39,6 +39,7 @@ export async function updateSession(request: NextRequest) {
     '/casos',
     '/turnos',
     '/cobranza',
+    '/familiares',
     '/enfermero',
     '/familiar',
   ]
