@@ -66,6 +66,7 @@ export async function updateSession(request: NextRequest) {
     } else if (perfil?.rol === 'familiar') {
       url.pathname = '/familiar/dashboard'
     } else {
+      // admin y jefe_enfermeros van al dashboard
       url.pathname = '/dashboard'
     }
     return NextResponse.redirect(url)

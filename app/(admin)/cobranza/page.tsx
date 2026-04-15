@@ -1,6 +1,8 @@
 import { getCobranza, marcarPagado } from '@/lib/actions/cobranza'
 import { Badge } from '@/components/ui/badge'
 import { Receipt, CheckCircle, Clock } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
 function formatMonto(n: number) {
   return n.toLocaleString('es-VE', { minimumFractionDigits: 2 })
@@ -11,6 +13,14 @@ function formatFecha(f: string) {
 }
 
 export default async function CobranzaPage() {
+  // Solo admin puede ver cobranza
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: perfil } = await supabase.from('perfiles').select('rol').eq('id', user.id).single()
+    if (perfil?.rol === 'jefe_enfermeros') redirect('/dashboard')
+  }
+
   let items: Awaited<ReturnType<typeof getCobranza>> = []
   try { items = await getCobranza() } catch { /* sin datos */ }
 

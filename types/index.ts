@@ -7,7 +7,7 @@ export type StatusPaciente = 'activo' | 'cerrado'
 export type StatusCaso = 'activo' | 'pausado' | 'cerrado'
 export type StatusTurno = 'programado' | 'activo' | 'completado'
 export type StatusCobranza = 'pendiente' | 'pagado'
-export type RolUsuario = 'admin' | 'enfermero' | 'familiar'
+export type RolUsuario = 'admin' | 'enfermero' | 'familiar' | 'jefe_enfermeros'
 
 // ----------------------------------------------------------------
 export interface Paciente {

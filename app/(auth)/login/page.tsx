@@ -42,6 +42,7 @@ function LoginForm() {
     } else if (perfil?.rol === 'familiar') {
       router.push('/familiar/dashboard')
     } else {
+      // admin y jefe_enfermeros
       router.push('/dashboard')
     }
     router.refresh()
