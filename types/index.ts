@@ -156,3 +156,29 @@ export interface MetricasDashboard {
   turnos_hoy: number
   cobranza_pendiente: number
 }
+
+// ----------------------------------------------------------------
+// Módulo de Recibos de Pago
+export interface ReciboItem {
+  id: string
+  recibo_id: string
+  descripcion: string
+  cantidad: number
+  precio_unitario: number
+  importe: number
+  orden: number
+}
+
+export interface Recibo {
+  id: string
+  folio: string
+  paciente_nombre: string
+  fecha_emision: string              // ISO date YYYY-MM-DD
+  subtotal: number
+  total: number
+  observaciones?: string | null
+  creado_en: string
+  actualizado_en: string
+  // Relación opcional (cuando se hace join con recibo_items)
+  recibo_items?: ReciboItem[]
+}

@@ -120,15 +120,35 @@ function LoginForm() {
           </form>
         </div>
 
-        {/* Registro enfermero */}
-        <p className="text-center text-sm text-gray-500 mt-5">
-          ¿Eres enfermero/a?{' '}
-          <Link href="/registro" className="font-medium hover:underline" style={{ color: '#2AABBF' }}>
-            Regístrate aquí
-          </Link>
-        </p>
+        {/* Accesos rápidos */}
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+            <div className="inline-flex items-center justify-center w-9 h-9 rounded-full mb-2"
+              style={{ backgroundColor: '#EBF8FB' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2AABBF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <p className="text-xs font-semibold mb-1" style={{ color: '#1B2B4B' }}>Familiares</p>
+            <p className="text-xs text-gray-400 leading-tight">Ingresa con tus credenciales de invitación</p>
+          </div>
 
-        <p className="text-center text-xs text-gray-400 mt-3">
+          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+            <div className="inline-flex items-center justify-center w-9 h-9 rounded-full mb-2"
+              style={{ backgroundColor: '#EBF8FB' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2AABBF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+            </div>
+            <p className="text-xs font-semibold mb-1" style={{ color: '#1B2B4B' }}>Enfermeros/as</p>
+            <Link href="/registro" className="text-xs hover:underline" style={{ color: '#2AABBF' }}>
+              Regístrate aquí
+            </Link>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-4">
           © 2025 Abastemed · Todos los derechos reservados
         </p>
       </div>

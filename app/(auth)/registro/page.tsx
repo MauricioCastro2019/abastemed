@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { registrarEnfermero } from '@/lib/actions/registro'
 import Link from 'next/link'
 
@@ -8,6 +9,7 @@ const INPUT = "w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outl
 const LABEL = "block text-sm font-medium mb-1.5"
 
 export default function RegistroEnfermeroPage() {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError]     = useState<string | null>(null)
   const [password, setPassword] = useState('')
@@ -28,10 +30,11 @@ export default function RegistroEnfermeroPage() {
 
     const formData = new FormData(e.currentTarget)
     startTransition(async () => {
-      try {
-        await registrarEnfermero(formData)
-      } catch (err: unknown) {
-        if (err instanceof Error) setError(err.message)
+      const result = await registrarEnfermero(formData)
+      if (!result.ok) {
+        setError(result.error)
+      } else {
+        router.push('/login?registered=1')
       }
     })
   }

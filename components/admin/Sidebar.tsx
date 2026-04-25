@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Shield,
+  FileText,
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -27,6 +28,7 @@ const NAV_ADMIN = [
   { href: '/turnos',      label: 'Turnos',              icon: Calendar },
   { href: '/familiares',  label: 'Familiares',          icon: Heart },
   { href: '/cobranza',    label: 'Cobranza',            icon: Receipt },
+  { href: '/recibos',     label: 'Recibos',             icon: FileText },
 ]
 
 const NAV_JEFE = [
@@ -36,6 +38,7 @@ const NAV_JEFE = [
   { href: '/casos',       label: 'Casos',               icon: FolderOpen },
   { href: '/turnos',      label: 'Turnos',              icon: Calendar },
   { href: '/familiares',  label: 'Familiares',          icon: Heart },
+  { href: '/recibos',     label: 'Recibos',             icon: FileText },
 ]
 
 interface Props {
