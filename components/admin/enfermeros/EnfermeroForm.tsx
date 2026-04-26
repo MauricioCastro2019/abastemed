@@ -64,20 +64,20 @@ export function EnfermeroForm({ enfermero }: Props) {
     const form = e.currentTarget
 
     startTransition(async () => {
-      try {
-        const uploadedUrl = await uploadCv()
-        const formData = new FormData(form)
-        formData.set('cv_url', uploadedUrl ?? '')
+      const uploadedUrl = await uploadCv()
+      if (uploadedUrl === null && cvFile) return  // uploadCv already set error
 
-        if (enfermero) {
-          await actualizarEnfermero(enfermero.id, formData)
-        } else {
-          await crearEnfermero(formData)
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error && !err.message.includes('NEXT_REDIRECT')) {
-          setError(err.message)
-        }
+      const formData = new FormData(form)
+      formData.set('cv_url', uploadedUrl ?? '')
+
+      if (enfermero) {
+        const result = await actualizarEnfermero(enfermero.id, formData)
+        if (result?.error) setError(result.error)
+        else router.push(`/enfermeros/${enfermero.id}`)
+      } else {
+        const result = await crearEnfermero(formData)
+        if (result?.error) setError(result.error)
+        else router.push('/enfermeros')
       }
     })
   }

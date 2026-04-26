@@ -24,16 +24,14 @@ export function CasoForm({ caso, pacientes }: Props) {
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
-      try {
-        if (caso) {
-          await actualizarCaso(caso.id, formData)
-        } else {
-          await crearCaso(formData)
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error && !err.message.includes('NEXT_REDIRECT')) {
-          setError(err.message)
-        }
+      if (caso) {
+        const result = await actualizarCaso(caso.id, formData)
+        if (result?.error) setError(result.error)
+        else router.push(`/casos/${caso.id}`)
+      } else {
+        const result = await crearCaso(formData)
+        if (result?.error) setError(result.error)
+        else router.push('/casos')
       }
     })
   }

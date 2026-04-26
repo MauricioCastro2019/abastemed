@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import type { Paciente } from '@/types'
 
 export async function getPacientes() {
@@ -28,7 +27,7 @@ export async function getPaciente(id: string) {
   return data as Paciente
 }
 
-export async function crearPaciente(formData: FormData) {
+export async function crearPaciente(formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const medicamentos = (formData.get('medicamentos') as string)
@@ -37,31 +36,31 @@ export async function crearPaciente(formData: FormData) {
     .split('\n').map(s => s.trim()).filter(Boolean)
 
   const contacto_familiar = {
-    nombre: formData.get('contacto_nombre') as string,
+    nombre:   formData.get('contacto_nombre') as string,
     telefono: formData.get('contacto_telefono') as string,
-    email: formData.get('contacto_email') as string,
+    email:    formData.get('contacto_email') as string,
     relacion: formData.get('contacto_relacion') as string,
   }
 
   const { error } = await supabase.from('pacientes').insert({
-    nombre: formData.get('nombre') as string,
-    apellido: formData.get('apellido') as string,
-    fecha_nacimiento: formData.get('fecha_nacimiento') as string,
-    diagnostico: formData.get('diagnostico') as string,
+    nombre:            formData.get('nombre') as string,
+    apellido:          formData.get('apellido') as string,
+    fecha_nacimiento:  formData.get('fecha_nacimiento') as string,
+    diagnostico:       formData.get('diagnostico') as string,
     medicamentos,
     alergias,
     contacto_familiar,
     contexto: formData.get('contexto') as string,
-    status: 'activo',
+    status:   'activo',
   })
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath('/pacientes')
-  redirect('/pacientes')
+  return {}
 }
 
-export async function actualizarPaciente(id: string, formData: FormData) {
+export async function actualizarPaciente(id: string, formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const medicamentos = (formData.get('medicamentos') as string)
@@ -70,29 +69,29 @@ export async function actualizarPaciente(id: string, formData: FormData) {
     .split('\n').map(s => s.trim()).filter(Boolean)
 
   const contacto_familiar = {
-    nombre: formData.get('contacto_nombre') as string,
+    nombre:   formData.get('contacto_nombre') as string,
     telefono: formData.get('contacto_telefono') as string,
-    email: formData.get('contacto_email') as string,
+    email:    formData.get('contacto_email') as string,
     relacion: formData.get('contacto_relacion') as string,
   }
 
   const { error } = await supabase.from('pacientes').update({
-    nombre: formData.get('nombre') as string,
-    apellido: formData.get('apellido') as string,
+    nombre:           formData.get('nombre') as string,
+    apellido:         formData.get('apellido') as string,
     fecha_nacimiento: formData.get('fecha_nacimiento') as string,
-    diagnostico: formData.get('diagnostico') as string,
+    diagnostico:      formData.get('diagnostico') as string,
     medicamentos,
     alergias,
     contacto_familiar,
     contexto: formData.get('contexto') as string,
-    status: formData.get('status') as string,
+    status:   formData.get('status') as string,
   }).eq('id', id)
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath('/pacientes')
   revalidatePath(`/pacientes/${id}`)
-  redirect(`/pacientes/${id}`)
+  return {}
 }
 
 export async function cambiarStatusPaciente(id: string, status: 'activo' | 'cerrado') {

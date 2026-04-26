@@ -21,11 +21,9 @@ export function InvitarFamiliarForm({ pacientes }: { pacientes: Paciente[] }) {
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
-      try {
-        await invitarFamiliar(formData)
-      } catch (err: unknown) {
-        if (err instanceof Error) setError(err.message)
-      }
+      const result = await invitarFamiliar(formData)
+      if (result?.error) setError(result.error)
+      else router.push('/familiares')
     })
   }
 

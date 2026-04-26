@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import type { Enfermero } from '@/types'
 
 export async function getEnfermeros() {
@@ -28,7 +27,7 @@ export async function getEnfermero(id: string) {
   return data as Enfermero
 }
 
-export async function crearEnfermero(formData: FormData) {
+export async function crearEnfermero(formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const especialidades = (formData.get('especialidades') as string)
@@ -37,24 +36,24 @@ export async function crearEnfermero(formData: FormData) {
   const cv_url = formData.get('cv_url') as string
 
   const { error } = await supabase.from('enfermeros').insert({
-    nombre: formData.get('nombre') as string,
-    apellido: formData.get('apellido') as string,
-    cedula: formData.get('cedula') as string,
+    nombre:       formData.get('nombre') as string,
+    apellido:     formData.get('apellido') as string,
+    cedula:       formData.get('cedula') as string,
     especialidades,
-    telefono: formData.get('telefono') as string,
-    email: formData.get('email') as string,
-    bio: formData.get('bio') as string || null,
-    disponible: formData.get('disponible') === 'true',
-    cv_url: cv_url || null,
+    telefono:     formData.get('telefono') as string,
+    email:        formData.get('email') as string,
+    bio:          (formData.get('bio') as string) || null,
+    disponible:   formData.get('disponible') === 'true',
+    cv_url:       cv_url || null,
   })
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath('/enfermeros')
-  redirect('/enfermeros')
+  return {}
 }
 
-export async function actualizarEnfermero(id: string, formData: FormData) {
+export async function actualizarEnfermero(id: string, formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const especialidades = (formData.get('especialidades') as string)
@@ -63,22 +62,22 @@ export async function actualizarEnfermero(id: string, formData: FormData) {
   const cv_url = formData.get('cv_url') as string
 
   const { error } = await supabase.from('enfermeros').update({
-    nombre: formData.get('nombre') as string,
-    apellido: formData.get('apellido') as string,
-    cedula: formData.get('cedula') as string,
+    nombre:       formData.get('nombre') as string,
+    apellido:     formData.get('apellido') as string,
+    cedula:       formData.get('cedula') as string,
     especialidades,
-    telefono: formData.get('telefono') as string,
-    email: formData.get('email') as string,
-    bio: formData.get('bio') as string || null,
-    disponible: formData.get('disponible') === 'true',
-    cv_url: cv_url || null,
+    telefono:     formData.get('telefono') as string,
+    email:        formData.get('email') as string,
+    bio:          (formData.get('bio') as string) || null,
+    disponible:   formData.get('disponible') === 'true',
+    cv_url:       cv_url || null,
   }).eq('id', id)
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath('/enfermeros')
   revalidatePath(`/enfermeros/${id}`)
-  redirect(`/enfermeros/${id}`)
+  return {}
 }
 
 export async function aprobarEnfermero(id: string) {

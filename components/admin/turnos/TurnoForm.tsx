@@ -25,11 +25,9 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId }: Props) {
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
-      try {
-        await crearTurno(formData)
-      } catch (err: unknown) {
-        if (err instanceof Error) setError(err.message)
-      }
+      const result = await crearTurno(formData)
+      if (result?.error) setError(result.error)
+      else router.push('/turnos')
     })
   }
 

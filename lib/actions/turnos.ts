@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
 export async function getTurnos() {
   const supabase = await createClient()
@@ -32,29 +31,28 @@ export async function getTurnosByCaso(casoId: string) {
   return data ?? []
 }
 
-export async function crearTurno(formData: FormData) {
+export async function crearTurno(formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const { error } = await supabase.from('turnos').insert({
-    caso_id:        formData.get('caso_id') as string,
-    enfermero_id:   formData.get('enfermero_id') as string,
-    fecha_inicio:   formData.get('fecha_inicio') as string,
-    fecha_fin:      formData.get('fecha_fin') as string,
-    notas_entrega:  (formData.get('notas_entrega') as string) || null,
-    status:         'programado',
+    caso_id:       formData.get('caso_id') as string,
+    enfermero_id:  formData.get('enfermero_id') as string,
+    fecha_inicio:  formData.get('fecha_inicio') as string,
+    fecha_fin:     formData.get('fecha_fin') as string,
+    notas_entrega: (formData.get('notas_entrega') as string) || null,
+    status:        'programado',
   })
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath('/turnos')
   revalidatePath('/dashboard')
-  redirect('/turnos')
+  return {}
 }
 
 export async function cambiarStatusTurno(id: string, status: 'programado' | 'activo' | 'completado') {
   const supabase = await createClient()
 
-  // Leer turno antes de cambiar para generar cobranza si aplica
   const { data: turno } = await supabase
     .from('turnos')
     .select('*, caso:casos(tarifa_hora)')

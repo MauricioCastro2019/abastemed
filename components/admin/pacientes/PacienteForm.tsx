@@ -24,16 +24,14 @@ export function PacienteForm({ paciente }: Props) {
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
-      try {
-        if (paciente) {
-          await actualizarPaciente(paciente.id, formData)
-        } else {
-          await crearPaciente(formData)
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error && !err.message.includes('NEXT_REDIRECT')) {
-          setError(err.message)
-        }
+      if (paciente) {
+        const result = await actualizarPaciente(paciente.id, formData)
+        if (result?.error) setError(result.error)
+        else router.push(`/pacientes/${paciente.id}`)
+      } else {
+        const result = await crearPaciente(formData)
+        if (result?.error) setError(result.error)
+        else router.push('/pacientes')
       }
     })
   }

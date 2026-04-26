@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import type { Caso } from '@/types'
 
 export async function getCasos() {
@@ -34,7 +33,7 @@ export async function getCaso(id: string) {
   return data as Caso
 }
 
-export async function crearCaso(formData: FormData) {
+export async function crearCaso(formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const { error } = await supabase.from('casos').insert({
@@ -49,14 +48,14 @@ export async function crearCaso(formData: FormData) {
     status: 'activo',
   })
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath('/casos')
   revalidatePath('/dashboard')
-  redirect('/casos')
+  return {}
 }
 
-export async function actualizarCaso(id: string, formData: FormData) {
+export async function actualizarCaso(id: string, formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const { error } = await supabase.from('casos').update({
@@ -71,12 +70,12 @@ export async function actualizarCaso(id: string, formData: FormData) {
     status: formData.get('status') as string,
   }).eq('id', id)
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath('/casos')
   revalidatePath(`/casos/${id}`)
   revalidatePath('/dashboard')
-  redirect(`/casos/${id}`)
+  return {}
 }
 
 export async function cambiarStatusCaso(id: string, status: 'activo' | 'pausado' | 'cerrado') {
