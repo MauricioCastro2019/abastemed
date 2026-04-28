@@ -1,0 +1,20 @@
+<svg viewBox="0 0 56 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="teal" x1="0" y1="0" x2="56" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1A9AAF"/>
+      <stop offset="100%" stop-color="#2AABBF"/>
+    </linearGradient>
+  </defs>
+  <!-- Left diagonal of A -->
+  <path d="M7 48 L23 6" stroke="url(#teal)" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Right side curves into heart loop -->
+  <path d="M23 6 C23 6 48 6 48 26 C48 40 36 48 23 48 L17 48"
+        stroke="url(#teal)" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <!-- Crossbar horizontal -->
+  <line x1="15" y1="31" x2="34" y2="31" stroke="url(#teal)" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Plus vertical (medical cross) -->
+  <line x1="24" y1="25" x2="24" y2="37" stroke="url(#teal)" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- EKG heartbeat line -->
+  <path d="M2 56 L12 56 L15 50 L18 62 L21 52 L24 56 L54 56"
+        stroke="url(#teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+</svg>

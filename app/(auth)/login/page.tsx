@@ -3,9 +3,30 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Suspense } from 'react'
+
+function LogoMark({ size = 72 }: { size?: number }) {
+  const s = size
+  const vb = `0 0 56 62`
+  return (
+    <svg width={s} height={Math.round(s * 62 / 56)} viewBox={vb} fill="none">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="56" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#18A0B5" />
+          <stop offset="100%" stopColor="#2AABBF" />
+        </linearGradient>
+      </defs>
+      <path d="M7 48 L23 6" stroke="url(#lg)" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M23 6 C23 6 48 6 48 26 C48 40 36 48 23 48 L17 48"
+        stroke="url(#lg)" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <line x1="15" y1="31" x2="34" y2="31" stroke="url(#lg)" strokeWidth="4.5" strokeLinecap="round" />
+      <line x1="24" y1="25" x2="24" y2="37" stroke="url(#lg)" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M2 56 L12 56 L15 50 L18 62 L21 52 L24 56 L54 56"
+        stroke="url(#lg)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.65" />
+    </svg>
+  )
+}
 
 function LoginForm() {
   const router = useRouter()
@@ -42,115 +63,138 @@ function LoginForm() {
     } else if (perfil?.rol === 'familiar') {
       router.push('/familiar/dashboard')
     } else {
-      // admin y jefe_enfermeros
       router.push('/dashboard')
     }
     router.refresh()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F0' }}>
-      <div className="w-full max-w-md px-6">
+    <div className="min-h-screen flex items-stretch relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #0B1934 0%, #0D2048 50%, #122454 100%)' }}>
 
-        {/* Logo */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-            style={{ backgroundColor: '#1B2B4B' }}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 4C9.373 4 4 9.373 4 16s5.373 12 12 12 12-5.373 12-12S22.627 4 16 4z"
-                fill="#2AABBF" opacity="0.3" />
-              <path d="M14 10h4v4h4v4h-4v4h-4v-4h-4v-4h4v-4z" fill="white" />
-            </svg>
+      {/* Olas decorativas */}
+      <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 220" preserveAspectRatio="none"
+        style={{ opacity: 0.12 }}>
+        <path d="M0,128 C360,200 720,56 1080,128 C1260,164 1380,180 1440,160 L1440,220 L0,220 Z"
+          fill="#2AABBF" />
+      </svg>
+      <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 160" preserveAspectRatio="none"
+        style={{ opacity: 0.07 }}>
+        <path d="M0,80 C480,160 960,0 1440,80 L1440,160 L0,160 Z"
+          fill="#2AABBF" />
+      </svg>
+
+      {/* Panel izquierdo — branding (solo desktop) */}
+      <div className="hidden lg:flex flex-col items-center justify-center flex-1 px-16 relative z-10">
+        <div className="flex flex-col items-center gap-6 select-none">
+          {/* Glow detrás del logo */}
+          <div className="relative">
+            <div className="absolute inset-0 blur-3xl rounded-full scale-150"
+              style={{ backgroundColor: '#2AABBF', opacity: 0.15 }} />
+            <LogoMark size={110} />
           </div>
-          <h1 className="text-3xl font-bold tracking-widest mb-1" style={{ color: '#1B2B4B' }}>
-            ABASTEMED
-          </h1>
-          <p className="text-sm" style={{ color: '#2AABBF' }}>
-            Tu aliado confiable en suministros hospitalarios
-          </p>
+
+          <div className="text-center">
+            <h1 className="text-5xl font-black tracking-widest text-white mb-2">
+              ABASTEMED
+            </h1>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="h-px flex-1 max-w-16" style={{ backgroundColor: '#2AABBF', opacity: 0.4 }} />
+              <svg width="60" height="14" viewBox="0 0 60 14" fill="none">
+                <path d="M0 7 L12 7 L15 2 L18 12 L21 4 L24 7 L60 7"
+                  stroke="#2AABBF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <div className="h-px flex-1 max-w-16" style={{ backgroundColor: '#2AABBF', opacity: 0.4 }} />
+            </div>
+            <p className="text-lg font-medium tracking-wide" style={{ color: '#2AABBF' }}>
+              Cuidado profesional en casa
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Panel derecho — formulario */}
+      <div className="flex flex-col items-center justify-center w-full lg:w-auto lg:min-w-[440px] px-6 py-10 relative z-10">
+
+        {/* Logo mobile */}
+        <div className="lg:hidden flex flex-col items-center mb-8">
+          <LogoMark size={64} />
+          <h1 className="text-3xl font-black tracking-widest text-white mt-3">ABASTEMED</h1>
+          <p className="text-sm mt-1" style={{ color: '#2AABBF' }}>Cuidado profesional en casa</p>
         </div>
 
-        {/* Mensaje de registro exitoso */}
-        {justRegistered && (
-          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-4 text-sm text-green-700">
-            ¡Cuenta creada correctamente! Inicia sesión para continuar.
-          </div>
-        )}
-
-        {/* Card de login */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h2 className="text-xl font-semibold mb-6" style={{ color: '#1B2B4B' }}>
-            Iniciar sesión
-          </h2>
-
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1.5" style={{ color: '#1B2B4B' }}>
-                Correo electrónico
-              </label>
-              <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
-                required placeholder="tu@correo.com"
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none transition-all"
-                style={{ backgroundColor: '#F5F5F0', color: '#1B2B4B' }}
-                onFocus={e => e.target.style.borderColor = '#2AABBF'}
-                onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+        <div className="w-full max-w-sm">
+          {justRegistered && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4 text-sm text-emerald-700">
+              ¡Cuenta creada! Inicia sesión para continuar.
             </div>
+          )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1.5" style={{ color: '#1B2B4B' }}>
-                Contraseña
-              </label>
-              <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
-                required placeholder="••••••••"
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none transition-all"
-                style={{ backgroundColor: '#F5F5F0', color: '#1B2B4B' }}
-                onFocus={e => e.target.style.borderColor = '#2AABBF'}
-                onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
-            </div>
+          {/* Card login */}
+          <div className="bg-white rounded-2xl shadow-2xl p-8">
+            <h2 className="text-xl font-bold mb-1" style={{ color: '#0D1B3E' }}>Bienvenido</h2>
+            <p className="text-sm text-gray-400 mb-6">Ingresa tus credenciales para continuar</p>
 
-            {error && (
-              <div className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-3">{error}</div>
-            )}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-xs font-semibold mb-1.5 uppercase tracking-wider"
+                  style={{ color: '#1B2B4B' }}>
+                  Correo electrónico
+                </label>
+                <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  required placeholder="tu@correo.com" autoComplete="email"
+                  className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all bg-gray-50"
+                  style={{ borderColor: '#e5e7eb', color: '#1B2B4B' }}
+                  onFocus={e => e.target.style.borderColor = '#2AABBF'}
+                  onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+              </div>
 
-            <Button type="submit" disabled={loading}
-              className="w-full py-2.5 text-sm font-semibold rounded-lg transition-all text-white border-none"
-              style={{ backgroundColor: loading ? '#94a3b8' : '#2AABBF' }}>
-              {loading ? 'Ingresando...' : 'Ingresar'}
-            </Button>
-          </form>
-        </div>
+              <div>
+                <label htmlFor="password" className="block text-xs font-semibold mb-1.5 uppercase tracking-wider"
+                  style={{ color: '#1B2B4B' }}>
+                  Contraseña
+                </label>
+                <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
+                  required placeholder="••••••••" autoComplete="current-password"
+                  className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all bg-gray-50"
+                  style={{ borderColor: '#e5e7eb', color: '#1B2B4B' }}
+                  onFocus={e => e.target.style.borderColor = '#2AABBF'}
+                  onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+              </div>
 
-        {/* Accesos rápidos */}
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <div className="inline-flex items-center justify-center w-9 h-9 rounded-full mb-2"
-              style={{ backgroundColor: '#EBF8FB' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2AABBF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-            <p className="text-xs font-semibold mb-1" style={{ color: '#1B2B4B' }}>Familiares</p>
-            <p className="text-xs text-gray-400 leading-tight">Ingresa con tus credenciales de invitación</p>
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</div>
+              )}
+
+              <button type="submit" disabled={loading}
+                className="w-full py-3 text-sm font-bold rounded-xl transition-all text-white mt-2 tracking-wide"
+                style={{ backgroundColor: loading ? '#94a3b8' : '#2AABBF' }}>
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.3" />
+                      <path d="M12 2 A10 10 0 0 1 22 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                    Ingresando...
+                  </span>
+                ) : 'Ingresar'}
+              </button>
+            </form>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <div className="inline-flex items-center justify-center w-9 h-9 rounded-full mb-2"
-              style={{ backgroundColor: '#EBF8FB' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2AABBF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            </div>
-            <p className="text-xs font-semibold mb-1" style={{ color: '#1B2B4B' }}>Enfermeros/as</p>
-            <Link href="/registro" className="text-xs hover:underline" style={{ color: '#2AABBF' }}>
-              Regístrate aquí
+          {/* Acceso enfermeros */}
+          <div className="mt-4 bg-white/8 backdrop-blur-sm rounded-xl p-4 border border-white/10 text-center">
+            <p className="text-white/60 text-xs mb-1">¿Eres enfermero/a?</p>
+            <Link href="/registro" className="text-sm font-semibold hover:underline"
+              style={{ color: '#2AABBF' }}>
+              Regístrate aquí →
             </Link>
           </div>
-        </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
-          © 2025 Abastemed · Todos los derechos reservados
-        </p>
+          <p className="text-center text-xs text-white/25 mt-6">
+            © 2025 Abastemed · Cuidado profesional en casa
+          </p>
+        </div>
       </div>
     </div>
   )
