@@ -1,11 +1,12 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { requireAuth, requireRole, fd, zodActionError, type ActionResult } from './utils'
+import { TurnoSchema } from '@/lib/validations'
 
-export async function getTurnos() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+export async function getTurnos(search?: string) {
+  const { supabase } = await requireAuth()
+  let query = supabase
     .from('turnos')
     .select(`
       *,
@@ -13,12 +14,20 @@ export async function getTurnos() {
       enfermero:enfermeros(id, nombre, apellido)
     `)
     .order('fecha_inicio', { ascending: false })
+
+  if (search?.trim()) {
+    // Filtrar por título de caso (join) — usamos rpc o filtramos en app
+    // Supabase no permite filtrar en relaciones directamente con .ilike, filtramos después
+    query = query.ilike('casos.titulo', `%${search}%`)
+  }
+
+  const { data, error } = await query
   if (error) throw new Error(error.message)
   return data ?? []
 }
 
 export async function getTurnosByCaso(casoId: string) {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('turnos')
     .select(`
@@ -27,19 +36,31 @@ export async function getTurnosByCaso(casoId: string) {
     `)
     .eq('caso_id', casoId)
     .order('fecha_inicio', { ascending: true })
+
   if (error) throw new Error(error.message)
   return data ?? []
 }
 
-export async function crearTurno(formData: FormData): Promise<{ error?: string }> {
-  const supabase = await createClient()
+export async function crearTurno(formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
+  const parsed = TurnoSchema.safeParse({
+    caso_id:      fd(formData, 'caso_id'),
+    enfermero_id: fd(formData, 'enfermero_id'),
+    fecha_inicio: fd(formData, 'fecha_inicio'),
+    fecha_fin:    fd(formData, 'fecha_fin'),
+  })
+
+  if (!parsed.success) return zodActionError(parsed.error)
+
+  const v = parsed.data
   const { error } = await supabase.from('turnos').insert({
-    caso_id:       formData.get('caso_id') as string,
-    enfermero_id:  formData.get('enfermero_id') as string,
-    fecha_inicio:  formData.get('fecha_inicio') as string,
-    fecha_fin:     formData.get('fecha_fin') as string,
-    notas_entrega: (formData.get('notas_entrega') as string) || null,
+    caso_id:       v.caso_id,
+    enfermero_id:  v.enfermero_id,
+    fecha_inicio:  v.fecha_inicio,
+    fecha_fin:     v.fecha_fin,
+    notas_entrega: fd(formData, 'notas_entrega') || null,
     status:        'programado',
   })
 
@@ -51,7 +72,21 @@ export async function crearTurno(formData: FormData): Promise<{ error?: string }
 }
 
 export async function cambiarStatusTurno(id: string, status: 'programado' | 'activo' | 'completado') {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros', 'enfermero')
+
+  // Si es enfermero, verificar que el turno le pertenece
+  if (perfil.rol === 'enfermero') {
+    const { data: turnoCheck } = await supabase
+      .from('turnos')
+      .select('enfermero_id')
+      .eq('id', id)
+      .single()
+
+    if (turnoCheck?.enfermero_id !== perfil.enfermero_id) {
+      throw new Error('No tienes permiso para modificar este turno')
+    }
+  }
 
   const { data: turno } = await supabase
     .from('turnos')

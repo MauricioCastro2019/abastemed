@@ -1,11 +1,11 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { revalidatePath } from 'next/cache'
+import { requireAuth, requireRole, fd } from './utils'
 
 export async function getFamiliares() {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('perfiles')
     .select(`
@@ -20,7 +20,7 @@ export async function getFamiliares() {
 }
 
 export async function getFamiliar(id: string) {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('perfiles')
     .select(`
@@ -35,10 +35,16 @@ export async function getFamiliar(id: string) {
 }
 
 export async function invitarFamiliar(formData: FormData): Promise<{ error?: string }> {
-  const email      = formData.get('email') as string
-  const nombre     = formData.get('nombre') as string
-  const apellido   = formData.get('apellido') as string
-  const pacienteId = (formData.get('paciente_id') as string) || null
+  const { perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
+  const email      = fd(formData, 'email')
+  const nombre     = fd(formData, 'nombre')
+  const apellido   = fd(formData, 'apellido')
+  const pacienteId = fd(formData, 'paciente_id') || null
+
+  if (!email) return { error: 'Email requerido' }
+  if (!nombre) return { error: 'Nombre requerido' }
 
   const admin = createServiceClient()
 
@@ -62,7 +68,9 @@ export async function invitarFamiliar(formData: FormData): Promise<{ error?: str
 }
 
 export async function vincularPaciente(familiarId: string, pacienteId: string | null) {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
   const { error } = await supabase
     .from('perfiles')
     .update({ paciente_id: pacienteId })
@@ -74,6 +82,9 @@ export async function vincularPaciente(familiarId: string, pacienteId: string | 
 }
 
 export async function removerFamiliar(id: string) {
+  const { perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
+
   const admin = createServiceClient()
   await admin.from('perfiles').update({ rol: 'familiar', paciente_id: null }).eq('id', id)
   revalidatePath('/familiares')

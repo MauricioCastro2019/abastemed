@@ -1,22 +1,30 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Paciente } from '@/types'
+import { requireAuth, requireRole, fd, fdLines, zodActionError, type ActionResult } from './utils'
+import { PacienteSchema } from '@/lib/validations'
 
-export async function getPacientes() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+export async function getPacientes(search?: string) {
+  const { supabase } = await requireAuth()
+  let query = supabase
     .from('pacientes')
     .select('*')
     .order('created_at', { ascending: false })
 
+  if (search?.trim()) {
+    query = query.or(
+      `nombre.ilike.%${search}%,apellido.ilike.%${search}%,diagnostico.ilike.%${search}%`
+    )
+  }
+
+  const { data, error } = await query
   if (error) throw new Error(error.message)
   return data as Paciente[]
 }
 
 export async function getPaciente(id: string) {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('pacientes')
     .select('*')
@@ -27,30 +35,39 @@ export async function getPaciente(id: string) {
   return data as Paciente
 }
 
-export async function crearPaciente(formData: FormData): Promise<{ error?: string }> {
-  const supabase = await createClient()
+export async function crearPaciente(formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const medicamentos = (formData.get('medicamentos') as string)
-    .split('\n').map(s => s.trim()).filter(Boolean)
-  const alergias = (formData.get('alergias') as string)
-    .split('\n').map(s => s.trim()).filter(Boolean)
+  const parsed = PacienteSchema.safeParse({
+    nombre:            fd(formData, 'nombre'),
+    apellido:          fd(formData, 'apellido'),
+    fecha_nacimiento:  fd(formData, 'fecha_nacimiento'),
+    diagnostico:       fd(formData, 'diagnostico'),
+    contexto:          fd(formData, 'contexto'),
+    contacto_nombre:   fd(formData, 'contacto_nombre'),
+    contacto_telefono: fd(formData, 'contacto_telefono'),
+    contacto_relacion: fd(formData, 'contacto_relacion'),
+    contacto_email:    fd(formData, 'contacto_email'),
+  })
 
-  const contacto_familiar = {
-    nombre:   formData.get('contacto_nombre') as string,
-    telefono: formData.get('contacto_telefono') as string,
-    email:    formData.get('contacto_email') as string,
-    relacion: formData.get('contacto_relacion') as string,
-  }
+  if (!parsed.success) return zodActionError(parsed.error)
 
+  const v = parsed.data
   const { error } = await supabase.from('pacientes').insert({
-    nombre:            formData.get('nombre') as string,
-    apellido:          formData.get('apellido') as string,
-    fecha_nacimiento:  formData.get('fecha_nacimiento') as string,
-    diagnostico:       formData.get('diagnostico') as string,
-    medicamentos,
-    alergias,
-    contacto_familiar,
-    contexto: formData.get('contexto') as string,
+    nombre:           v.nombre,
+    apellido:         v.apellido,
+    fecha_nacimiento: v.fecha_nacimiento,
+    diagnostico:      v.diagnostico,
+    medicamentos:     fdLines(formData, 'medicamentos'),
+    alergias:         fdLines(formData, 'alergias'),
+    contacto_familiar: {
+      nombre:   v.contacto_nombre,
+      telefono: v.contacto_telefono,
+      email:    v.contacto_email || null,
+      relacion: v.contacto_relacion,
+    },
+    contexto: v.contexto,
     status:   'activo',
   })
 
@@ -60,31 +77,40 @@ export async function crearPaciente(formData: FormData): Promise<{ error?: strin
   return {}
 }
 
-export async function actualizarPaciente(id: string, formData: FormData): Promise<{ error?: string }> {
-  const supabase = await createClient()
+export async function actualizarPaciente(id: string, formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const medicamentos = (formData.get('medicamentos') as string)
-    .split('\n').map(s => s.trim()).filter(Boolean)
-  const alergias = (formData.get('alergias') as string)
-    .split('\n').map(s => s.trim()).filter(Boolean)
+  const parsed = PacienteSchema.safeParse({
+    nombre:            fd(formData, 'nombre'),
+    apellido:          fd(formData, 'apellido'),
+    fecha_nacimiento:  fd(formData, 'fecha_nacimiento'),
+    diagnostico:       fd(formData, 'diagnostico'),
+    contexto:          fd(formData, 'contexto'),
+    contacto_nombre:   fd(formData, 'contacto_nombre'),
+    contacto_telefono: fd(formData, 'contacto_telefono'),
+    contacto_relacion: fd(formData, 'contacto_relacion'),
+    contacto_email:    fd(formData, 'contacto_email'),
+  })
 
-  const contacto_familiar = {
-    nombre:   formData.get('contacto_nombre') as string,
-    telefono: formData.get('contacto_telefono') as string,
-    email:    formData.get('contacto_email') as string,
-    relacion: formData.get('contacto_relacion') as string,
-  }
+  if (!parsed.success) return zodActionError(parsed.error)
 
+  const v = parsed.data
   const { error } = await supabase.from('pacientes').update({
-    nombre:           formData.get('nombre') as string,
-    apellido:         formData.get('apellido') as string,
-    fecha_nacimiento: formData.get('fecha_nacimiento') as string,
-    diagnostico:      formData.get('diagnostico') as string,
-    medicamentos,
-    alergias,
-    contacto_familiar,
-    contexto: formData.get('contexto') as string,
-    status:   formData.get('status') as string,
+    nombre:           v.nombre,
+    apellido:         v.apellido,
+    fecha_nacimiento: v.fecha_nacimiento,
+    diagnostico:      v.diagnostico,
+    medicamentos:     fdLines(formData, 'medicamentos'),
+    alergias:         fdLines(formData, 'alergias'),
+    contacto_familiar: {
+      nombre:   v.contacto_nombre,
+      telefono: v.contacto_telefono,
+      email:    v.contacto_email || null,
+      relacion: v.contacto_relacion,
+    },
+    contexto: v.contexto,
+    status:   fd(formData, 'status') || 'activo',
   }).eq('id', id)
 
   if (error) return { error: error.message }
@@ -95,7 +121,9 @@ export async function actualizarPaciente(id: string, formData: FormData): Promis
 }
 
 export async function cambiarStatusPaciente(id: string, status: 'activo' | 'cerrado') {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
   const { error } = await supabase
     .from('pacientes')
     .update({ status })

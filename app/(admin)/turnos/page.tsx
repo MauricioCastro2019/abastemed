@@ -1,6 +1,7 @@
-import { getTurnos, cambiarStatusTurno } from '@/lib/actions/turnos'
+import { getTurnos } from '@/lib/actions/turnos'
+import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Clock, MapPin, Plus, User } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plus, Search, User } from 'lucide-react'
 import Link from 'next/link'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -12,7 +13,7 @@ const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; b
 function formatFecha(fecha: string) {
   return new Date(fecha).toLocaleString('es-VE', {
     weekday: 'short', day: 'numeric', month: 'short',
-    hour: '2-digit', minute: '2-digit'
+    hour: '2-digit', minute: '2-digit',
   })
 }
 
@@ -21,12 +22,31 @@ function duracion(inicio: string, fin: string) {
   return `${h.toFixed(1)}h`
 }
 
-export default async function TurnosPage() {
-  let turnos: Awaited<ReturnType<typeof getTurnos>> = []
-  try { turnos = await getTurnos() } catch { /* sin datos */ }
+function getStatusStyle(status: string) {
+  return STATUS_STYLE[status] ?? STATUS_STYLE.programado
+}
 
-  const activos    = turnos.filter(t => t.status !== 'completado')
-  const historial  = turnos.filter(t => t.status === 'completado')
+export default async function TurnosPage({
+  searchParams,
+}: {
+  searchParams: { q?: string }
+}) {
+  const q = searchParams.q?.trim()
+  let allTurnos: Awaited<ReturnType<typeof getTurnos>> = []
+  try { allTurnos = await getTurnos() } catch { /* sin datos */ }
+
+  // Filtrado client-side (Supabase no soporta ilike en joins directamente)
+  const turnos = q
+    ? allTurnos.filter(t => {
+        const caso = t.caso as { titulo?: string } | null
+        const enf = t.enfermero as { nombre?: string; apellido?: string } | null
+        const haystack = [caso?.titulo, enf?.nombre, enf?.apellido].join(' ').toLowerCase()
+        return haystack.includes(q.toLowerCase())
+      })
+    : allTurnos
+
+  const activos   = turnos.filter(t => t.status !== 'completado')
+  const historial = turnos.filter(t => t.status === 'completado')
 
   return (
     <div className="space-y-6">
@@ -46,19 +66,33 @@ export default async function TurnosPage() {
         </Link>
       </div>
 
+      {/* Búsqueda */}
+      <form method="GET" className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Buscar por caso o enfermero..."
+          className="w-full sm:max-w-xs pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2AABBF] bg-white transition-all"
+        />
+      </form>
+
       {/* Activos */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Próximos y en curso</h2>
         {activos.length === 0 ? (
           <div className="bg-white rounded-xl p-10 shadow-sm text-center">
             <Calendar size={32} className="mx-auto mb-3 text-gray-200" />
-            <p className="text-sm text-gray-400 font-medium">Sin turnos programados</p>
-            <p className="text-xs text-gray-300 mt-1">Asigna enfermeros a los casos activos</p>
-            <Link href="/turnos/nuevo"
-              className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-[#2AABBF] hover:underline">
-              <Plus size={14} />
-              Asignar primer turno
-            </Link>
+            <p className="text-sm text-gray-400 font-medium">
+              {q ? 'Sin resultados para esa búsqueda' : 'Sin turnos programados'}
+            </p>
+            {!q && (
+              <Link href="/turnos/nuevo"
+                className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-[#2AABBF] hover:underline">
+                <Plus size={14} />
+                Asignar primer turno
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -83,8 +117,8 @@ export default async function TurnosPage() {
 type TurnoRow = Awaited<ReturnType<typeof getTurnos>>[number]
 
 function TurnoCard({ turno }: { turno: TurnoRow }) {
-  const st = STATUS_TURNO_STYLE(turno.status)
-  const caso = turno.caso as { id: string; titulo: string; direccion: string } | null
+  const st = getStatusStyle(turno.status)
+  const caso      = turno.caso as { id: string; titulo: string; direccion: string } | null
   const enfermero = turno.enfermero as { id: string; nombre: string; apellido: string } | null
 
   return (
@@ -126,36 +160,25 @@ function TurnoCard({ turno }: { turno: TurnoRow }) {
         </div>
       </div>
 
-      {/* Acciones de estado */}
       {turno.status !== 'completado' && (
         <div className="flex items-center gap-2 flex-shrink-0">
           {turno.status === 'programado' && (
-            <form action={async () => {
-              'use server'
-              await cambiarStatusTurno(turno.id, 'activo')
-            }}>
-              <button type="submit"
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#059669] text-[#059669] hover:bg-[#ECFDF5] transition-all">
-                Iniciar
-              </button>
-            </form>
+            <TurnoStatusBtn
+              turnoId={turno.id}
+              nuevoStatus="activo"
+              label="Iniciar"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#059669] text-[#059669] hover:bg-[#ECFDF5] transition-all disabled:opacity-50"
+            />
           )}
-          <form action={async () => {
-            'use server'
-            await cambiarStatusTurno(turno.id, 'completado')
-          }}>
-            <button type="submit"
-              className="px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-all"
-              style={{ backgroundColor: '#1B2B4B' }}>
-              Completar
-            </button>
-          </form>
+          <TurnoStatusBtn
+            turnoId={turno.id}
+            nuevoStatus="completado"
+            label="Completar"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-all disabled:opacity-50"
+            style={{ backgroundColor: '#1B2B4B' } as React.CSSProperties}
+          />
         </div>
       )}
     </div>
   )
-}
-
-function STATUS_TURNO_STYLE(status: string) {
-  return STATUS_STYLE[status] ?? STATUS_STYLE.programado
 }

@@ -1,12 +1,18 @@
-import { getEnfermeros, aprobarEnfermero } from '@/lib/actions/enfermeros'
+import { getEnfermeros } from '@/lib/actions/enfermeros'
+import { AprobarBtn } from '@/components/admin/enfermeros/AprobarBtn'
 import { Badge } from '@/components/ui/badge'
-import { Stethoscope, Plus, ChevronRight, Star, Clock } from 'lucide-react'
+import { Stethoscope, Plus, ChevronRight, Star, Clock, Search } from 'lucide-react'
 import Link from 'next/link'
 import type { Enfermero } from '@/types'
 
-export default async function EnfermerosPage() {
+export default async function EnfermerosPage({
+  searchParams,
+}: {
+  searchParams: { q?: string }
+}) {
+  const q = searchParams.q?.trim()
   let enfermeros: Enfermero[] = []
-  try { enfermeros = await getEnfermeros() } catch { enfermeros = [] }
+  try { enfermeros = await getEnfermeros(q) } catch { enfermeros = [] }
 
   const pendientes   = enfermeros.filter(e => !e.disponible && e.total_casos === 0)
   const activos      = enfermeros.filter(e => e.disponible)
@@ -31,6 +37,17 @@ export default async function EnfermerosPage() {
           Nuevo enfermero/a
         </Link>
       </div>
+
+      {/* Búsqueda */}
+      <form method="GET" className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Buscar por nombre, apellido o cédula..."
+          className="w-full sm:max-w-xs pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2AABBF] bg-white transition-all"
+        />
+      </form>
 
       {/* Pendientes de aprobación */}
       {pendientes.length > 0 && (
@@ -60,16 +77,7 @@ export default async function EnfermerosPage() {
                     className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 transition-all">
                     Ver perfil
                   </Link>
-                  <form action={async () => {
-                    'use server'
-                    await aprobarEnfermero(e.id)
-                  }}>
-                    <button type="submit"
-                      className="px-3 py-1.5 text-xs font-semibold text-white rounded-lg transition-all"
-                      style={{ backgroundColor: '#059669' }}>
-                      Aprobar
-                    </button>
-                  </form>
+                  <AprobarBtn enfermeroId={e.id} />
                 </div>
               </div>
             ))}
@@ -77,21 +85,27 @@ export default async function EnfermerosPage() {
         </section>
       )}
 
-      {/* Equipo activo */}
+      {/* Equipo */}
       {enfermeros.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
           <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center"
             style={{ backgroundColor: '#EEF1F7' }}>
             <Stethoscope size={24} style={{ color: '#1B2B4B' }} />
           </div>
-          <p className="font-medium text-gray-700 mb-1">No hay enfermeros registrados</p>
-          <p className="text-sm text-gray-400 mb-4">Comparte el link de registro con tu equipo</p>
-          <Link href="/enfermeros/nuevo"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg"
-            style={{ backgroundColor: '#2AABBF' }}>
-            <Plus size={14} />
-            Registrar enfermero/a
-          </Link>
+          <p className="font-medium text-gray-700 mb-1">
+            {q ? 'Sin resultados' : 'No hay enfermeros registrados'}
+          </p>
+          <p className="text-sm text-gray-400 mb-4">
+            {q ? `No se encontraron resultados para "${q}"` : 'Comparte el link de registro con tu equipo'}
+          </p>
+          {!q && (
+            <Link href="/enfermeros/nuevo"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg"
+              style={{ backgroundColor: '#2AABBF' }}>
+              <Plus size={14} />
+              Registrar enfermero/a
+            </Link>
+          )}
         </div>
       ) : (
         <>

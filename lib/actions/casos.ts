@@ -1,12 +1,13 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Caso } from '@/types'
+import { requireAuth, requireRole, fd, fdNum, zodActionError, type ActionResult } from './utils'
+import { CasoSchema } from '@/lib/validations'
 
-export async function getCasos() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+export async function getCasos(search?: string) {
+  const { supabase } = await requireAuth()
+  let query = supabase
     .from('casos')
     .select(`
       *,
@@ -14,12 +15,17 @@ export async function getCasos() {
     `)
     .order('created_at', { ascending: false })
 
+  if (search?.trim()) {
+    query = query.or(`titulo.ilike.%${search}%,direccion.ilike.%${search}%`)
+  }
+
+  const { data, error } = await query
   if (error) throw new Error(error.message)
   return data as Caso[]
 }
 
 export async function getCaso(id: string) {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('casos')
     .select(`
@@ -33,19 +39,32 @@ export async function getCaso(id: string) {
   return data as Caso
 }
 
-export async function crearCaso(formData: FormData): Promise<{ error?: string }> {
-  const supabase = await createClient()
+export async function crearCaso(formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
+  const parsed = CasoSchema.safeParse({
+    paciente_id:  fd(formData, 'paciente_id'),
+    titulo:       fd(formData, 'titulo'),
+    contexto:     fd(formData, 'contexto'),
+    direccion:    fd(formData, 'direccion'),
+    fecha_inicio: fd(formData, 'fecha_inicio'),
+    tarifa_hora:  fdNum(formData, 'tarifa_hora'),
+  })
+
+  if (!parsed.success) return zodActionError(parsed.error)
+
+  const v = parsed.data
   const { error } = await supabase.from('casos').insert({
-    paciente_id: formData.get('paciente_id') as string,
-    titulo: formData.get('titulo') as string,
-    contexto: formData.get('contexto') as string,
-    direccion: formData.get('direccion') as string,
-    fecha_inicio: formData.get('fecha_inicio') as string,
-    fecha_fin: (formData.get('fecha_fin') as string) || null,
-    tarifa_hora: parseFloat(formData.get('tarifa_hora') as string),
-    notas: (formData.get('notas') as string) || null,
-    status: 'activo',
+    paciente_id:  v.paciente_id,
+    titulo:       v.titulo,
+    contexto:     v.contexto,
+    direccion:    v.direccion,
+    fecha_inicio: v.fecha_inicio,
+    fecha_fin:    fd(formData, 'fecha_fin') || null,
+    tarifa_hora:  v.tarifa_hora,
+    notas:        fd(formData, 'notas') || null,
+    status:       'activo',
   })
 
   if (error) return { error: error.message }
@@ -55,19 +74,32 @@ export async function crearCaso(formData: FormData): Promise<{ error?: string }>
   return {}
 }
 
-export async function actualizarCaso(id: string, formData: FormData): Promise<{ error?: string }> {
-  const supabase = await createClient()
+export async function actualizarCaso(id: string, formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
+  const parsed = CasoSchema.safeParse({
+    paciente_id:  fd(formData, 'paciente_id'),
+    titulo:       fd(formData, 'titulo'),
+    contexto:     fd(formData, 'contexto'),
+    direccion:    fd(formData, 'direccion'),
+    fecha_inicio: fd(formData, 'fecha_inicio'),
+    tarifa_hora:  fdNum(formData, 'tarifa_hora'),
+  })
+
+  if (!parsed.success) return zodActionError(parsed.error)
+
+  const v = parsed.data
   const { error } = await supabase.from('casos').update({
-    paciente_id: formData.get('paciente_id') as string,
-    titulo: formData.get('titulo') as string,
-    contexto: formData.get('contexto') as string,
-    direccion: formData.get('direccion') as string,
-    fecha_inicio: formData.get('fecha_inicio') as string,
-    fecha_fin: (formData.get('fecha_fin') as string) || null,
-    tarifa_hora: parseFloat(formData.get('tarifa_hora') as string),
-    notas: (formData.get('notas') as string) || null,
-    status: formData.get('status') as string,
+    paciente_id:  v.paciente_id,
+    titulo:       v.titulo,
+    contexto:     v.contexto,
+    direccion:    v.direccion,
+    fecha_inicio: v.fecha_inicio,
+    fecha_fin:    fd(formData, 'fecha_fin') || null,
+    tarifa_hora:  v.tarifa_hora,
+    notas:        fd(formData, 'notas') || null,
+    status:       fd(formData, 'status') || 'activo',
   }).eq('id', id)
 
   if (error) return { error: error.message }
@@ -79,7 +111,9 @@ export async function actualizarCaso(id: string, formData: FormData): Promise<{ 
 }
 
 export async function cambiarStatusCaso(id: string, status: 'activo' | 'pausado' | 'cerrado') {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
   const { error } = await supabase
     .from('casos')
     .update({ status })

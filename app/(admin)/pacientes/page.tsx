@@ -1,18 +1,23 @@
 import { getPacientes } from '@/lib/actions/pacientes'
 import { Badge } from '@/components/ui/badge'
-import { Users, Plus, ChevronRight } from 'lucide-react'
+import { Users, Plus, ChevronRight, Search } from 'lucide-react'
 import Link from 'next/link'
 import type { Paciente } from '@/types'
 
-export default async function PacientesPage() {
+export default async function PacientesPage({
+  searchParams,
+}: {
+  searchParams: { q?: string }
+}) {
+  const q = searchParams.q?.trim()
   let pacientes: Paciente[] = []
   try {
-    pacientes = await getPacientes()
+    pacientes = await getPacientes(q)
   } catch {
     pacientes = []
   }
 
-  const activos = pacientes.filter(p => p.status === 'activo').length
+  const activos  = pacientes.filter(p => p.status === 'activo').length
   const cerrados = pacientes.filter(p => p.status === 'cerrado').length
 
   return (
@@ -33,6 +38,17 @@ export default async function PacientesPage() {
         </Link>
       </div>
 
+      {/* Búsqueda */}
+      <form method="GET" className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Buscar por nombre, apellido o diagnóstico..."
+          className="w-full sm:max-w-xs pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2AABBF] bg-white transition-all"
+        />
+      </form>
+
       {/* Lista */}
       {pacientes.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
@@ -40,14 +56,20 @@ export default async function PacientesPage() {
             style={{ backgroundColor: '#EBF8FB' }}>
             <Users size={24} style={{ color: '#2AABBF' }} />
           </div>
-          <p className="font-medium text-gray-700 mb-1">No hay pacientes registrados</p>
-          <p className="text-sm text-gray-400 mb-4">Comienza dando de alta al primer paciente</p>
-          <Link href="/pacientes/nuevo"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg"
-            style={{ backgroundColor: '#2AABBF' }}>
-            <Plus size={14} />
-            Nuevo paciente
-          </Link>
+          <p className="font-medium text-gray-700 mb-1">
+            {q ? 'Sin resultados' : 'No hay pacientes registrados'}
+          </p>
+          <p className="text-sm text-gray-400 mb-4">
+            {q ? `No se encontraron pacientes para "${q}"` : 'Comienza dando de alta al primer paciente'}
+          </p>
+          {!q && (
+            <Link href="/pacientes/nuevo"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg"
+              style={{ backgroundColor: '#2AABBF' }}>
+              <Plus size={14} />
+              Nuevo paciente
+            </Link>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -85,8 +107,7 @@ export default async function PacientesPage() {
                     <span className="text-sm text-gray-500 capitalize">{p.contexto.replace('_', ' ')}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant="outline"
-                      className="text-xs"
+                    <Badge variant="outline" className="text-xs"
                       style={{
                         borderColor: p.status === 'activo' ? '#2AABBF' : '#e5e7eb',
                         color: p.status === 'activo' ? '#2AABBF' : '#6b7280',

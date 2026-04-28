@@ -1,22 +1,30 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Enfermero } from '@/types'
+import { requireAuth, requireRole, fd, fdBool, fdLines, zodActionError, type ActionResult } from './utils'
+import { EnfermeroSchema } from '@/lib/validations'
 
-export async function getEnfermeros() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
+export async function getEnfermeros(search?: string) {
+  const { supabase } = await requireAuth()
+  let query = supabase
     .from('enfermeros')
     .select('*')
     .order('created_at', { ascending: false })
 
+  if (search?.trim()) {
+    query = query.or(
+      `nombre.ilike.%${search}%,apellido.ilike.%${search}%,cedula.ilike.%${search}%`
+    )
+  }
+
+  const { data, error } = await query
   if (error) throw new Error(error.message)
   return data as Enfermero[]
 }
 
 export async function getEnfermero(id: string) {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('enfermeros')
     .select('*')
@@ -27,24 +35,31 @@ export async function getEnfermero(id: string) {
   return data as Enfermero
 }
 
-export async function crearEnfermero(formData: FormData): Promise<{ error?: string }> {
-  const supabase = await createClient()
+export async function crearEnfermero(formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const especialidades = (formData.get('especialidades') as string)
-    .split('\n').map(s => s.trim()).filter(Boolean)
+  const parsed = EnfermeroSchema.safeParse({
+    nombre:   fd(formData, 'nombre'),
+    apellido: fd(formData, 'apellido'),
+    cedula:   fd(formData, 'cedula'),
+    telefono: fd(formData, 'telefono'),
+    email:    fd(formData, 'email'),
+  })
 
-  const cv_url = formData.get('cv_url') as string
+  if (!parsed.success) return zodActionError(parsed.error)
 
+  const v = parsed.data
   const { error } = await supabase.from('enfermeros').insert({
-    nombre:       formData.get('nombre') as string,
-    apellido:     formData.get('apellido') as string,
-    cedula:       formData.get('cedula') as string,
-    especialidades,
-    telefono:     formData.get('telefono') as string,
-    email:        formData.get('email') as string,
-    bio:          (formData.get('bio') as string) || null,
-    disponible:   formData.get('disponible') === 'true',
-    cv_url:       cv_url || null,
+    nombre:        v.nombre,
+    apellido:      v.apellido,
+    cedula:        v.cedula,
+    especialidades: fdLines(formData, 'especialidades'),
+    telefono:      v.telefono,
+    email:         v.email,
+    bio:           fd(formData, 'bio') || null,
+    disponible:    fdBool(formData, 'disponible'),
+    cv_url:        fd(formData, 'cv_url') || null,
   })
 
   if (error) return { error: error.message }
@@ -53,24 +68,31 @@ export async function crearEnfermero(formData: FormData): Promise<{ error?: stri
   return {}
 }
 
-export async function actualizarEnfermero(id: string, formData: FormData): Promise<{ error?: string }> {
-  const supabase = await createClient()
+export async function actualizarEnfermero(id: string, formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const especialidades = (formData.get('especialidades') as string)
-    .split('\n').map(s => s.trim()).filter(Boolean)
+  const parsed = EnfermeroSchema.safeParse({
+    nombre:   fd(formData, 'nombre'),
+    apellido: fd(formData, 'apellido'),
+    cedula:   fd(formData, 'cedula'),
+    telefono: fd(formData, 'telefono'),
+    email:    fd(formData, 'email'),
+  })
 
-  const cv_url = formData.get('cv_url') as string
+  if (!parsed.success) return zodActionError(parsed.error)
 
+  const v = parsed.data
   const { error } = await supabase.from('enfermeros').update({
-    nombre:       formData.get('nombre') as string,
-    apellido:     formData.get('apellido') as string,
-    cedula:       formData.get('cedula') as string,
-    especialidades,
-    telefono:     formData.get('telefono') as string,
-    email:        formData.get('email') as string,
-    bio:          (formData.get('bio') as string) || null,
-    disponible:   formData.get('disponible') === 'true',
-    cv_url:       cv_url || null,
+    nombre:        v.nombre,
+    apellido:      v.apellido,
+    cedula:        v.cedula,
+    especialidades: fdLines(formData, 'especialidades'),
+    telefono:      v.telefono,
+    email:         v.email,
+    bio:           fd(formData, 'bio') || null,
+    disponible:    fdBool(formData, 'disponible'),
+    cv_url:        fd(formData, 'cv_url') || null,
   }).eq('id', id)
 
   if (error) return { error: error.message }
@@ -81,11 +103,14 @@ export async function actualizarEnfermero(id: string, formData: FormData): Promi
 }
 
 export async function aprobarEnfermero(id: string) {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
   const { error } = await supabase
     .from('enfermeros')
     .update({ disponible: true })
     .eq('id', id)
+
   if (error) throw new Error(error.message)
   revalidatePath('/enfermeros')
   revalidatePath(`/enfermeros/${id}`)

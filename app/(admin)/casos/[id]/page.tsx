@@ -1,5 +1,6 @@
 import { getCaso } from '@/lib/actions/casos'
-import { getTurnosByCaso, cambiarStatusTurno } from '@/lib/actions/turnos'
+import { getTurnosByCaso } from '@/lib/actions/turnos'
+import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock } from 'lucide-react'
 import Link from 'next/link'
@@ -200,15 +201,12 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
                         {tst.label}
                       </Badge>
                       {turno.status !== 'completado' && (
-                        <form action={async () => {
-                          'use server'
-                          await cambiarStatusTurno(turno.id, 'completado')
-                        }}>
-                          <button type="submit"
-                            className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-500 hover:border-[#1B2B4B] hover:text-[#1B2B4B] transition-all">
-                            Completar
-                          </button>
-                        </form>
+                        <TurnoStatusBtn
+                          turnoId={turno.id}
+                          nuevoStatus="completado"
+                          label="Completar"
+                          className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-500 hover:border-[#1B2B4B] hover:text-[#1B2B4B] transition-all disabled:opacity-50"
+                        />
                       )}
                     </div>
                   </div>

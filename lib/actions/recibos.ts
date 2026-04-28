@@ -1,13 +1,9 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { Recibo, ReciboItem } from '@/types'
-
-// ----------------------------------------------------------------
-// Tipos internos
-// ----------------------------------------------------------------
+import { requireAuth, requireRole, fd } from './utils'
 
 type ItemInput = {
   descripcion: string
@@ -18,15 +14,11 @@ type ItemInput = {
 
 type ReciboConItems = Recibo & { recibo_items: ReciboItem[] }
 
-// ----------------------------------------------------------------
-// Helper: generar folio ABM-YYYYMMDD-0001
-// ----------------------------------------------------------------
-
 async function generarFolio(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
   fechaEmision: string
 ): Promise<string> {
-  const dateStr = fechaEmision.replace(/-/g, '') // "20260424"
+  const dateStr = fechaEmision.replace(/-/g, '')
   const { count } = await supabase
     .from('recibos')
     .select('*', { count: 'exact', head: true })
@@ -36,12 +28,8 @@ async function generarFolio(
   return `ABM-${dateStr}-${n}`
 }
 
-// ----------------------------------------------------------------
-// READ: lista de recibos
-// ----------------------------------------------------------------
-
 export async function getRecibos(): Promise<Recibo[]> {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('recibos')
     .select('*')
@@ -51,12 +39,8 @@ export async function getRecibos(): Promise<Recibo[]> {
   return data as Recibo[]
 }
 
-// ----------------------------------------------------------------
-// READ: recibo individual con items
-// ----------------------------------------------------------------
-
 export async function getRecibo(id: string): Promise<ReciboConItems> {
-  const supabase = await createClient()
+  const { supabase } = await requireAuth()
   const { data, error } = await supabase
     .from('recibos')
     .select('*, recibo_items(*)')
@@ -70,28 +54,26 @@ export async function getRecibo(id: string): Promise<ReciboConItems> {
   return result
 }
 
-// ----------------------------------------------------------------
-// CREATE
-// ----------------------------------------------------------------
-
 export async function crearRecibo(formData: FormData) {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const fechaEmision = formData.get('fecha_emision') as string
+  const fechaEmision = fd(formData, 'fecha_emision')
+  if (!fechaEmision) throw new Error('Fecha de emisión requerida')
+
   const folio = await generarFolio(supabase, fechaEmision)
-
-  const items = JSON.parse(formData.get('items') as string) as ItemInput[]
+  const items = JSON.parse(fd(formData, 'items') || '[]') as ItemInput[]
   const subtotal = items.reduce((sum, i) => sum + i.importe, 0)
 
   const { data: recibo, error } = await supabase
     .from('recibos')
     .insert({
       folio,
-      paciente_nombre: formData.get('paciente_nombre') as string,
-      fecha_emision: fechaEmision,
+      paciente_nombre: fd(formData, 'paciente_nombre'),
+      fecha_emision:   fechaEmision,
       subtotal,
-      total: subtotal,
-      observaciones: (formData.get('observaciones') as string) || null,
+      total:           subtotal,
+      observaciones:   fd(formData, 'observaciones') || null,
     })
     .select()
     .single()
@@ -99,12 +81,12 @@ export async function crearRecibo(formData: FormData) {
   if (error) throw new Error(error.message)
 
   const itemsRows = items.map((item, idx) => ({
-    recibo_id: recibo.id,
-    descripcion: item.descripcion,
-    cantidad: item.cantidad,
+    recibo_id:       recibo.id,
+    descripcion:     item.descripcion,
+    cantidad:        item.cantidad,
     precio_unitario: item.precio_unitario,
-    importe: item.importe,
-    orden: idx,
+    importe:         item.importe,
+    orden:           idx,
   }))
 
   const { error: itemsError } = await supabase.from('recibo_items').insert(itemsRows)
@@ -114,30 +96,26 @@ export async function crearRecibo(formData: FormData) {
   redirect(`/recibos/${recibo.id}`)
 }
 
-// ----------------------------------------------------------------
-// UPDATE
-// ----------------------------------------------------------------
-
 export async function actualizarRecibo(id: string, formData: FormData) {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const items = JSON.parse(formData.get('items') as string) as ItemInput[]
+  const items = JSON.parse(fd(formData, 'items') || '[]') as ItemInput[]
   const subtotal = items.reduce((sum, i) => sum + i.importe, 0)
 
   const { error } = await supabase
     .from('recibos')
     .update({
-      paciente_nombre: formData.get('paciente_nombre') as string,
-      fecha_emision: formData.get('fecha_emision') as string,
+      paciente_nombre: fd(formData, 'paciente_nombre'),
+      fecha_emision:   fd(formData, 'fecha_emision'),
       subtotal,
-      total: subtotal,
-      observaciones: (formData.get('observaciones') as string) || null,
+      total:           subtotal,
+      observaciones:   fd(formData, 'observaciones') || null,
     })
     .eq('id', id)
 
   if (error) throw new Error(error.message)
 
-  // Reemplazar todos los items (delete + insert)
   const { error: delError } = await supabase
     .from('recibo_items')
     .delete()
@@ -145,12 +123,12 @@ export async function actualizarRecibo(id: string, formData: FormData) {
   if (delError) throw new Error(delError.message)
 
   const itemsRows = items.map((item, idx) => ({
-    recibo_id: id,
-    descripcion: item.descripcion,
-    cantidad: item.cantidad,
+    recibo_id:       id,
+    descripcion:     item.descripcion,
+    cantidad:        item.cantidad,
     precio_unitario: item.precio_unitario,
-    importe: item.importe,
-    orden: idx,
+    importe:         item.importe,
+    orden:           idx,
   }))
 
   const { error: itemsError } = await supabase.from('recibo_items').insert(itemsRows)
@@ -161,14 +139,10 @@ export async function actualizarRecibo(id: string, formData: FormData) {
   redirect(`/recibos/${id}`)
 }
 
-// ----------------------------------------------------------------
-// DELETE
-// ----------------------------------------------------------------
-
 export async function eliminarRecibo(id: string) {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
 
-  // Los items se eliminan en cascada por la FK ON DELETE CASCADE
   const { error } = await supabase.from('recibos').delete().eq('id', id)
   if (error) throw new Error(error.message)
 
@@ -176,36 +150,33 @@ export async function eliminarRecibo(id: string) {
   redirect('/recibos')
 }
 
-// ----------------------------------------------------------------
-// SEED: crear recibo de prueba con datos de Sra. Margarita
-// ----------------------------------------------------------------
-
 export async function crearReciboDemo() {
-  const supabase = await createClient()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
 
   const fechaEmision = '2026-04-24'
   const folio = await generarFolio(supabase, fechaEmision)
 
   const demoItems: ItemInput[] = [
-    { descripcion: 'Pañales',           cantidad: 3, precio_unitario: 202, importe: 606  },
-    { descripcion: 'Cubrecama',         cantidad: 1, precio_unitario: 130, importe: 130  },
-    { descripcion: 'Quetiapina',        cantidad: 1, precio_unitario: 312, importe: 312  },
-    { descripcion: 'Servicio Miércoles',cantidad: 1, precio_unitario: 960, importe: 960  },
-    { descripcion: 'Servicio Jueves',   cantidad: 1, precio_unitario: 960, importe: 960  },
-    { descripcion: 'Servicio Viernes',  cantidad: 1, precio_unitario: 960, importe: 960  },
+    { descripcion: 'Pañales',            cantidad: 3, precio_unitario: 202, importe: 606  },
+    { descripcion: 'Cubrecama',          cantidad: 1, precio_unitario: 130, importe: 130  },
+    { descripcion: 'Quetiapina',         cantidad: 1, precio_unitario: 312, importe: 312  },
+    { descripcion: 'Servicio Miércoles', cantidad: 1, precio_unitario: 960, importe: 960  },
+    { descripcion: 'Servicio Jueves',    cantidad: 1, precio_unitario: 960, importe: 960  },
+    { descripcion: 'Servicio Viernes',   cantidad: 1, precio_unitario: 960, importe: 960  },
   ]
 
-  const subtotal = demoItems.reduce((sum, i) => sum + i.importe, 0) // 3928
+  const subtotal = demoItems.reduce((sum, i) => sum + i.importe, 0)
 
   const { data: recibo, error } = await supabase
     .from('recibos')
     .insert({
       folio,
       paciente_nombre: 'Sra. Margarita',
-      fecha_emision: fechaEmision,
+      fecha_emision:   fechaEmision,
       subtotal,
-      total: subtotal,
-      observaciones: null,
+      total:           subtotal,
+      observaciones:   null,
     })
     .select()
     .single()
