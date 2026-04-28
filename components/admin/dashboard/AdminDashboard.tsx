@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { FolderOpen, Stethoscope, Calendar, Receipt, TrendingUp, Clock } from 'lucide-react'
+import { FolderOpen, Stethoscope, Calendar, Receipt, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 import type { MetricasDashboard } from '@/types'
 
 async function getMetricas(): Promise<MetricasDashboard> {
@@ -29,6 +30,74 @@ async function getMetricas(): Promise<MetricasDashboard> {
   } catch {
     return { casos_activos: 0, enfermeros_disponibles: 0, turnos_hoy: 0, cobranza_pendiente: 0 }
   }
+}
+
+async function getUltimosTurnos() {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('turnos')
+      .select('id, status, fecha_inicio, caso:casos(titulo), enfermero:enfermeros(nombre, apellido)')
+      .order('fecha_inicio', { ascending: false })
+      .limit(5)
+    return data ?? []
+  } catch { return [] }
+}
+
+async function UltimosTurnos() {
+  const turnos = await getUltimosTurnos()
+
+  const STATUS_COLOR: Record<string, { color: string; label: string }> = {
+    programado: { color: '#2AABBF', label: 'Programado' },
+    activo:     { color: '#059669', label: 'En curso' },
+    completado: { color: '#6b7280', label: 'Completado' },
+  }
+
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold flex items-center gap-2" style={{ color: '#1B2B4B' }}>
+            <Clock size={16} style={{ color: '#2AABBF' }} />
+            Últimos turnos
+          </CardTitle>
+          <Link href="/turnos" className="text-xs font-medium hover:underline" style={{ color: '#2AABBF' }}>
+            Ver todos →
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {turnos.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Sin turnos registrados aún</p>
+        ) : (
+          <div className="space-y-3">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {turnos.map((t: any) => {
+              const st = STATUS_COLOR[t.status as string] ?? STATUS_COLOR.programado
+              const Icon = t.status === 'completado' ? CheckCircle : t.status === 'activo' ? AlertCircle : Clock
+              const casoTitulo = Array.isArray(t.caso) ? t.caso[0]?.titulo : t.caso?.titulo
+              const enfNombre  = Array.isArray(t.enfermero) ? t.enfermero[0]?.nombre : t.enfermero?.nombre
+              const enfApellido = Array.isArray(t.enfermero) ? t.enfermero[0]?.apellido : t.enfermero?.apellido
+              return (
+                <div key={t.id} className="flex items-center gap-3 text-sm">
+                  <Icon size={14} style={{ color: st.color }} className="flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: '#1B2B4B' }}>
+                      {casoTitulo ?? 'Turno'}
+                    </p>
+                    <p className="text-xs text-gray-400">{enfNombre} {enfApellido}</p>
+                  </div>
+                  <span className="text-xs flex-shrink-0 font-medium" style={{ color: st.color }}>
+                    {st.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
 }
 
 function formatValue(value: number, format?: string) {
@@ -86,30 +155,7 @@ export async function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2" style={{ color: '#1B2B4B' }}>
-              <Clock size={16} style={{ color: '#2AABBF' }} />
-              Actividad reciente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                { texto: 'Sistema operativo', tiempo: 'Ahora', tipo: 'success' },
-                { texto: 'Base de datos conectada', tiempo: 'Ahora', tipo: 'info' },
-                { texto: 'Módulos cargados', tiempo: 'Ahora', tipo: 'info' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm">
-                  <div className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: item.tipo === 'success' ? '#059669' : '#2AABBF' }} />
-                  <span className="flex-1 text-gray-600">{item.texto}</span>
-                  <span className="text-xs text-gray-400">{item.tiempo}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <UltimosTurnos />
 
         <Card className="border-0 shadow-sm">
           <CardHeader>

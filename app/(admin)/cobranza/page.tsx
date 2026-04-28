@@ -1,8 +1,11 @@
-import { getCobranza, marcarPagado } from '@/lib/actions/cobranza'
+import { getCobranza } from '@/lib/actions/cobranza'
+import { MarcarPagadoBtn } from '@/components/admin/cobranza/MarcarPagadoBtn'
 import { Badge } from '@/components/ui/badge'
 import { Receipt, CheckCircle, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
+import { ToastSuccess } from '@/components/ToastSuccess'
 
 function formatMonto(n: number) {
   return n.toLocaleString('es-VE', { minimumFractionDigits: 2 })
@@ -31,6 +34,7 @@ export default async function CobranzaPage() {
 
   return (
     <div className="space-y-6">
+      <Suspense><ToastSuccess /></Suspense>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2B4B' }}>Cobranza</h1>
@@ -113,16 +117,7 @@ export default async function CobranzaPage() {
                       ${formatMonto(item.subtotal)}
                     </p>
                     {item.status === 'pendiente' && (
-                      <form action={async () => {
-                        'use server'
-                        await marcarPagado(item.id)
-                      }}>
-                        <button type="submit"
-                          className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-all"
-                          style={{ backgroundColor: '#059669' }}>
-                          Marcar pagado
-                        </button>
-                      </form>
+                      <MarcarPagadoBtn itemId={item.id} />
                     )}
                   </div>
                 </div>

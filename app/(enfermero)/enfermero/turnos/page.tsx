@@ -1,6 +1,9 @@
 import { getMisTurnos } from '@/lib/actions/enfermero-portal'
+import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { Calendar, Clock, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Suspense } from 'react'
+import { ToastSuccess } from '@/components/ToastSuccess'
 import type { Turno } from '@/types'
 
 const STATUS_TURNO: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -12,7 +15,7 @@ const STATUS_TURNO: Record<string, { label: string; color: string; bg: string; b
 function formatFecha(fecha: string) {
   return new Date(fecha).toLocaleDateString('es-VE', {
     weekday: 'long', day: 'numeric', month: 'long',
-    hour: '2-digit', minute: '2-digit'
+    hour: '2-digit', minute: '2-digit',
   })
 }
 
@@ -23,17 +26,15 @@ function duracion(inicio: string, fin: string) {
 
 export default async function MisTurnosPage() {
   let turnos: Turno[] = []
-  try {
-    turnos = await getMisTurnos()
-  } catch {
-    turnos = []
-  }
+  try { turnos = await getMisTurnos() } catch { turnos = [] }
 
-  const proximos   = turnos.filter(t => t.status !== 'completado')
-  const historial  = turnos.filter(t => t.status === 'completado')
+  const proximos  = turnos.filter(t => t.status !== 'completado')
+  const historial = turnos.filter(t => t.status === 'completado')
 
   return (
     <div className="space-y-8">
+      <Suspense><ToastSuccess /></Suspense>
+
       <div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2B4B' }}>Mis turnos</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -41,9 +42,8 @@ export default async function MisTurnosPage() {
         </p>
       </div>
 
-      {/* Próximos */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Próximos</h2>
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Próximos y en curso</h2>
         {proximos.length === 0 ? (
           <div className="bg-white rounded-xl p-8 shadow-sm text-center">
             <Calendar size={28} className="mx-auto mb-2 text-gray-200" />
@@ -56,10 +56,9 @@ export default async function MisTurnosPage() {
         )}
       </section>
 
-      {/* Historial */}
       {historial.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Historial</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Historial</h2>
           <div className="space-y-3">
             {historial.map((t: Turno) => <TurnoCard key={t.id} turno={t} />)}
           </div>
@@ -76,7 +75,7 @@ function TurnoCard({ turno }: { turno: Turno }) {
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm border-l-4" style={{ borderColor: st.color }}>
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm" style={{ color: '#1B2B4B' }}>
             {caso?.titulo ?? 'Turno asignado'}
           </p>
@@ -92,7 +91,7 @@ function TurnoCard({ turno }: { turno: Turno }) {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
         <div className="flex items-center gap-1.5 text-xs text-gray-400">
           <Clock size={12} />
           <span>{formatFecha(turno.fecha_inicio)}</span>
@@ -110,8 +109,30 @@ function TurnoCard({ turno }: { turno: Turno }) {
       </div>
 
       {turno.notas_entrega && (
-        <div className="mt-3 pt-3 border-t border-gray-50">
-          <p className="text-xs text-gray-500">{turno.notas_entrega}</p>
+        <div className="mb-3 pt-3 border-t border-gray-50">
+          <p className="text-xs text-gray-500 italic">{turno.notas_entrega}</p>
+        </div>
+      )}
+
+      {turno.status !== 'completado' && (
+        <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
+          {turno.status === 'programado' && (
+            <TurnoStatusBtn
+              turnoId={turno.id}
+              nuevoStatus="activo"
+              label="Iniciar turno"
+              className="px-4 py-2 text-xs font-semibold rounded-lg border border-[#059669] text-[#059669] hover:bg-[#ECFDF5] transition-all disabled:opacity-50"
+            />
+          )}
+          {turno.status === 'activo' && (
+            <TurnoStatusBtn
+              turnoId={turno.id}
+              nuevoStatus="completado"
+              label="Completar turno"
+              className="px-4 py-2 text-xs font-semibold rounded-lg text-white transition-all disabled:opacity-50"
+              style={{ backgroundColor: '#1B2B4B' } as React.CSSProperties}
+            />
+          )}
         </div>
       )}
     </div>

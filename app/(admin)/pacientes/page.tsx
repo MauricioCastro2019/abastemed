@@ -2,6 +2,8 @@ import { getPacientes } from '@/lib/actions/pacientes'
 import { Badge } from '@/components/ui/badge'
 import { Users, Plus, ChevronRight, Search } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { ToastSuccess } from '@/components/ToastSuccess'
 import type { Paciente } from '@/types'
 
 export default async function PacientesPage({
@@ -22,6 +24,7 @@ export default async function PacientesPage({
 
   return (
     <div className="space-y-6">
+      <Suspense><ToastSuccess /></Suspense>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

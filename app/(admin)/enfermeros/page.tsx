@@ -3,6 +3,8 @@ import { AprobarBtn } from '@/components/admin/enfermeros/AprobarBtn'
 import { Badge } from '@/components/ui/badge'
 import { Stethoscope, Plus, ChevronRight, Star, Clock, Search } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { ToastSuccess } from '@/components/ToastSuccess'
 import type { Enfermero } from '@/types'
 
 export default async function EnfermerosPage({
@@ -21,6 +23,7 @@ export default async function EnfermerosPage({
 
   return (
     <div className="space-y-6">
+      <Suspense><ToastSuccess /></Suspense>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

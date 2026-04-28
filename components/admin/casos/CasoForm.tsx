@@ -36,7 +36,7 @@ export function CasoForm({ caso, pacientes }: Props) {
           : await crearCaso(formData)
         if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
         else if (result?.error) setError(result.error)
-        else window.location.href = caso ? `/casos/${caso.id}` : '/casos'
+        else window.location.href = caso ? `/casos/${caso.id}?ok=updated` : '/casos?ok=created'
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error inesperado. Intenta de nuevo.')
       }

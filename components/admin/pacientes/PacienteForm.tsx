@@ -36,7 +36,7 @@ export function PacienteForm({ paciente }: Props) {
           : await crearPaciente(formData)
         if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
         else if (result?.error) setError(result.error)
-        else window.location.href = paciente ? `/pacientes/${paciente.id}` : '/pacientes'
+        else window.location.href = paciente ? `/pacientes/${paciente.id}?ok=updated` : '/pacientes?ok=created'
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error inesperado. Intenta de nuevo.')
       }

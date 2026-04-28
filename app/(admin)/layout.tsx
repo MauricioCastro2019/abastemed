@@ -1,6 +1,7 @@
 import { Sidebar } from '@/components/admin/Sidebar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { Toaster } from 'sonner'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,6 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F5F5F0' }}>
+      <Toaster position="top-right" richColors closeButton />
       <Sidebar rol={perfil?.rol ?? 'admin'} nombre={perfil?.nombre} apellido={perfil?.apellido} />
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 lg:p-8">{children}</div>

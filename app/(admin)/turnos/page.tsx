@@ -3,6 +3,8 @@ import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, MapPin, Plus, Search, User } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { ToastSuccess } from '@/components/ToastSuccess'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
   programado: { label: 'Programado', color: '#2AABBF', bg: '#EBF8FB', border: '#2AABBF' },
@@ -50,6 +52,7 @@ export default async function TurnosPage({
 
   return (
     <div className="space-y-6">
+      <Suspense><ToastSuccess /></Suspense>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

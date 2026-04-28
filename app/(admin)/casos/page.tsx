@@ -2,6 +2,8 @@ import { getCasos } from '@/lib/actions/casos'
 import { Badge } from '@/components/ui/badge'
 import { FolderOpen, Plus, ChevronRight, MapPin, Clock, Search } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { ToastSuccess } from '@/components/ToastSuccess'
 import type { Caso } from '@/types'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -29,6 +31,7 @@ export default async function CasosPage({
 
   return (
     <div className="space-y-6">
+      <Suspense><ToastSuccess /></Suspense>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

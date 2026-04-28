@@ -81,7 +81,7 @@ export function EnfermeroForm({ enfermero }: Props) {
           : await crearEnfermero(formData)
         if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
         else if (result?.error) setError(result.error)
-        else window.location.href = enfermero ? `/enfermeros/${enfermero.id}` : '/enfermeros'
+        else window.location.href = enfermero ? `/enfermeros/${enfermero.id}?ok=updated` : '/enfermeros?ok=created'
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error inesperado. Intenta de nuevo.')
       }
