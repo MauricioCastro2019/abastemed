@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { crearPaciente, actualizarPaciente } from '@/lib/actions/pacientes'
 import type { Paciente } from '@/types'
 
@@ -15,7 +14,6 @@ interface Props {
 }
 
 export function PacienteForm({ paciente }: Props) {
-  const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -32,14 +30,15 @@ export function PacienteForm({ paciente }: Props) {
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
-      const result = paciente
-        ? await actualizarPaciente(paciente.id, formData)
-        : await crearPaciente(formData)
-
-      if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
-      if (result?.error) setError(result.error)
-      else if (!result?.fieldErrors) {
-        router.push(paciente ? `/pacientes/${paciente.id}` : '/pacientes')
+      try {
+        const result = paciente
+          ? await actualizarPaciente(paciente.id, formData)
+          : await crearPaciente(formData)
+        if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
+        if (result?.error) setError(result.error)
+      } catch (err) {
+        if ((err as { digest?: string })?.digest?.startsWith('NEXT_REDIRECT')) return
+        setError(err instanceof Error ? err.message : 'Error inesperado. Intenta de nuevo.')
       }
     })
   }
@@ -153,10 +152,10 @@ export function PacienteForm({ paciente }: Props) {
       )}
 
       <div className="flex gap-3 justify-end">
-        <button type="button" onClick={() => router.back()}
+        <a href="/pacientes"
           className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
           Cancelar
-        </button>
+        </a>
         <button type="submit" disabled={isPending}
           className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all"
           style={{ backgroundColor: isPending ? '#94a3b8' : '#2AABBF' }}>

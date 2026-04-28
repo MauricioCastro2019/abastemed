@@ -1,7 +1,6 @@
 'use client'
 
 import { useTransition, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { crearEnfermero, actualizarEnfermero } from '@/lib/actions/enfermeros'
 import { createClient } from '@/lib/supabase/client'
 import type { Enfermero } from '@/types'
@@ -15,7 +14,6 @@ const FIELD_ERR = "text-xs text-red-500 mt-1"
 interface Props { enfermero?: Enfermero }
 
 export function EnfermeroForm({ enfermero }: Props) {
-  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -77,14 +75,15 @@ export function EnfermeroForm({ enfermero }: Props) {
       const formData = new FormData(form)
       formData.set('cv_url', uploadedUrl ?? '')
 
-      const result = enfermero
-        ? await actualizarEnfermero(enfermero.id, formData)
-        : await crearEnfermero(formData)
-
-      if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
-      if (result?.error) setError(result.error)
-      else if (!result?.fieldErrors) {
-        router.push(enfermero ? `/enfermeros/${enfermero.id}` : '/enfermeros')
+      try {
+        const result = enfermero
+          ? await actualizarEnfermero(enfermero.id, formData)
+          : await crearEnfermero(formData)
+        if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
+        if (result?.error) setError(result.error)
+      } catch (err) {
+        if ((err as { digest?: string })?.digest?.startsWith('NEXT_REDIRECT')) return
+        setError(err instanceof Error ? err.message : 'Error inesperado. Intenta de nuevo.')
       }
     })
   }
@@ -215,10 +214,10 @@ export function EnfermeroForm({ enfermero }: Props) {
       )}
 
       <div className="flex gap-3 justify-end">
-        <button type="button" onClick={() => router.back()}
+        <a href="/enfermeros"
           className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
           Cancelar
-        </button>
+        </a>
         <button type="submit" disabled={isPending || uploading}
           className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all"
           style={{ backgroundColor: isPending || uploading ? '#94a3b8' : '#2AABBF' }}>

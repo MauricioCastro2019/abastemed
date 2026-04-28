@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import type { Enfermero } from '@/types'
 import { requireAuth, requireRole, fd, fdBool, fdLines, zodActionError, type ActionResult } from './utils'
 import { EnfermeroSchema } from '@/lib/validations'
@@ -65,7 +66,7 @@ export async function crearEnfermero(formData: FormData): Promise<ActionResult> 
   if (error) return { error: error.message }
 
   revalidatePath('/enfermeros')
-  return {}
+  redirect('/enfermeros')
 }
 
 export async function actualizarEnfermero(id: string, formData: FormData): Promise<ActionResult> {
@@ -99,7 +100,7 @@ export async function actualizarEnfermero(id: string, formData: FormData): Promi
 
   revalidatePath('/enfermeros')
   revalidatePath(`/enfermeros/${id}`)
-  return {}
+  redirect(`/enfermeros/${id}`)
 }
 
 export async function aprobarEnfermero(id: string) {

@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import type { Caso } from '@/types'
 import { requireAuth, requireRole, fd, fdNum, zodActionError, type ActionResult } from './utils'
 import { CasoSchema } from '@/lib/validations'
@@ -71,7 +72,7 @@ export async function crearCaso(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/casos')
   revalidatePath('/dashboard')
-  return {}
+  redirect('/casos')
 }
 
 export async function actualizarCaso(id: string, formData: FormData): Promise<ActionResult> {
@@ -107,7 +108,7 @@ export async function actualizarCaso(id: string, formData: FormData): Promise<Ac
   revalidatePath('/casos')
   revalidatePath(`/casos/${id}`)
   revalidatePath('/dashboard')
-  return {}
+  redirect(`/casos/${id}`)
 }
 
 export async function cambiarStatusCaso(id: string, status: 'activo' | 'pausado' | 'cerrado') {
