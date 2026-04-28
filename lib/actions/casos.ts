@@ -110,6 +110,16 @@ export async function actualizarCaso(id: string, formData: FormData): Promise<Ac
   return {}
 }
 
+export async function eliminarCaso(id: string) {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
+
+  const { error } = await supabase.from('casos').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/casos')
+  revalidatePath('/dashboard')
+}
+
 export async function cambiarStatusCaso(id: string, status: 'activo' | 'pausado' | 'cerrado') {
   const { supabase, perfil } = await requireAuth()
   requireRole(perfil, 'admin', 'jefe_enfermeros')

@@ -1,6 +1,7 @@
 import { getCaso } from '@/lib/actions/casos'
 import { getTurnosByCaso } from '@/lib/actions/turnos'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
+import { EliminarCasoBtn } from '@/components/admin/casos/EliminarCasoBtn'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock } from 'lucide-react'
 import Link from 'next/link'
@@ -65,11 +66,14 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
             </div>
           </div>
         </div>
-        <Link href={`/casos/${caso.id}/editar`}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
-          <Pencil size={14} />
-          Editar
-        </Link>
+        <div className="flex items-center gap-2">
+          <EliminarCasoBtn casoId={caso.id} titulo={caso.titulo} />
+          <Link href={`/casos/${caso.id}/editar`}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
+            <Pencil size={14} />
+            Editar
+          </Link>
+        </div>
       </div>
 
       {/* Stats rápidas */}
