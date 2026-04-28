@@ -34,12 +34,10 @@ export function CasoForm({ caso, pacientes }: Props) {
         const result = caso
           ? await actualizarCaso(caso.id, formData)
           : await crearCaso(formData)
-        // Si llega aquí es porque hubo error (redirect lanza y no retorna)
         if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
-        if (result?.error) setError(result.error)
+        else if (result?.error) setError(result.error)
+        else window.location.href = caso ? `/casos/${caso.id}` : '/casos'
       } catch (err) {
-        // NEXT_REDIRECT no es un error real — Next.js lo maneja internamente
-        if ((err as { digest?: string })?.digest?.startsWith('NEXT_REDIRECT')) return
         setError(err instanceof Error ? err.message : 'Error inesperado. Intenta de nuevo.')
       }
     })

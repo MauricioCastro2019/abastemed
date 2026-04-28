@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import type { Paciente } from '@/types'
 import { requireAuth, requireRole, fd, fdLines, zodActionError, type ActionResult } from './utils'
 import { PacienteSchema } from '@/lib/validations'
@@ -75,7 +74,7 @@ export async function crearPaciente(formData: FormData): Promise<ActionResult> {
   if (error) return { error: error.message }
 
   revalidatePath('/pacientes')
-  redirect('/pacientes')
+  return {}
 }
 
 export async function actualizarPaciente(id: string, formData: FormData): Promise<ActionResult> {
@@ -118,7 +117,7 @@ export async function actualizarPaciente(id: string, formData: FormData): Promis
 
   revalidatePath('/pacientes')
   revalidatePath(`/pacientes/${id}`)
-  redirect(`/pacientes/${id}`)
+  return {}
 }
 
 export async function cambiarStatusPaciente(id: string, status: 'activo' | 'cerrado') {

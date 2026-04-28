@@ -34,9 +34,9 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId }: Props) {
       try {
         const result = await crearTurno(formData)
         if (result?.fieldErrors) setFieldErrors(result.fieldErrors)
-        if (result?.error) setError(result.error)
+        else if (result?.error) setError(result.error)
+        else window.location.href = '/turnos'
       } catch (err) {
-        if ((err as { digest?: string })?.digest?.startsWith('NEXT_REDIRECT')) return
         setError(err instanceof Error ? err.message : 'Error inesperado. Intenta de nuevo.')
       }
     })

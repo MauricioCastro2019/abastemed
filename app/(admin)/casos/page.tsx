@@ -17,10 +17,11 @@ export default async function CasosPage({
 }) {
   const q = searchParams.q?.trim()
   let casos: Caso[] = []
+  let fetchError: string | null = null
   try {
     casos = await getCasos(q)
-  } catch {
-    casos = []
+  } catch (err) {
+    fetchError = err instanceof Error ? err.message : 'Error al cargar los casos'
   }
 
   const activos  = casos.filter(c => c.status === 'activo').length
@@ -45,6 +46,13 @@ export default async function CasosPage({
           Nuevo caso
         </Link>
       </div>
+
+      {/* Error de carga */}
+      {fetchError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          Error al cargar casos: <strong>{fetchError}</strong>
+        </div>
+      )}
 
       {/* Búsqueda */}
       <form method="GET" className="relative">

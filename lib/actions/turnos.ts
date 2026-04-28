@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { requireAuth, requireRole, fd, zodActionError, type ActionResult } from './utils'
 import { TurnoSchema } from '@/lib/validations'
 
@@ -69,7 +68,7 @@ export async function crearTurno(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/turnos')
   revalidatePath('/dashboard')
-  redirect('/turnos')
+  return {}
 }
 
 export async function cambiarStatusTurno(id: string, status: 'programado' | 'activo' | 'completado') {
