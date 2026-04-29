@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getCatalogo, getInsumosByCaso, registrarUso } from '@/lib/actions/insumos'
+import { getCatalogo, getInsumosByCaso } from '@/lib/actions/insumos'
 import { getMisTurnos, getMiPerfil } from '@/lib/actions/enfermero-portal'
 import { RegistrarUsoForm } from '@/components/admin/insumos/RegistrarUsoForm'
-import { Package, Clock, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { Package, Clock } from 'lucide-react'
 import type { InsumoCatalogo, InsumoUsado } from '@/types'
 
 const CAT_COLOR: Record<string, string> = {
