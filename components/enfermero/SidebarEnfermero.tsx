@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Calendar, User, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Calendar, User, LogOut, Menu, X, Package } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV = [
   { href: '/enfermero/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/enfermero/turnos',    label: 'Mis turnos',  icon: Calendar },
+  { href: '/enfermero/insumos',   label: 'Insumos',     icon: Package },
   { href: '/enfermero/perfil',    label: 'Mi perfil',   icon: User },
 ]
 

@@ -3,6 +3,7 @@
 // ============================================================
 
 export type ContextoPaciente = 'domicilio' | 'hospital' | 'casa_reposo'
+export type CategoriaInsumo = 'solucion' | 'medicamento' | 'material' | 'otro'
 export type StatusPaciente = 'activo' | 'cerrado'
 export type StatusCaso = 'activo' | 'pausado' | 'cerrado'
 export type StatusTurno = 'programado' | 'activo' | 'completado'
@@ -181,4 +182,34 @@ export interface Recibo {
   actualizado_en: string
   // Relación opcional (cuando se hace join con recibo_items)
   recibo_items?: ReciboItem[]
+}
+
+// ----------------------------------------------------------------
+// Módulo de Insumos
+export interface InsumoCatalogo {
+  id: string
+  nombre: string
+  categoria: CategoriaInsumo
+  unidad: string
+  costo: number
+  descripcion?: string | null
+  activo: boolean
+  created_at: string
+}
+
+export interface InsumoUsado {
+  id: string
+  caso_id: string
+  turno_id?: string | null
+  enfermero_id: string
+  insumo_id: string
+  cantidad: number
+  costo_unitario: number
+  notas?: string | null
+  fecha: string
+  created_at: string
+  // Relaciones opcionales
+  insumo?: InsumoCatalogo
+  enfermero?: Pick<Enfermero, 'id' | 'nombre' | 'apellido'>
+  caso?: Pick<Caso, 'id' | 'titulo'>
 }
