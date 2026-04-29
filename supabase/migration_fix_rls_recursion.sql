@@ -72,6 +72,22 @@ CREATE POLICY "turnos_select" ON turnos
   );
 
 -- ============================================================
--- Verificar: esta query NO debe dar error después del fix
+-- 4. Fix enfermeros_select: agregar jefe_enfermeros
+--    (la política original solo tenía 'admin' y 'enfermero')
+-- ============================================================
+
+DROP POLICY IF EXISTS "enfermeros_select" ON enfermeros;
+CREATE POLICY "enfermeros_select" ON enfermeros
+  FOR SELECT USING (
+    auth_rol() IN ('admin', 'jefe_enfermeros')
+    OR EXISTS (
+      SELECT 1 FROM perfiles
+      WHERE id = auth.uid() AND enfermero_id = enfermeros.id
+    )
+  );
+
+-- ============================================================
+-- Verificar: estas queries NO deben dar error después del fix
 -- SELECT count(*) FROM casos;
+-- SELECT count(*) FROM enfermeros;
 -- ============================================================
