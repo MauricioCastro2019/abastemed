@@ -1,9 +1,10 @@
 import { getMisTurnos } from '@/lib/actions/enfermero-portal'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
-import { Calendar, Clock, MapPin } from 'lucide-react'
+import { Calendar, Clock, MapPin, ClipboardList } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
+import Link from 'next/link'
 import type { Turno } from '@/types'
 
 const STATUS_TURNO: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -125,13 +126,12 @@ function TurnoCard({ turno }: { turno: Turno }) {
             />
           )}
           {turno.status === 'activo' && (
-            <TurnoStatusBtn
-              turnoId={turno.id}
-              nuevoStatus="completado"
-              label="Completar turno"
-              className="px-4 py-2 text-xs font-semibold rounded-lg text-white transition-all disabled:opacity-50"
-              style={{ backgroundColor: '#1B2B4B' } as React.CSSProperties}
-            />
+            <Link href={`/enfermero/turnos/entrega/${turno.id}`}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-white transition-all"
+              style={{ backgroundColor: '#1B2B4B' }}>
+              <ClipboardList size={13} />
+              Registrar entrega
+            </Link>
           )}
         </div>
       )}

@@ -1,12 +1,13 @@
 import { getCaso } from '@/lib/actions/casos'
 import { getTurnosByCaso } from '@/lib/actions/turnos'
+import { getEntregasDeCaso } from '@/lib/actions/entregas'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { EliminarCasoBtn } from '@/components/admin/casos/EliminarCasoBtn'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock } from 'lucide-react'
+import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Paciente } from '@/types'
+import type { Paciente, SignosVitales } from '@/types'
 
 const STATUS_CASO: Record<string, { label: string; color: string; bg: string; border: string }> = {
   activo:  { label: 'Activo',  color: '#2AABBF', bg: '#EBF8FB', border: '#2AABBF' },
@@ -40,6 +41,10 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
 
   let turnos: Awaited<ReturnType<typeof getTurnosByCaso>> = []
   try { turnos = await getTurnosByCaso(params.id) } catch { /* sin datos */ }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let entregas: any[] = []
+  try { entregas = await getEntregasDeCaso(params.id) } catch { /* sin datos */ }
 
   const st = STATUS_CASO[caso.status]
   const paciente = caso.paciente as Paciente | undefined
@@ -220,6 +225,83 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
           </div>
         )}
       </div>
+
+      {/* Historial de entregas */}
+      {entregas.length > 0 && (
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Heart size={15} style={{ color: '#2AABBF' }} />
+            <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+              Historial de entregas ({entregas.length})
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {entregas.map((e: {
+              id: string; observaciones: string; incidentes?: string; created_at: string;
+              signos_vitales: SignosVitales;
+              enfermero_saliente: { nombre?: string; apellido?: string } | null;
+            }) => {
+              const sv = e.signos_vitales as SignosVitales
+              const enf = Array.isArray(e.enfermero_saliente) ? e.enfermero_saliente[0] : e.enfermero_saliente
+              return (
+                <div key={e.id} className="border border-gray-100 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+                        {enf?.nombre} {enf?.apellido}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(e.created_at).toLocaleString('es-VE', {
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Signos vitales */}
+                  {sv && Object.values(sv).some(v => v !== undefined && v !== '') && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {sv.presion_arterial && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-[#EBF8FB] text-[#1A7A8C]">
+                          PA: {sv.presion_arterial}
+                        </span>
+                      )}
+                      {sv.frecuencia_cardiaca && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-[#FCE4EC] text-[#C62828]">
+                          FC: {sv.frecuencia_cardiaca} bpm
+                        </span>
+                      )}
+                      {sv.temperatura && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-[#FFF3E0] text-[#E65100]">
+                          T°: {sv.temperatura}°C
+                        </span>
+                      )}
+                      {sv.saturacion_oxigeno && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-[#E8F5E9] text-[#1B5E20]">
+                          SpO₂: {sv.saturacion_oxigeno}%
+                        </span>
+                      )}
+                      {sv.glucosa && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-[#F3E5F5] text-[#4A148C]">
+                          Glucosa: {sv.glucosa} mg/dL
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-600 leading-relaxed">{e.observaciones}</p>
+                  {e.incidentes && (
+                    <div className="mt-2 bg-amber-50 rounded-lg px-3 py-2">
+                      <p className="text-xs font-medium text-amber-700">Incidente: {e.incidentes}</p>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
