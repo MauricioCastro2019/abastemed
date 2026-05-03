@@ -58,6 +58,17 @@ CREATE INDEX IF NOT EXISTS idx_cobranza_status_caso
 CREATE INDEX IF NOT EXISTS idx_recibos_fecha_emision
   ON recibos(fecha_emision DESC);
 
+-- Entregas de turno
+CREATE INDEX IF NOT EXISTS idx_entregas_turno_saliente
+  ON entregas_turno(turno_saliente_id);
+
+CREATE INDEX IF NOT EXISTS idx_entregas_created_at
+  ON entregas_turno(created_at DESC);
+
+-- Insumos usados
+CREATE INDEX IF NOT EXISTS idx_insumos_usados_caso
+  ON insumos_usados(caso_id);
+
 -- Perfiles
 CREATE INDEX IF NOT EXISTS idx_perfiles_rol
   ON perfiles(rol);

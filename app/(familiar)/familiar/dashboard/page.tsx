@@ -1,5 +1,5 @@
-import { getMiCaso } from '@/lib/actions/familiar-portal'
-import { Calendar, Clock, MapPin, Phone, Star } from 'lucide-react'
+import { getMiCaso, getMisEntregas } from '@/lib/actions/familiar-portal'
+import { Calendar, Clock, MapPin, Phone, Star, Heart, AlertTriangle, Activity } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 const STATUS_TURNO: Record<string, { label: string; color: string; bg: string }> = {
@@ -14,13 +14,17 @@ function formatFecha(f: string) {
   })
 }
 
+function formatFechaCorta(f: string) {
+  return new Date(f).toLocaleString('es-VE', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  })
+}
+
 export default async function FamiliarDashboardPage() {
-  let data
-  try {
-    data = await getMiCaso()
-  } catch {
-    data = { perfil: null, paciente: null, caso: null, turnos: [] }
-  }
+  const [data, entregas] = await Promise.all([
+    getMiCaso().catch(() => ({ perfil: null, paciente: null, caso: null, turnos: [] })),
+    getMisEntregas().catch(() => []),
+  ])
 
   const { perfil, paciente, caso, turnos } = data
 
@@ -93,7 +97,9 @@ export default async function FamiliarDashboardPage() {
       {/* Próximos turnos */}
       {caso && (
         <section>
-          <h2 className="text-sm font-semibold mb-3" style={{ color: '#1B2B4B' }}>Próximos turnos</h2>
+          <h2 className="text-sm font-semibold mb-3" style={{ color: '#1B2B4B' }}>
+            Próximos turnos
+          </h2>
           {(turnos as unknown[]).length === 0 ? (
             <div className="bg-white rounded-xl p-8 shadow-sm text-center">
               <Clock size={28} className="mx-auto mb-2 text-gray-200" />
@@ -157,6 +163,89 @@ export default async function FamiliarDashboardPage() {
               })}
             </div>
           )}
+        </section>
+      )}
+
+      {/* Historial de reportes de turno */}
+      {entregas.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#1B2B4B' }}>
+            <Activity size={15} style={{ color: '#2AABBF' }} />
+            Reportes recientes
+          </h2>
+          <div className="space-y-3">
+            {(entregas as Array<{
+              id: string
+              observaciones: string
+              incidentes?: string | null
+              signos_vitales: Record<string, string | number | undefined>
+              created_at: string
+              enfermero_saliente: { nombre: string; apellido: string } | null
+              turno_saliente: { fecha_inicio: string; fecha_fin: string } | null
+            }>).map(e => {
+              const sv = e.signos_vitales as Record<string, string | number | undefined>
+              const enf = Array.isArray(e.enfermero_saliente) ? e.enfermero_saliente[0] : e.enfermero_saliente
+
+              return (
+                <div key={e.id} className="bg-white rounded-xl p-5 shadow-sm">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+                        {enf ? `${enf.nombre} ${enf.apellido}` : 'Enfermero/a'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {e.turno_saliente
+                          ? `${formatFechaCorta(e.turno_saliente.fecha_inicio)} → ${formatFechaCorta(e.turno_saliente.fecha_fin)}`
+                          : formatFechaCorta(e.created_at)
+                        }
+                      </p>
+                    </div>
+                    <Heart size={14} className="text-gray-200 flex-shrink-0 mt-0.5" />
+                  </div>
+
+                  {/* Signos vitales resumidos */}
+                  {sv && Object.values(sv).some(v => v !== undefined && v !== null && v !== '') && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {sv.presion_arterial && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#EBF8FB] text-[#1A7A8C]">
+                          PA: {sv.presion_arterial}
+                        </span>
+                      )}
+                      {sv.frecuencia_cardiaca && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#FCE4EC] text-[#C62828]">
+                          FC: {sv.frecuencia_cardiaca} bpm
+                        </span>
+                      )}
+                      {sv.temperatura && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#FFF3E0] text-[#E65100]">
+                          T°: {sv.temperatura}°C
+                        </span>
+                      )}
+                      {sv.saturacion_oxigeno && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#1B5E20]">
+                          SpO₂: {sv.saturacion_oxigeno}%
+                        </span>
+                      )}
+                      {sv.glucosa && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#F3E5F5] text-[#4A148C]">
+                          Glucosa: {sv.glucosa} mg/dL
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-600 leading-relaxed">{e.observaciones}</p>
+
+                  {e.incidentes && (
+                    <div className="mt-3 bg-amber-50 rounded-lg px-3 py-2 flex items-start gap-2">
+                      <AlertTriangle size={12} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-700">{e.incidentes}</p>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </section>
       )}
     </div>

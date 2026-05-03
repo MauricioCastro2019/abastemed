@@ -15,6 +15,7 @@ const CAT_COLOR: Record<string, { bg: string; color: string; label: string }> = 
   solucion:    { bg: '#EBF8FB', color: '#2AABBF', label: 'Solución' },
   medicamento: { bg: '#FDE8F7', color: '#9C27B0', label: 'Medicamento' },
   material:    { bg: '#E8F5E9', color: '#2E7D32', label: 'Material' },
+  servicio:    { bg: '#EDE7F6', color: '#5E35B1', label: 'Servicio' },
   otro:        { bg: '#FFF3E0', color: '#E65100', label: 'Otro' },
 }
 

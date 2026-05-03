@@ -40,41 +40,57 @@ export async function getEntregasByTurno(turnoId: string) {
 
 export async function getEntregasDeCaso(casoId: string) {
   const { supabase } = await requireAuth()
+
+  // Primero obtenemos los IDs de turnos del caso para evitar full table scan
+  const { data: turnos } = await supabase
+    .from('turnos')
+    .select('id')
+    .eq('caso_id', casoId)
+
+  if (!turnos?.length) return []
+
+  const turnoIds = turnos.map(t => t.id)
+
   const { data, error } = await supabase
     .from('entregas_turno')
     .select(`
       *,
       enfermero_saliente:enfermeros!enfermero_saliente_id(id, nombre, apellido),
       enfermero_entrante:enfermeros!enfermero_entrante_id(id, nombre, apellido),
-      turno_saliente:turnos!turno_saliente_id(id, fecha_inicio, fecha_fin, caso_id)
+      turno_saliente:turnos!turno_saliente_id(id, fecha_inicio, fecha_fin)
     `)
+    .in('turno_saliente_id', turnoIds)
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-
-  // Filtrar las que pertenecen a este caso
-  return (data ?? []).filter((e: { turno_saliente: { caso_id?: string } | null }) =>
-    (e.turno_saliente as { caso_id?: string } | null)?.caso_id === casoId
-  )
+  return data ?? []
 }
 
 export async function getUltimaEntregaByCaso(casoId: string) {
   const { supabase } = await requireAuth()
+
+  const { data: turnos } = await supabase
+    .from('turnos')
+    .select('id')
+    .eq('caso_id', casoId)
+
+  if (!turnos?.length) return null
+
+  const turnoIds = turnos.map(t => t.id)
+
   const { data } = await supabase
     .from('entregas_turno')
     .select(`
       *,
       enfermero_saliente:enfermeros!enfermero_saliente_id(nombre, apellido),
-      turno_saliente:turnos!turno_saliente_id(id, fecha_inicio, caso_id)
+      turno_saliente:turnos!turno_saliente_id(id, fecha_inicio)
     `)
+    .in('turno_saliente_id', turnoIds)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(1)
+    .maybeSingle()
 
-  // Filtrar por caso
-  const filtradas = (data ?? []).filter((e: { turno_saliente: { caso_id?: string } | null }) =>
-    (e.turno_saliente as { caso_id?: string } | null)?.caso_id === casoId
-  )
-  return filtradas[0] ?? null
+  return data ?? null
 }
 
 export async function crearEntrega(formData: FormData): Promise<ActionResult> {

@@ -3,7 +3,7 @@
 // ============================================================
 
 export type ContextoPaciente = 'domicilio' | 'hospital' | 'casa_reposo'
-export type CategoriaInsumo = 'solucion' | 'medicamento' | 'material' | 'otro'
+export type CategoriaInsumo = 'solucion' | 'medicamento' | 'material' | 'servicio' | 'otro'
 export type StatusPaciente = 'activo' | 'cerrado'
 export type StatusCaso = 'activo' | 'pausado' | 'cerrado'
 export type StatusTurno = 'programado' | 'activo' | 'completado'

@@ -12,6 +12,7 @@ const CATEGORIAS = [
   { value: 'solucion',    label: 'Solución' },
   { value: 'medicamento', label: 'Medicamento' },
   { value: 'material',    label: 'Material' },
+  { value: 'servicio',    label: 'Servicio' },
   { value: 'otro',        label: 'Otro' },
 ]
 

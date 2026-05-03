@@ -125,9 +125,9 @@ function TurnoCard({ turno }: { turno: TurnoRow }) {
   const enfermero = turno.enfermero as { id: string; nombre: string; apellido: string } | null
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 flex flex-col sm:flex-row sm:items-center gap-4"
+    <div className="bg-white rounded-xl shadow-sm border-l-4 flex flex-col sm:flex-row sm:items-center gap-4 overflow-hidden"
       style={{ borderColor: st.color }}>
-      <div className="flex-1 min-w-0 space-y-2">
+      <Link href={`/turnos/${turno.id}`} className="flex-1 min-w-0 space-y-2 p-5 hover:bg-gray-50 transition-colors">
         <div className="flex items-start justify-between gap-2">
           <p className="font-semibold text-sm" style={{ color: '#1B2B4B' }}>
             {caso?.titulo ?? 'Turno'}
@@ -161,10 +161,10 @@ function TurnoCard({ turno }: { turno: TurnoRow }) {
             </span>
           )}
         </div>
-      </div>
+      </Link>
 
       {turno.status !== 'completado' && (
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 pr-5 pb-5 sm:pb-0">
           {turno.status === 'programado' && (
             <TurnoStatusBtn
               turnoId={turno.id}

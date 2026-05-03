@@ -26,6 +26,24 @@ export async function getTurnos(search?: string) {
   return data ?? []
 }
 
+export async function getTurno(id: string) {
+  const { supabase } = await requireAuth()
+  const { data, error } = await supabase
+    .from('turnos')
+    .select(`
+      *,
+      caso:casos(id, titulo, direccion, contexto, tarifa_hora, notas,
+        paciente:pacientes(id, nombre, apellido, diagnostico, medicamentos, alergias, contacto_familiar)
+      ),
+      enfermero:enfermeros(id, nombre, apellido, cedula, telefono, especialidades, bio, rating, total_casos)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
 export async function getTurnosByCaso(casoId: string) {
   const { supabase } = await requireAuth()
   const { data, error } = await supabase
