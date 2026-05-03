@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireAuth, requireRole, fd } from './utils'
+import { requireAuth, fd } from './utils'
 import type { EntregaTurno, SignosVitales, MedicamentoAdministrado } from '@/types'
 import type { ActionResult } from './utils'
 
