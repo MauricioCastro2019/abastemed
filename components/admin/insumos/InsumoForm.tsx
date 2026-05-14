@@ -24,6 +24,16 @@ interface Props {
 export function InsumoForm({ insumo, onDone }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [costo, setCosto] = useState(insumo?.costo ?? 0)
+  const [precio, setPrecio] = useState<number>(
+    insumo?.precio ?? Math.round((insumo?.costo ?? 0) * 1.35 * 100) / 100
+  )
+
+  function handleCostoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = parseFloat(e.target.value) || 0
+    setCosto(val)
+    setPrecio(Math.round(val * 1.35 * 100) / 100)
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -46,7 +56,7 @@ export function InsumoForm({ insumo, onDone }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
       <div className="lg:col-span-2">
         <label className={LABEL}>Nombre *</label>
         <input name="nombre" defaultValue={insumo?.nombre} required className={INPUT}
@@ -66,12 +76,20 @@ export function InsumoForm({ insumo, onDone }: Props) {
       <div>
         <label className={LABEL}>Costo ($)</label>
         <input name="costo" type="number" step="0.01" min="0"
-          defaultValue={insumo?.costo ?? 0} className={INPUT} />
+          value={costo} onChange={handleCostoChange} className={INPUT} />
+      </div>
+      <div>
+        <label className={LABEL}>
+          Precio venta ($){' '}
+          <span className="font-normal" style={{ color: '#2AABBF' }}>+35%</span>
+        </label>
+        <input name="precio" type="number" step="0.01" min="0"
+          value={precio} onChange={e => setPrecio(parseFloat(e.target.value) || 0)} className={INPUT} />
       </div>
 
-      {error && <p className="lg:col-span-5 text-xs text-red-500">{error}</p>}
+      {error && <p className="lg:col-span-6 text-xs text-red-500">{error}</p>}
 
-      <div className="lg:col-span-5 flex gap-2 justify-end">
+      <div className="lg:col-span-6 flex gap-2 justify-end">
         <button type="button" onClick={onDone}
           className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50">
           Cancelar

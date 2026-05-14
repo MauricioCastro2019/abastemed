@@ -67,20 +67,25 @@ export default async function ImprimirReciboPage({ params }: Props) {
           <div className="receipt-header px-10 py-8" style={{ backgroundColor: '#0B2A44' }}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: '#178C93' }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                      <path d="M14 10h4v4h4v4h-4v4h-4v-4h-4v-4h4v-4z" fill="white" />
-                    </svg>
-                  </div>
+                <div className="flex items-center gap-4 mb-2">
+                  <svg width="44" height="47" viewBox="0 0 56 60" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                    <defs>
+                      <linearGradient id="logoTeal" x1="0" y1="0" x2="56" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#1A9AAF"/>
+                        <stop offset="100%" stopColor="#2AABBF"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M7 48 L23 6" stroke="url(#logoTeal)" strokeWidth="4.5" strokeLinecap="round"/>
+                    <path d="M23 6 C23 6 48 6 48 26 C48 40 36 48 23 48 L17 48" stroke="url(#logoTeal)" strokeWidth="4.5" strokeLinecap="round" fill="none"/>
+                    <line x1="15" y1="31" x2="34" y2="31" stroke="url(#logoTeal)" strokeWidth="4.5" strokeLinecap="round"/>
+                    <line x1="24" y1="25" x2="24" y2="37" stroke="url(#logoTeal)" strokeWidth="4.5" strokeLinecap="round"/>
+                    <path d="M2 56 L12 56 L15 50 L18 62 L21 52 L24 56 L54 56" stroke="url(#logoTeal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+                  </svg>
                   <div>
-                    <p style={{ color: '#ffffff', fontWeight: 800, fontSize: '20px', letterSpacing: '4px', margin: 0 }}>
+                    <p style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', letterSpacing: '4px', margin: 0 }}>
                       ABASTEMED
                     </p>
-                    <p style={{ color: '#178C93', fontSize: '12px', margin: 0 }}>Cuidado profesional en casa</p>
+                    <p style={{ color: '#2AABBF', fontSize: '12px', margin: 0 }}>Cuidado profesional en casa</p>
                   </div>
                 </div>
               </div>

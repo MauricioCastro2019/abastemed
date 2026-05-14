@@ -37,6 +37,7 @@ export async function crearInsumo(formData: FormData): Promise<ActionResult> {
     categoria:   fd(formData, 'categoria'),
     unidad:      fd(formData, 'unidad'),
     costo:       fdNum(formData, 'costo'),
+    precio:      fdNum(formData, 'precio') || null,
     descripcion: fd(formData, 'descripcion') || null,
     activo:      true,
   })
@@ -55,6 +56,7 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
     categoria:   fd(formData, 'categoria'),
     unidad:      fd(formData, 'unidad'),
     costo:       fdNum(formData, 'costo'),
+    precio:      fdNum(formData, 'precio') || null,
     descripcion: fd(formData, 'descripcion') || null,
   }).eq('id', id)
 

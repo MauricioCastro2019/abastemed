@@ -29,6 +29,28 @@ export const CasoSchema = z.object({
   tarifa_hora:  z.number().min(0, 'La tarifa no puede ser negativa'),
 })
 
+export const IndicacionSchema = z.object({
+  paciente_id:  z.string().uuid('Paciente requerido'),
+  caso_id:      z.string().uuid().optional().or(z.literal('')),
+  tipo:         z.enum(
+    ['medicamento_oral', 'aplicacion_medicamento', 'curacion', 'signos_vitales', 'terapia', 'otra'],
+    { message: 'Tipo de indicación inválido' }
+  ),
+  nombre:       z.string().min(2, 'Nombre requerido').max(120, 'Máximo 120 caracteres'),
+  dosis:        z.string().max(80).optional().or(z.literal('')),
+  via:          z.enum(
+    ['oral', 'intravenosa', 'intramuscular', 'subcutanea', 'topica', 'inhalatoria', 'sublingual', 'nasal', 'otra']
+  ).optional().or(z.literal('')),
+  frecuencia:   z.enum(
+    ['cada_4h', 'cada_6h', 'cada_8h', 'cada_12h', 'cada_24h', 'lunes_miercoles_viernes', 'una_vez', 'segun_necesidad'],
+    { message: 'Frecuencia inválida' }
+  ),
+  fecha_inicio: z.string().min(1, 'Fecha de inicio requerida'),
+  fecha_fin:    z.string().optional().or(z.literal('')),
+  responsable:  z.string().max(100).optional().or(z.literal('')),
+  notas:        z.string().max(500).optional().or(z.literal('')),
+})
+
 export const TurnoSchema = z.object({
   caso_id:       z.string().uuid('Selecciona un caso válido'),
   enfermero_id:  z.string().uuid('Selecciona un enfermero válido'),

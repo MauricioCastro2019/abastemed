@@ -1,6 +1,6 @@
 import { getPaciente } from '@/lib/actions/pacientes'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, Phone, Mail, User, Pill, AlertTriangle, MapPin } from 'lucide-react'
+import { ArrowLeft, Pencil, Phone, Mail, User, Pill, AlertTriangle, MapPin, ClipboardList } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -46,11 +46,19 @@ export default async function PacienteDetailPage({ params }: { params: { id: str
             </div>
           </div>
         </div>
-        <Link href={`/pacientes/${paciente.id}/editar`}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
-          <Pencil size={14} />
-          Editar
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/pacientes/${paciente.id}/plan-cuidado`}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-all"
+            style={{ backgroundColor: '#2AABBF' }}>
+            <ClipboardList size={14} />
+            Plan de Cuidado
+          </Link>
+          <Link href={`/pacientes/${paciente.id}/editar`}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
+            <Pencil size={14} />
+            Editar
+          </Link>
+        </div>
       </div>
 
       {/* Diagnóstico */}

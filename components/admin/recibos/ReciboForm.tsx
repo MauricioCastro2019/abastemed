@@ -180,7 +180,7 @@ export function ReciboForm({ recibo, pacientes = [], catalogo = [] }: Props) {
                         onChange={e => {
                           const nombre = e.target.value
                           const insumo = catalogo.find(i => i.nombre === nombre)
-                          if (insumo) selectInsumo(row.uid, insumo.nombre, insumo.costo)
+                          if (insumo) selectInsumo(row.uid, insumo.nombre, insumo.precio ?? insumo.costo)
                           else updateItem(row.uid, 'descripcion', nombre)
                         }}
                         required

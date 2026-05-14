@@ -185,6 +185,79 @@ export interface Recibo {
 }
 
 // ----------------------------------------------------------------
+// Módulo: Plan de Cuidado
+
+export type TipoIndicacion =
+  | 'medicamento_oral'
+  | 'aplicacion_medicamento'
+  | 'curacion'
+  | 'signos_vitales'
+  | 'terapia'
+  | 'otra'
+
+export type ViaAdministracion =
+  | 'oral'
+  | 'intravenosa'
+  | 'intramuscular'
+  | 'subcutanea'
+  | 'topica'
+  | 'inhalatoria'
+  | 'sublingual'
+  | 'nasal'
+  | 'otra'
+
+export type FrecuenciaIndicacion =
+  | 'cada_4h'
+  | 'cada_6h'
+  | 'cada_8h'
+  | 'cada_12h'
+  | 'cada_24h'
+  | 'lunes_miercoles_viernes'
+  | 'una_vez'
+  | 'segun_necesidad'
+
+export type StatusEvento =
+  | 'pendiente'
+  | 'confirmado'
+  | 'omitido'
+  | 'reprogramado'
+  | 'cancelado'
+
+export interface Indicacion {
+  id: string
+  paciente_id: string
+  caso_id?: string | null
+  tipo: TipoIndicacion
+  nombre: string
+  dosis?: string | null
+  via?: ViaAdministracion | null
+  frecuencia: FrecuenciaIndicacion
+  horarios: string[]                 // ['08:00', '14:00', '20:00']
+  fecha_inicio: string               // ISO date
+  fecha_fin?: string | null
+  responsable?: string | null
+  notas?: string | null
+  activa: boolean
+  created_at: string
+  paciente?: Pick<Paciente, 'id' | 'nombre' | 'apellido'>
+}
+
+export interface EventoIndicacion {
+  id: string
+  indicacion_id: string
+  paciente_id: string
+  fecha_hora_programada: string      // ISO datetime
+  status: StatusEvento
+  fecha_hora_real?: string | null
+  notas?: string | null
+  atendido_por?: string | null
+  created_at: string
+  indicacion?: Indicacion & {
+    paciente?: Pick<Paciente, 'id' | 'nombre' | 'apellido'>
+  }
+}
+
+// ----------------------------------------------------------------
 // Módulo de Insumos
 export interface InsumoCatalogo {
   id: string
@@ -192,6 +265,7 @@ export interface InsumoCatalogo {
   categoria: CategoriaInsumo
   unidad: string
   costo: number
+  precio?: number | null
   descripcion?: string | null
   activo: boolean
   created_at: string

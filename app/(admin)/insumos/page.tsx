@@ -156,7 +156,7 @@ export default function InsumosPage() {
                     {items.map(item => (
                       <tr key={item.id}>
                         {editingId === item.id ? (
-                          <td colSpan={4} className="px-5 py-3">
+                          <td colSpan={5} className="px-5 py-3">
                             <InsumoForm insumo={item} onDone={() => { setEditingId(null); load() }} />
                           </td>
                         ) : (
@@ -168,7 +168,12 @@ export default function InsumosPage() {
                             <td className="px-5 py-3 text-xs text-gray-400">{item.unidad}</td>
                             <td className="px-5 py-3">
                               <span className="text-sm font-semibold" style={{ color: item.costo > 0 ? '#1B2B4B' : '#d1d5db' }}>
-                                {item.costo > 0 ? `$${item.costo.toFixed(2)}` : 'Sin precio'}
+                                {item.costo > 0 ? `$${item.costo.toFixed(2)}` : 'Sin costo'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3">
+                              <span className="text-sm font-semibold" style={{ color: item.precio && item.precio > 0 ? '#178C93' : '#d1d5db' }}>
+                                {item.precio && item.precio > 0 ? `$${item.precio.toFixed(2)}` : '—'}
                               </span>
                             </td>
                             <td className="px-5 py-3">

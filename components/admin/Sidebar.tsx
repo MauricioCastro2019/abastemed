@@ -17,33 +17,36 @@ import {
   Shield,
   FileText,
   Package,
+  ClipboardList,
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_ADMIN = [
-  { href: '/dashboard',      label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/pacientes',      label: 'Pacientes',   icon: Users },
-  { href: '/enfermeros',     label: 'Enfermeros',  icon: Stethoscope },
-  { href: '/casos',          label: 'Casos',       icon: FolderOpen },
-  { href: '/turnos',         label: 'Turnos',      icon: Calendar },
-  { href: '/turnos/semana',  label: 'Horarios',    icon: Calendar },
-  { href: '/insumos',        label: 'Insumos',     icon: Package },
-  { href: '/familiares',     label: 'Familiares',  icon: Heart },
-  { href: '/cobranza',       label: 'Cobranza',    icon: Receipt },
-  { href: '/recibos',        label: 'Recibos',     icon: FileText },
+  { href: '/dashboard',        label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/pacientes',        label: 'Pacientes',      icon: Users },
+  { href: '/enfermeros',       label: 'Enfermeros',     icon: Stethoscope },
+  { href: '/casos',            label: 'Casos',          icon: FolderOpen },
+  { href: '/agenda-cuidado',   label: 'Plan de Cuidado',icon: ClipboardList },
+  { href: '/turnos',           label: 'Turnos',         icon: Calendar },
+  { href: '/turnos/semana',    label: 'Horarios',       icon: Calendar },
+  { href: '/insumos',          label: 'Insumos',        icon: Package },
+  { href: '/familiares',       label: 'Familiares',     icon: Heart },
+  { href: '/cobranza',         label: 'Cobranza',       icon: Receipt },
+  { href: '/recibos',          label: 'Recibos',        icon: FileText },
 ]
 
 const NAV_JEFE = [
-  { href: '/dashboard',      label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/pacientes',      label: 'Pacientes',   icon: Users },
-  { href: '/enfermeros',     label: 'Enfermeros',  icon: Stethoscope },
-  { href: '/casos',          label: 'Casos',       icon: FolderOpen },
-  { href: '/turnos',         label: 'Turnos',      icon: Calendar },
-  { href: '/turnos/semana',  label: 'Horarios',    icon: Calendar },
-  { href: '/insumos',        label: 'Insumos',     icon: Package },
-  { href: '/familiares',     label: 'Familiares',  icon: Heart },
-  { href: '/recibos',        label: 'Recibos',     icon: FileText },
+  { href: '/dashboard',        label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/pacientes',        label: 'Pacientes',      icon: Users },
+  { href: '/enfermeros',       label: 'Enfermeros',     icon: Stethoscope },
+  { href: '/casos',            label: 'Casos',          icon: FolderOpen },
+  { href: '/agenda-cuidado',   label: 'Plan de Cuidado',icon: ClipboardList },
+  { href: '/turnos',           label: 'Turnos',         icon: Calendar },
+  { href: '/turnos/semana',    label: 'Horarios',       icon: Calendar },
+  { href: '/insumos',          label: 'Insumos',        icon: Package },
+  { href: '/familiares',       label: 'Familiares',     icon: Heart },
+  { href: '/recibos',          label: 'Recibos',        icon: FileText },
 ]
 
 interface Props {
