@@ -152,6 +152,15 @@ export default function InsumosPage() {
                   <span className="text-xs text-gray-400">{items.length} items</span>
                 </div>
                 <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="px-5 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Producto</th>
+                      <th className="px-5 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Presentación</th>
+                      <th className="px-5 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Costo</th>
+                      <th className="px-5 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Precio</th>
+                      <th className="px-5 py-2"></th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-50">
                     {items.map(item => (
                       <tr key={item.id}>

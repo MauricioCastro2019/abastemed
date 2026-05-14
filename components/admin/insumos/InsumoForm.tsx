@@ -26,13 +26,17 @@ export function InsumoForm({ insumo, onDone }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [costo, setCosto] = useState(insumo?.costo ?? 0)
   const [precio, setPrecio] = useState<number>(
-    insumo?.precio ?? Math.round((insumo?.costo ?? 0) * 1.35 * 100) / 100
+    insumo?.precio ?? Math.ceil((insumo?.costo ?? 0) * 1.35 / 5) * 5
   )
+
+  function calcPrecio(costo: number): number {
+    return Math.ceil(costo * 1.35 / 5) * 5
+  }
 
   function handleCostoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = parseFloat(e.target.value) || 0
     setCosto(val)
-    setPrecio(Math.round(val * 1.35 * 100) / 100)
+    setPrecio(calcPrecio(val))
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
