@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { registrarUso } from '@/lib/actions/insumos'
 import { toast } from 'sonner'
-import type { InsumoCatalogo, Caso } from '@/types'
+import type { InsumoCatalogo, Caso, Enfermero } from '@/types'
 
 const INPUT = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#2AABBF] transition-all bg-white"
 const LABEL = "block text-xs font-medium text-gray-500 mb-1"
@@ -18,10 +18,11 @@ interface Props {
   defaultCasoId?: string
   turnoId?: string
   enfermeroId?: string
+  enfermeros?: Pick<Enfermero, 'id' | 'nombre' | 'apellido'>[]
   onDone?: () => void
 }
 
-export function RegistrarUsoForm({ casos, catalogo, defaultCasoId, turnoId, enfermeroId, onDone }: Props) {
+export function RegistrarUsoForm({ casos, catalogo, defaultCasoId, turnoId, enfermeroId, enfermeros, onDone }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [casoId, setCasoId] = useState(defaultCasoId ?? '')
@@ -70,6 +71,19 @@ export function RegistrarUsoForm({ casos, catalogo, defaultCasoId, turnoId, enfe
         </div>
       )}
       {defaultCasoId && <input type="hidden" name="caso_id" value={defaultCasoId} />}
+
+      {/* Selector de enfermero (solo en contexto admin, cuando no viene fijo) */}
+      {!enfermeroId && enfermeros && enfermeros.length > 0 && (
+        <div>
+          <label className={LABEL}>Enfermero *</label>
+          <select name="enfermero_id" required className={INPUT} defaultValue="">
+            <option value="" disabled>Selecciona el enfermero...</option>
+            {enfermeros.map(e => (
+              <option key={e.id} value={e.id}>{e.nombre} {e.apellido}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Insumo */}
       <div>

@@ -3,11 +3,12 @@
 import { useEffect, useState, useTransition } from 'react'
 import { getCatalogo, eliminarInsumo, getResumenCostosPorCaso } from '@/lib/actions/insumos'
 import { getCasos } from '@/lib/actions/casos'
+import { getEnfermeros } from '@/lib/actions/enfermeros'
 import { InsumoForm } from '@/components/admin/insumos/InsumoForm'
 import { RegistrarUsoForm } from '@/components/admin/insumos/RegistrarUsoForm'
 import { Package, Plus, Pencil, Trash2, DollarSign, X } from 'lucide-react'
 import { toast } from 'sonner'
-import type { InsumoCatalogo, Caso } from '@/types'
+import type { InsumoCatalogo, Caso, Enfermero } from '@/types'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
 
@@ -22,6 +23,7 @@ const CAT_COLOR: Record<string, { bg: string; color: string; label: string }> = 
 export default function InsumosPage() {
   const [catalogo, setCatalogo]         = useState<InsumoCatalogo[]>([])
   const [casos, setCasos]               = useState<Pick<Caso, 'id' | 'titulo'>[]>([])
+  const [enfermeros, setEnfermeros]     = useState<Pick<Enfermero, 'id' | 'nombre' | 'apellido'>[]>([])
   const [resumen, setResumen]           = useState<{ caso_id: string; titulo: string; total: number; items: number }[]>([])
   const [tab, setTab]                   = useState<'catalogo' | 'expediente'>('catalogo')
   const [showAddForm, setShowAddForm]   = useState(false)
@@ -32,13 +34,15 @@ export default function InsumosPage() {
 
   async function load() {
     try {
-      const [cat, casosData, res] = await Promise.all([
+      const [cat, casosData, res, enfs] = await Promise.all([
         getCatalogo(),
         getCasos(),
         getResumenCostosPorCaso(),
+        getEnfermeros(),
       ])
       setCatalogo(cat)
       setCasos(casosData.map(c => ({ id: c.id, titulo: c.titulo })))
+      setEnfermeros(enfs.map(e => ({ id: e.id, nombre: e.nombre, apellido: e.apellido })))
       setResumen(res.sort((a, b) => b.total - a.total))
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error cargando datos')
@@ -108,7 +112,7 @@ export default function InsumosPage() {
               <X size={16} />
             </button>
           </div>
-          <RegistrarUsoForm casos={casos} catalogo={catalogo} onDone={() => { setShowRegistrar(false); load() }} />
+          <RegistrarUsoForm casos={casos} catalogo={catalogo} enfermeros={enfermeros} onDone={() => { setShowRegistrar(false); load() }} />
         </div>
       )}
 
