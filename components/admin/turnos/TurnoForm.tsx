@@ -4,6 +4,16 @@ import { useState, useTransition } from 'react'
 import { crearTurno } from '@/lib/actions/turnos'
 import type { Caso, Enfermero } from '@/types'
 
+function calcHoras(inicio: string, fin: string): string | null {
+  if (!inicio || !fin) return null
+  const h = (new Date(fin).getTime() - new Date(inicio).getTime()) / 3600000
+  if (h <= 0) return null
+  const dias = Math.floor(h / 24)
+  const hRest = Math.round((h % 24) * 10) / 10
+  if (dias > 0) return `${dias}d ${hRest}h = ${h.toFixed(1)}h total`
+  return `${h.toFixed(1)}h`
+}
+
 const INPUT = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#2AABBF] transition-all bg-white"
 const INPUT_ERR = "w-full px-3 py-2 rounded-lg border border-red-300 text-sm outline-none focus:border-red-400 transition-all bg-white"
 const LABEL = "block text-xs font-medium text-gray-500 mb-1"
@@ -19,6 +29,9 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [fechaInicio, setFechaInicio] = useState('')
+  const [fechaFin, setFechaFin]       = useState('')
+  const preview = calcHoras(fechaInicio, fechaFin)
 
   function inp(name: string) {
     return fieldErrors[name] ? INPUT_ERR : INPUT
@@ -92,15 +105,31 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={LABEL}>Fecha y hora inicio *</label>
-              <input name="fecha_inicio" type="datetime-local" className={inp('fecha_inicio')} />
+              <input name="fecha_inicio" type="datetime-local" className={inp('fecha_inicio')}
+                value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} />
               {fieldErrors.fecha_inicio && <p className={FIELD_ERR}>{fieldErrors.fecha_inicio}</p>}
             </div>
             <div>
               <label className={LABEL}>Fecha y hora fin *</label>
-              <input name="fecha_fin" type="datetime-local" className={inp('fecha_fin')} />
+              <input name="fecha_fin" type="datetime-local" className={inp('fecha_fin')}
+                value={fechaFin} onChange={e => setFechaFin(e.target.value)} />
               {fieldErrors.fecha_fin && <p className={FIELD_ERR}>{fieldErrors.fecha_fin}</p>}
             </div>
           </div>
+
+          {/* Preview duración */}
+          {preview && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
+              parseFloat(preview) > 48
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                : 'bg-[#EBF8FB] text-[#1A7A8C]'
+            }`}>
+              <span>⏱ Duración: <strong>{preview}</strong></span>
+              {parseFloat(preview) > 48 && (
+                <span className="text-xs font-normal">— ¿Seguro que la fecha de fin es correcta?</span>
+              )}
+            </div>
+          )}
 
           <div>
             <label className={LABEL}>Notas / instrucciones</label>
