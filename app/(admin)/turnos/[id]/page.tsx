@@ -1,6 +1,7 @@
 import { getTurno } from '@/lib/actions/turnos'
 import { getEntregasByTurno } from '@/lib/actions/entregas'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
+import { EditarFechasBtn } from '@/components/admin/turnos/EditarFechasBtn'
 import { Badge } from '@/components/ui/badge'
 import {
   ArrowLeft, User, MapPin, Calendar, Clock, Phone, FileText,
@@ -121,6 +122,13 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
           <p className="text-lg font-bold" style={{ color: '#2AABBF' }}>{durH}</p>
         </div>
       </div>
+
+      {/* Editar fechas */}
+      <EditarFechasBtn
+        turnoId={turno.id}
+        fechaInicioActual={turno.fecha_inicio}
+        fechaFinActual={turno.fecha_fin}
+      />
 
       {/* Enfermero */}
       {enfermero && (

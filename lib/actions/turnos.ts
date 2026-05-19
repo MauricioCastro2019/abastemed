@@ -141,3 +141,26 @@ export async function cambiarStatusTurno(id: string, status: 'programado' | 'act
   revalidatePath('/cobranza')
   revalidatePath('/dashboard')
 }
+
+export async function editarFechasTurno(id: string, formData: FormData): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
+  const fecha_inicio = fd(formData, 'fecha_inicio')
+  const fecha_fin    = fd(formData, 'fecha_fin')
+
+  if (!fecha_inicio || !fecha_fin) return { error: 'Ambas fechas son requeridas' }
+  if (new Date(fecha_fin) <= new Date(fecha_inicio)) return { error: 'La fecha de fin debe ser posterior al inicio' }
+
+  const { error } = await supabase
+    .from('turnos')
+    .update({ fecha_inicio, fecha_fin })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/turnos/${id}`)
+  revalidatePath('/turnos')
+  revalidatePath('/casos')
+  return {}
+}
