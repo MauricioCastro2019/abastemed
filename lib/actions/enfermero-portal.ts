@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { revalidatePath } from 'next/cache'
 import type { Enfermero, PerfilUsuario } from '@/types'
 
@@ -88,7 +89,8 @@ export async function actualizarMiPerfil(formData: FormData) {
   const especialidades = (formData.get('especialidades') as string)
     .split('\n').map(s => s.trim()).filter(Boolean)
 
-  const { error } = await supabase
+  const serviceClient = createServiceClient()
+  const { error } = await serviceClient
     .from('enfermeros')
     .update({
       telefono: formData.get('telefono') as string,

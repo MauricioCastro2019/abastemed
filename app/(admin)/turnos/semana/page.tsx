@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { Printer, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { PrintButton } from '@/components/print/PrintButton'
 
 // Paleta de colores por enfermero (asignada por orden de aparición)
 const PALETA = [
@@ -147,12 +148,7 @@ export default async function SemanaPage({
             className="p-2 rounded-lg border border-gray-200 hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all">
             <ChevronRight size={18} />
           </Link>
-          <button onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg ml-2 print:hidden"
-            style={{ backgroundColor: '#1B2B4B' }}>
-            <Printer size={15} />
-            Imprimir
-          </button>
+          <PrintButton />
         </div>
       </div>
 
