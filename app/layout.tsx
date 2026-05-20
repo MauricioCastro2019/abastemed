@@ -5,8 +5,12 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
-  title: 'Abastemed — Plataforma de Enfermería',
-  description: 'Tu aliado confiable en suministros hospitalarios',
+  title: {
+    default: 'Abastemed — Enfermería a Domicilio en León, Gto.',
+    template: '%s | Abastemed',
+  },
+  description:
+    'Agencia de enfermería profesional a domicilio en León, Guanajuato. Cuidado de adultos mayores y pacientes post-quirúrgicos. Disponibles 24/7.',
 }
 
 export default function RootLayout({
