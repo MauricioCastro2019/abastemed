@@ -31,13 +31,6 @@ const FILTROS_TIPO: { value: TipoMovimiento | 'todos'; label: string }[] = [
   { value: 'cobranza',        label: 'Cobranza' },
 ]
 
-function formatFecha(iso: string) {
-  return new Date(iso).toLocaleString('es-VE', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
-}
-
 function formatFechaCorta(iso: string) {
   const d = new Date(iso)
   const hoy = new Date()
