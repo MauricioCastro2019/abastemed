@@ -1,5 +1,4 @@
 import { getLevantamientos } from '@/lib/actions/levantamientos'
-import { Badge } from '@/components/ui/badge'
 import { Plus, Search, ChevronRight, ClipboardCheck } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'

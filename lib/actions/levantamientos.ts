@@ -61,7 +61,7 @@ export async function getLevantamientos(filtros?: LevantamientoFiltros) {
 
   const { data, error } = await query
   if (error) throw new Error(error.message)
-  return (data ?? []) as LevantamientoPaciente[]
+  return (data ?? []) as unknown as LevantamientoPaciente[]
 }
 
 export async function getLevantamiento(id: string) {
@@ -156,6 +156,7 @@ export async function actualizarLevantamiento(
   requireRole(perfil, 'admin', 'jefe_enfermeros')
 
   const insertData = buildInsertPayload(payload, perfil.id)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { levantado_por: _lp, ...updateData } = insertData
 
   const { error: levErr } = await supabase

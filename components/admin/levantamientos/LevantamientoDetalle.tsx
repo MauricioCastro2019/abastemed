@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { cambiarEstadoLevantamiento } from '@/lib/actions/levantamientos'
 import type { LevantamientoPaciente } from '@/types'
 import {

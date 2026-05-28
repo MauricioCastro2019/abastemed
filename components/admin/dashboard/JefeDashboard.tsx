@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import {
   Users, Stethoscope, Calendar, Heart,
-  Plus, ChevronRight, Clock, AlertCircle, CheckCircle,
+  Plus, ChevronRight, AlertCircle, CheckCircle,
   ClipboardCheck, ArrowRight,
 } from 'lucide-react'
 import Link from 'next/link'

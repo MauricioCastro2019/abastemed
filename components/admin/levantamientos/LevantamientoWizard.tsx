@@ -291,7 +291,6 @@ export function LevantamientoWizard({ levantamiento }: Props) {
     })
   }
 
-  const enPaso = (s: number) => step === s
   const pacienteNombre = [data.paciente_nombre, data.paciente_apellido].filter(Boolean).join(' ') || 'Nuevo paciente'
 
   // ── Barra de progreso ───────────────────────────────────────
@@ -621,20 +620,23 @@ export function LevantamientoWizard({ levantamiento }: Props) {
             { key: 'usa_cateter', label: 'Catéter', detail: ['tipo_cateter'], placeholders: ['Tipo'] },
             { key: 'usa_panal', label: 'Pañal', detail: [], placeholders: [] },
             { key: 'tiene_heridas', label: 'Heridas', detail: ['descripcion_heridas'], placeholders: ['Descripción y ubicación'] },
-          ].map(({ key, label }) => (
-            <div key={key} className={`p-3 rounded-lg border cursor-pointer transition-all ${
-              (data as unknown as Record<string, unknown>)[key] ? 'border-[#2AABBF] bg-[#EBF8FB]' : 'border-gray-200'
-            }`} onClick={() => upd(key as keyof LevantamientoPayload, !(data as unknown as Record<string, unknown>)[key] as LevantamientoPayload[typeof key])}>
-              <div className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                  (data as unknown as Record<string, unknown>)[key] ? 'border-[#2AABBF] bg-[#2AABBF]' : 'border-gray-300'
-                }`}>
-                  {(data as unknown as Record<string, unknown>)[key] && <span className="text-white text-xs">✓</span>}
+          ].map(({ key, label }) => {
+            const val = !!(data as Record<string, unknown>)[key]
+            return (
+              <div key={key} className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                val ? 'border-[#2AABBF] bg-[#EBF8FB]' : 'border-gray-200'
+              }`} onClick={() => setData(prev => ({ ...prev, [key]: !val }))}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                    val ? 'border-[#2AABBF] bg-[#2AABBF]' : 'border-gray-300'
+                  }`}>
+                    {val && <span className="text-white text-xs">✓</span>}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{label}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">{label}</span>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {data.usa_oxigeno && (

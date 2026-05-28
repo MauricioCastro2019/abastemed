@@ -62,6 +62,8 @@ export function InsumosClient({ rol }: Props) {
     }
   }
 
+  // load es estable — solo necesitamos ejecutarla al montar
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [])
 
   function handleEliminar(id: string, nombre: string) {
