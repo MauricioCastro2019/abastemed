@@ -51,8 +51,6 @@ const NAV_JEFE = [
   { href: '/turnos/semana',    label: 'Horarios',        icon: Calendar },
   { href: '/insumos',          label: 'Insumos',         icon: Package },
   { href: '/familiares',       label: 'Familiares',      icon: Heart },
-  { href: '/recibos',          label: 'Recibos',         icon: FileText },
-  { href: '/bitacora',         label: 'Bitácora',        icon: ScrollText },
 ]
 
 interface Props {
