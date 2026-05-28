@@ -51,6 +51,30 @@ export const IndicacionSchema = z.object({
   notas:        z.string().max(500).optional().or(z.literal('')),
 })
 
+export const LevantamientoSchema = z.object({
+  paciente_nombre:           z.string().min(2, 'Nombre del paciente requerido'),
+  paciente_apellido:         z.string().min(2, 'Apellido del paciente requerido'),
+  responsable_nombre:        z.string().optional().or(z.literal('')),
+  responsable_tel_principal: z.string().optional().or(z.literal('')),
+  tipos_servicio:            z.array(z.string()).min(1, 'Selecciona al menos un tipo de servicio'),
+  fecha_inicio_estimada:     z.string().optional().or(z.literal('')),
+  riesgo_final:              z.enum(['bajo', 'medio', 'alto'], { message: 'Riesgo inválido' }),
+  prioridad:                 z.enum(['baja', 'media', 'alta', 'urgente'], { message: 'Prioridad inválida' }),
+  estado:                    z.enum(['borrador', 'pendiente_revision', 'revisado', 'aprobado', 'convertido', 'cancelado']).default('borrador'),
+})
+
+export const LevantamientoAprobacionSchema = LevantamientoSchema.extend({
+  paciente_nombre:           z.string().min(2, 'Nombre del paciente requerido'),
+  paciente_apellido:         z.string().min(2, 'Apellido requerido'),
+  responsable_tel_principal: z.string().min(7, 'Teléfono del responsable requerido'),
+  responsable_nombre:        z.string().min(2, 'Nombre del responsable requerido'),
+  tipos_servicio:            z.array(z.string()).min(1, 'Servicio requerido'),
+  actividades_enfermeria:    z.array(z.string()).min(1, 'Actividades requeridas'),
+  fecha_inicio_estimada:     z.string().min(1, 'Fecha de inicio requerida'),
+  riesgo_final:              z.enum(['bajo', 'medio', 'alto']),
+  prioridad:                 z.enum(['baja', 'media', 'alta', 'urgente']),
+})
+
 export const TurnoSchema = z.object({
   caso_id:       z.string().uuid('Selecciona un caso válido'),
   enfermero_id:  z.string().uuid('Selecciona un enfermero válido'),
