@@ -150,10 +150,17 @@ function LoginForm() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-xs font-semibold mb-1.5 uppercase tracking-wider"
-                  style={{ color: '#1B2B4B' }}>
-                  Contraseña
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: '#1B2B4B' }}>
+                    Contraseña
+                  </label>
+                  <Link href="/recuperar-contrasena"
+                    className="text-xs hover:underline"
+                    style={{ color: '#2AABBF' }}>
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
                   required placeholder="••••••••" autoComplete="current-password"
                   className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all bg-gray-50"

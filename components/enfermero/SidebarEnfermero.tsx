@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Calendar, User, LogOut, Menu, X, Package, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Calendar, User, LogOut, Menu, X, Package, ClipboardList, KeyRound } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -97,8 +97,13 @@ export function SidebarEnfermero({ perfil }: Props) {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 py-4 border-t border-white/10">
+      {/* Acciones de cuenta */}
+      <div className="px-3 py-4 border-t border-white/10 space-y-0.5">
+        <Link href="/actualizar-contrasena"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all w-full">
+          <KeyRound size={18} />
+          Cambiar contraseña
+        </Link>
         <button onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all w-full">
           <LogOut size={18} />

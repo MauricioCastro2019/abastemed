@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export default async function FamiliarLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -45,6 +46,10 @@ export default async function FamiliarLayout({ children }: { children: React.Rea
                 {perfil.nombre} {perfil.apellido}
               </span>
             )}
+            <Link href="/actualizar-contrasena"
+              className="text-xs text-gray-400 hover:text-[#1B2B4B] transition-colors">
+              Contraseña
+            </Link>
             <form action={handleLogout}>
               <button type="submit" className="text-xs text-gray-400 hover:text-[#1B2B4B] transition-colors">
                 Salir
