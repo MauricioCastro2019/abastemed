@@ -6,10 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import {
   ArrowLeft, User, MapPin, Calendar, Clock, Phone, FileText,
   Heart, AlertTriangle, Star, Briefcase, DollarSign, Pill,
+  ClipboardList, CheckCircle2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Paciente, Enfermero, Caso, SignosVitales, MedicamentoAdministrado } from '@/types'
+import { getReportesByTurno } from '@/lib/actions/reportes-turno'
+import type { Paciente, Enfermero, Caso, SignosVitales, MedicamentoAdministrado, ReporteTurno } from '@/types'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
   programado: { label: 'Programado', color: '#2AABBF', bg: '#EBF8FB',   border: '#2AABBF' },
@@ -47,6 +49,8 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
   let entrega: any = null
   try { entrega = await getEntregasByTurno(params.id) } catch { /* sin entrega */ }
 
+  const reportes = await getReportesByTurno(params.id)
+
   const st      = STATUS_STYLE[turno.status] ?? STATUS_STYLE.programado
   const caso     = turno.caso as (Caso & { paciente?: Paciente }) | null
   const enfermero = turno.enfermero as Enfermero | null
@@ -76,25 +80,37 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
           </div>
         </div>
 
-        {turno.status !== 'completado' && (
-          <div className="flex items-center gap-2">
-            {turno.status === 'programado' && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Botón Registrar Reporte — siempre visible si el turno está activo o completado */}
+          {turno.status !== 'programado' && (
+            <Link
+              href={`/turnos/${turno.id}/reporte`}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-[#2AABBF] text-[#2AABBF] hover:bg-[#EBF8FB] transition-all"
+            >
+              <ClipboardList size={14} />
+              {reportes.length > 0 ? `Reportes (${reportes.length})` : 'Registrar Reporte'}
+            </Link>
+          )}
+          {turno.status !== 'completado' && (
+            <>
+              {turno.status === 'programado' && (
+                <TurnoStatusBtn
+                  turnoId={turno.id}
+                  nuevoStatus="activo"
+                  label="Iniciar turno"
+                  className="px-3 py-2 text-sm font-medium rounded-lg border border-[#059669] text-[#059669] hover:bg-[#ECFDF5] transition-all disabled:opacity-50"
+                />
+              )}
               <TurnoStatusBtn
                 turnoId={turno.id}
-                nuevoStatus="activo"
-                label="Iniciar turno"
-                className="px-3 py-2 text-sm font-medium rounded-lg border border-[#059669] text-[#059669] hover:bg-[#ECFDF5] transition-all disabled:opacity-50"
+                nuevoStatus="completado"
+                label="Marcar completado"
+                className="px-3 py-2 text-sm font-semibold rounded-lg text-white transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#1B2B4B' } as React.CSSProperties}
               />
-            )}
-            <TurnoStatusBtn
-              turnoId={turno.id}
-              nuevoStatus="completado"
-              label="Marcar completado"
-              className="px-3 py-2 text-sm font-semibold rounded-lg text-white transition-all disabled:opacity-50"
-              style={{ backgroundColor: '#1B2B4B' } as React.CSSProperties}
-            />
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Fechas */}
@@ -386,6 +402,72 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
           <p className="text-xs font-medium text-gray-500 mb-1">Notas adicionales</p>
           <p className="text-sm text-gray-600 whitespace-pre-line">{turno.notas_entrega}</p>
         </div>
+      )}
+
+      {/* Reportes de turno completos */}
+      {reportes.length > 0 && (
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ClipboardList size={15} style={{ color: '#2AABBF' }} />
+              <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+                Reportes de enfermería · {reportes.length}
+              </h2>
+            </div>
+            <Link href={`/turnos/${turno.id}/reporte`}
+              className="text-xs text-[#2AABBF] hover:underline">
+              Ver / agregar →
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {(reportes as ReporteTurno[]).map(r => {
+              const enf = r.enfermero as { nombre: string; apellido: string } | null
+              return (
+                <div key={r.id} className="flex items-start gap-3 border-l-2 pl-3"
+                  style={{ borderColor: '#2AABBF' }}>
+                  <CheckCircle2 size={15} style={{ color: '#2AABBF' }} className="mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: '#1B2B4B' }}>
+                      {new Date(r.created_at).toLocaleString('es-MX', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit',
+                      })}
+                    </p>
+                    {enf && (
+                      <p className="text-xs text-gray-400">{enf.nombre} {enf.apellido}</p>
+                    )}
+                    {r.estado_general && (
+                      <p className="text-xs text-gray-500 mt-1 capitalize">
+                        Estado: {r.estado_general.replace(/_/g, ' ')}
+                      </p>
+                    )}
+                    {r.cuidados_realizados.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {r.cuidados_realizados.slice(0, 4).map((c, i) => (
+                          <span key={i} className="text-xs bg-[#EBF8FB] text-[#1A7A8C] px-1.5 py-0.5 rounded">
+                            {c}
+                          </span>
+                        ))}
+                        {r.cuidados_realizados.length > 4 && (
+                          <span className="text-xs text-gray-400">+{r.cuidados_realizados.length - 4}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* CTA si no hay reporte y el turno está activo */}
+      {reportes.length === 0 && turno.status === 'activo' && (
+        <Link href={`/turnos/${turno.id}/reporte`}
+          className="flex items-center justify-center gap-2 bg-[#EBF8FB] border border-[#2AABBF]/30 rounded-xl p-5 text-sm font-medium text-[#1A7A8C] hover:bg-[#d5f2f7] transition-colors">
+          <ClipboardList size={18} />
+          Registrar reporte de enfermería
+        </Link>
       )}
     </div>
   )

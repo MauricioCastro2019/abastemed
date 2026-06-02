@@ -120,6 +120,18 @@ export async function eliminarCaso(id: string) {
   revalidatePath('/dashboard')
 }
 
+export async function getCasosByPaciente(pacienteId: string): Promise<Caso[]> {
+  const { supabase } = await requireAuth()
+  const { data, error } = await supabase
+    .from('casos')
+    .select('*')
+    .eq('paciente_id', pacienteId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as Caso[]
+}
+
 export async function cambiarStatusCaso(id: string, status: 'activo' | 'pausado' | 'cerrado') {
   const { supabase, perfil } = await requireAuth()
   requireRole(perfil, 'admin', 'jefe_enfermeros')

@@ -21,12 +21,14 @@ import {
   ScrollText,
   ClipboardCheck,
   KeyRound,
+  UserPlus,
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_ADMIN = [
   { href: '/dashboard',        label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/prospectos',       label: 'Prospectos',      icon: UserPlus },
   { href: '/levantamientos',   label: 'Levantamientos',  icon: ClipboardCheck },
   { href: '/pacientes',        label: 'Pacientes',       icon: Users },
   { href: '/enfermeros',       label: 'Enfermeros',      icon: Stethoscope },
@@ -43,6 +45,7 @@ const NAV_ADMIN = [
 
 const NAV_JEFE = [
   { href: '/dashboard',        label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/prospectos',       label: 'Prospectos',      icon: UserPlus },
   { href: '/levantamientos',   label: 'Levantamientos',  icon: ClipboardCheck },
   { href: '/pacientes',        label: 'Pacientes',       icon: Users },
   { href: '/enfermeros',       label: 'Enfermeros',      icon: Stethoscope },

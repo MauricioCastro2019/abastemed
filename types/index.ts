@@ -471,3 +471,491 @@ export interface InsumoUsado {
   enfermero?: Pick<Enfermero, 'id' | 'nombre' | 'apellido'>
   caso?: Pick<Caso, 'id' | 'titulo'>
 }
+
+// ----------------------------------------------------------------
+// Módulo: Control Integral de Pacientes
+
+export type EstadoGeneral =
+  | 'alerta'
+  | 'somnoliento'
+  | 'confuso'
+  | 'desorientado'
+  | 'ansioso'
+  | 'agitado'
+  | 'cooperador'
+  | 'no_cooperador'
+
+export type GravedadIncidencia = 'leve' | 'moderada' | 'grave' | 'critica'
+
+export type TipoIncidencia =
+  | 'desaturacion'
+  | 'hipotension'
+  | 'fiebre'
+  | 'confusion'
+  | 'sincope'
+  | 'caida'
+  | 'casi_caida'
+  | 'dolor_intenso'
+  | 'vomito'
+  | 'retencion_urinaria'
+  | 'hematuria'
+  | 'falla_equipo'
+  | 'falta_insumo'
+  | 'reaccion_medicamento'
+  | 'otro'
+
+export type EstatusKardex = 'activo' | 'suspendido' | 'temporal' | 'prn'
+
+export type StatusAdministracion =
+  | 'administrado'
+  | 'omitido'
+  | 'suspendido'
+  | 'rechazado'
+  | 'sin_existencia'
+  | 'retrasado'
+
+export interface SignosVitalesReporte {
+  presion_arterial?: string
+  frecuencia_cardiaca?: number
+  temperatura?: number
+  saturacion_sin_o2?: number
+  saturacion_con_o2?: number
+  litros_o2?: number
+  soporte_o2?: string
+  frecuencia_respiratoria?: number
+  glucosa?: number
+  peso?: number
+  dolor_eva?: number
+  observaciones?: string
+}
+
+export interface MedAdministradoReporte {
+  kardex_id?: string
+  nombre: string
+  dosis: string
+  via: string
+  hora_programada: string
+  hora_administrada?: string
+  status: StatusAdministracion
+  observaciones?: string
+}
+
+export interface ReporteTurno {
+  id: string
+  turno_id: string
+  caso_id: string
+  enfermero_id: string
+  registrado_por?: string | null
+  signos_vitales: SignosVitalesReporte
+  estado_general?: EstadoGeneral | null
+  estado_general_obs?: string | null
+  tipo_dieta?: string | null
+  porcentaje_ingesta?: number | null
+  liquidos_ingeridos?: string | null
+  nausea: boolean
+  vomito: boolean
+  dificultad_deglucion: boolean
+  obs_alimentacion?: string | null
+  diuresis?: string | null
+  caracteristicas_orina?: string | null
+  vol_drenado_sonda?: string | null
+  evacuacion: boolean
+  evacuacion_cantidad?: string | null
+  evacuacion_consistencia?: string | null
+  evacuacion_color?: string | null
+  uso_panal: boolean
+  obs_eliminacion?: string | null
+  cuidados_realizados: string[]
+  obs_cuidados?: string | null
+  estado_piel?: string | null
+  zonas_enrojecidas?: string | null
+  curaciones_realizadas: boolean
+  desc_curaciones?: string | null
+  cambios_posturales_num?: number | null
+  obs_piel?: string | null
+  medicamentos_administrados: MedAdministradoReporte[]
+  pendientes?: string | null
+  observaciones?: string | null
+  created_at: string
+  // Relaciones opcionales
+  turno?: Pick<Turno, 'id' | 'fecha_inicio' | 'fecha_fin'>
+  enfermero?: Pick<Enfermero, 'id' | 'nombre' | 'apellido'>
+}
+
+export interface KardexMedicamento {
+  id: string
+  caso_id: string
+  nombre: string
+  presentacion?: string | null
+  dosis?: string | null
+  via?: string | null
+  frecuencia?: string | null
+  horarios: string[]
+  fecha_inicio?: string | null
+  fecha_suspension?: string | null
+  medico?: string | null
+  motivo?: string | null
+  estatus: EstatusKardex
+  existencia_domicilio: boolean
+  observaciones?: string | null
+  creado_por?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  administraciones?: AdministracionMedicamento[]
+}
+
+export interface AdministracionMedicamento {
+  id: string
+  kardex_id: string
+  reporte_turno_id?: string | null
+  enfermero_id?: string | null
+  fecha_hora_programada?: string | null
+  fecha_hora_administrada?: string | null
+  status: StatusAdministracion
+  observaciones?: string | null
+  created_at: string
+  enfermero?: Pick<Enfermero, 'id' | 'nombre' | 'apellido'>
+}
+
+export interface Incidencia {
+  id: string
+  caso_id: string
+  turno_id?: string | null
+  reporte_turno_id?: string | null
+  tipo: TipoIncidencia
+  descripcion: string
+  signos_vitales: SignosVitalesReporte
+  intervencion?: string | null
+  a_quien_se_aviso?: string | null
+  respuesta?: string | null
+  estado_posterior?: string | null
+  gravedad: GravedadIncidencia
+  reportado_por?: string | null
+  fecha_hora: string
+  created_at: string
+  // Relaciones opcionales
+  turno?: Pick<Turno, 'id' | 'fecha_inicio'>
+  reportado_por_perfil?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'>
+}
+
+// ============================================================
+// MÓDULO: Evaluación Inicial de Cuidado y Cotizador Inteligente
+// ============================================================
+
+export type ProspectoStatus =
+  | 'nuevo'
+  | 'prelevantamiento_iniciado'
+  | 'informacion_incompleta'
+  | 'requiere_valoracion'
+  | 'cotizacion_generada'
+  | 'propuesta_enviada'
+  | 'propuesta_aceptada'
+  | 'en_validacion'
+  | 'en_espera_de_pago'
+  | 'listo_para_activar'
+  | 'paciente_activo'
+  | 'rechazado'
+  | 'cancelado'
+
+export type RiskColor = 'verde' | 'amarillo' | 'naranja' | 'rojo'
+export type ComplexityLevel = 'bajo' | 'medio' | 'alto' | 'especializado'
+export type RecommendedProfile = 'cuidador' | 'auxiliar' | 'enfermero_general' | 'enfermero_especializado'
+export type ClinicalAlertLevel = 'verde' | 'amarillo' | 'naranja' | 'rojo'
+export type QuoteStatus =
+  | 'borrador'
+  | 'calculada'
+  | 'pendiente_revision'
+  | 'lista_para_enviar'
+  | 'enviada'
+  | 'aceptada'
+  | 'rechazada'
+  | 'vencida'
+  | 'convertida_a_servicio'
+
+export type DocumentType =
+  | 'whatsapp_corto'
+  | 'propuesta_formal'
+  | 'resumen_interno'
+  | 'condiciones_comerciales'
+  | 'seguimiento'
+  | 'plan_inicial_cuidado'
+
+export interface Prospect {
+  id: string
+  requester_name: string
+  requester_phone: string
+  requester_whatsapp?: string | null
+  requester_email?: string | null
+  relationship_to_patient: string
+  is_authorizer: boolean
+  authorization_responsible_name?: string | null
+  is_payer: boolean
+  payment_responsible_name?: string | null
+  payment_responsible_phone?: string | null
+  source: string
+  urgency: string
+  is_urgent: boolean
+  status: ProspectoStatus
+  initial_observations?: string | null
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  preassessment?: PatientPreassessment
+  assessment_result?: AssessmentResult
+  care_quote?: CareQuote
+}
+
+export interface PatientPreassessment {
+  id: string
+  prospect_id: string
+  patient_name: string
+  patient_age?: number | null
+  patient_gender?: string | null
+  service_address?: string | null
+  neighborhood?: string | null
+  city?: string | null
+  approximate_weight?: number | null
+  diagnosis?: string | null
+  doctor_name?: string | null
+  hospital_reference?: string | null
+  currently_hospitalized: boolean
+  current_location?: string | null
+  general_observations?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  physical_assessment?: PhysicalAssessment
+  clinical_assessment?: ClinicalAssessment
+  operational_assessment?: OperationalRiskAssessment
+}
+
+export interface PhysicalAssessment {
+  id: string
+  preassessment_id: string
+  mobility_status: number
+  fall_risk: number
+  bed_status: number
+  position_changes: number
+  diaper_or_bathroom: number
+  hygiene_support: number
+  feeding_status: number
+  hydration_support: number
+  night_watch_status: number
+  daily_life_support: number
+  physical_score: number
+  physical_level: string
+  physical_alerts: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface ClinicalAssessment {
+  id: string
+  preassessment_id: string
+  medication_status: number
+  injectable_medications: number
+  vital_signs_frequency: number
+  glucose_control: number
+  oxygen_use: number
+  nebulizations: number
+  devices_score: number
+  devices_list: string[]
+  wound_care: number
+  pain_status: number
+  postoperative_status: number
+  postoperative_notes?: Record<string, string> | null
+  neurological_events: number
+  secretion_aspiration: number
+  fluid_output_record: number
+  medical_indications_status: number
+  emergency_contact_status: number
+  clinical_score: number
+  clinical_level: string
+  clinical_alert_level: ClinicalAlertLevel
+  clinical_alerts: string[]
+  minimum_clinical_profile?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface OperationalRiskAssessment {
+  id: string
+  preassessment_id: string
+  orientation_status: number
+  cognitive_impairment: number
+  agitation_or_aggression: number
+  device_removal_risk: number
+  communication_ability: number
+  emotional_state: number
+  family_decision_structure: number
+  payment_clarity: number
+  family_conflict_level: number
+  service_expectations: number
+  supplies_availability: number
+  home_safety: number
+  operational_score: number
+  operational_level: string
+  operational_alerts: string[]
+  requires_written_agreements: boolean
+  requires_payment_before: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ServiceRequest {
+  id: string
+  prospect_id: string
+  preassessment_id?: string | null
+  requested_service_type?: string | null
+  recommended_service_type?: string | null
+  shift_duration_hours?: number | null
+  shift_schedule?: string | null
+  frequency?: string | null
+  requested_start_date?: string | null
+  estimated_duration?: string | null
+  staff_preference: string[]
+  report_type?: string | null
+  supervision_type?: string | null
+  medication_control_type?: string | null
+  supplies_handling?: string | null
+  payment_method?: string | null
+  payment_frequency?: string | null
+  location_type?: string | null
+  commercial_notes?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AssessmentResult {
+  id: string
+  preassessment_id: string
+  prospect_id: string
+  physical_score: number
+  clinical_score: number
+  operational_score: number
+  total_score: number
+  general_complexity_level: ComplexityLevel
+  risk_color: RiskColor
+  recommended_profile: RecommendedProfile
+  requires_in_person_assessment: boolean
+  requires_formal_proposal: boolean
+  requires_clinical_supervision: boolean
+  requires_mandatory_log: boolean
+  requires_advance_payment: boolean
+  blocking_flags: string[]
+  warning_flags: string[]
+  internal_recommendation?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CareQuote {
+  id: string
+  prospect_id: string
+  preassessment_id?: string | null
+  service_request_id?: string | null
+  assessment_result_id?: string | null
+  base_rate: number
+  physical_adjustment: number
+  clinical_adjustment: number
+  operational_adjustment: number
+  schedule_adjustment: number
+  urgency_adjustment: number
+  location_adjustment: number
+  supervision_fee: number
+  report_fee: number
+  medication_control_fee: number
+  supplies_management_fee: number
+  calculated_price: number
+  suggested_price: number
+  minimum_recommended_price: number
+  final_price?: number | null
+  adjustment_reason?: string | null
+  authorized_by?: string | null
+  deposit_required?: number | null
+  payment_terms?: string | null
+  quote_valid_until?: string | null
+  status: QuoteStatus
+  created_at: string
+  updated_at: string
+  adjustments?: QuoteAdjustment[]
+}
+
+export interface QuoteAdjustment {
+  id: string
+  care_quote_id: string
+  adjustment_type: string
+  description: string
+  percentage?: number | null
+  fixed_amount?: number | null
+  calculated_amount: number
+  created_at: string
+}
+
+export interface GeneratedDocument {
+  id: string
+  prospect_id: string
+  care_quote_id?: string | null
+  document_type: DocumentType
+  title: string
+  content: string
+  status: string
+  sent_at?: string | null
+  accepted_at?: string | null
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ActivationChecklist {
+  id: string
+  prospect_id: string
+  preassessment_id?: string | null
+  care_quote_id?: string | null
+  patient_data_complete: boolean
+  address_confirmed: boolean
+  payment_responsible_confirmed: boolean
+  emergency_contact_confirmed: boolean
+  final_price_authorized: boolean
+  deposit_registered: boolean
+  terms_accepted: boolean
+  medical_indications_available: boolean
+  medication_list_available: boolean
+  supplies_ready: boolean
+  assessment_completed_if_required: boolean
+  staff_profile_confirmed: boolean
+  start_date_confirmed: boolean
+  is_ready_to_activate: boolean
+  missing_items: string[]
+  validated_by?: string | null
+  validated_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CarePlan {
+  id: string
+  patient_id?: string | null
+  prospect_id?: string | null
+  preassessment_id?: string | null
+  plan_type: string
+  service_type?: string | null
+  shift_duration_hours?: number | null
+  shift_schedule?: string | null
+  frequency?: string | null
+  required_profile?: string | null
+  main_needs: string[]
+  care_instructions?: string | null
+  medication_instructions?: string | null
+  monitoring_instructions?: string | null
+  reporting_instructions?: string | null
+  restrictions?: string | null
+  alerts: string[]
+  emergency_plan?: string | null
+  status: string
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+}

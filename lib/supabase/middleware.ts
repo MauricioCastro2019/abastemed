@@ -34,6 +34,7 @@ export async function updateSession(request: NextRequest) {
   // Rutas que requieren auth
   const protectedPrefixes = [
     '/dashboard',
+    '/prospectos',
     '/pacientes',
     '/enfermeros',
     '/casos',
