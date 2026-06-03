@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Edit2, Calendar, DollarSign, User, FileText, Tag } from 'lucide-react'
+import { ArrowLeft, Edit2, Calendar, DollarSign, User, FileText } from 'lucide-react'
 import { getSalida } from '@/lib/actions/finanzas'
 import { Badge } from '@/components/ui/badge'
 import { CancelarBtn } from '@/components/admin/finanzas/CancelarBtn'

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getDashboardFinanciero, cargarDatosPrueba } from '@/lib/actions/finanzas'
+import { getDashboardFinanciero } from '@/lib/actions/finanzas'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'

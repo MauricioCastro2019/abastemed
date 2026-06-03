@@ -30,7 +30,7 @@ export function PropuestaPageClient({ prospectId, quote, initialDocs }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
-  const [docs, setDocs] = useState(initialDocs)
+  const [docs] = useState(initialDocs)
   const [copied, setCopied] = useState<string | null>(null)
   const [selectedDoc, setSelectedDoc] = useState<GeneratedDocument | null>(initialDocs[0] ?? null)
 

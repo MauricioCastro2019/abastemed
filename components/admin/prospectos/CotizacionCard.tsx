@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { actualizarPrecioFinal, calcularCotizacion } from '@/lib/actions/cotizacion'
+import { actualizarPrecioFinal } from '@/lib/actions/cotizacion'
 import type { CareQuote, QuoteAdjustment, AssessmentResult, ServiceRequest } from '@/types'
 
 interface Props {
@@ -47,7 +47,6 @@ export function CotizacionCard({ quote, adjustments, result, serviceRequest, pro
   const [reason, setReason]         = useState(quote.adjustment_reason ?? '')
 
   const isBelowMinimum = finalPrice < Number(quote.minimum_recommended_price)
-  const riskColor = result.risk_color
 
   function handleSavePrice() {
     setError('')
@@ -63,10 +62,6 @@ export function CotizacionCard({ quote, adjustments, result, serviceRequest, pro
       setEditPrice(false)
     })
   }
-
-  const totalAdjPct = adjustments
-    .filter(a => a.percentage)
-    .reduce((sum, a) => sum + (a.percentage ?? 0), 0)
 
   return (
     <div className="space-y-5">

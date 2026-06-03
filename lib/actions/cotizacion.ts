@@ -1,8 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { CareQuote, GeneratedDocument, ActivationChecklist, CarePlan } from '@/types'
-import { requireAuth, requireRole, fd, fdNum, fdBool, type ActionResult } from './utils'
+import type { CareQuote, GeneratedDocument, ActivationChecklist } from '@/types'
+import { requireAuth, requireRole, fd, fdNum, type ActionResult } from './utils'
 import { calculatePrice, validateFinalPrice, type PriceCalculationInput } from '@/lib/pricing'
 
 // ─── COTIZACIÓN ───────────────────────────────────────────────

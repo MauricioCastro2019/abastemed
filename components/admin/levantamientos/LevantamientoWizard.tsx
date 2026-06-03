@@ -1281,7 +1281,7 @@ export function LevantamientoWizard({ levantamiento }: Props) {
 
   return (
     <div className="space-y-5">
-      <ProgressBar />
+      {ProgressBar()}
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
@@ -1289,9 +1289,9 @@ export function LevantamientoWizard({ levantamiento }: Props) {
         </div>
       )}
 
-      <StepComponent />
+      {StepComponent()}
 
-      <NavButtons />
+      {NavButtons()}
     </div>
   )
 }

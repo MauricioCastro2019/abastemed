@@ -8,13 +8,6 @@ const RISK_COLOR_LABELS: Record<RiskColor, string> = {
   rojo:    'No iniciar sin validación formal',
 }
 
-const COMPLEXITY_LABELS: Record<ComplexityLevel, string> = {
-  bajo:        'Bajo',
-  medio:       'Medio',
-  alto:        'Alto',
-  especializado:'Especializado / alto riesgo',
-}
-
 const PROFILE_LABELS: Record<RecommendedProfile, string> = {
   cuidador:               'Cuidador / acompañante capacitado',
   auxiliar:               'Auxiliar / cuidador experimentado',
@@ -27,22 +20,6 @@ const PHYSICAL_LEVEL_LABELS: Record<string, string> = {
   apoyo_moderado:     'Apoyo moderado (6-12)',
   alta_dependencia:   'Alta dependencia (13-22)',
   dependencia_severa: 'Dependencia severa (23+)',
-}
-
-const CLINICAL_LEVEL_LABELS: Record<string, string> = {
-  sin_necesidades: 'Sin necesidades clínicas relevantes',
-  basico:          'Necesidades básicas',
-  moderado:        'Necesidades moderadas',
-  alto:            'Necesidades altas',
-  alta_complejidad:'Alta complejidad clínica',
-}
-
-const OPERATIONAL_LEVEL_LABELS: Record<string, string> = {
-  claro_manejable: 'Claro y manejable',
-  riesgo_leve:     'Riesgo leve',
-  riesgo_moderado: 'Riesgo moderado',
-  riesgo_alto:     'Riesgo alto',
-  riesgo_critico:  'Riesgo crítico',
 }
 
 interface Props {

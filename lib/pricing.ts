@@ -4,8 +4,6 @@
 // ============================================================
 
 import type {
-  AssessmentResult,
-  ServiceRequest,
   RecommendedProfile,
   RiskColor,
   CareQuote,

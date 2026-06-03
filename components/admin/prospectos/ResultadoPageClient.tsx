@@ -70,7 +70,7 @@ export function ResultadoPageClient({ prospectId, preassessmentId, existingResul
 
       {!existingResult && canCalculate && (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <p className="text-gray-500 text-sm">Presiona "Calcular resultado" para generar el score de evaluación.</p>
+          <p className="text-gray-500 text-sm">Presiona &ldquo;Calcular resultado&rdquo; para generar el score de evaluación.</p>
         </div>
       )}
     </div>

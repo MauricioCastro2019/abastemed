@@ -11,9 +11,8 @@ import { getCareQuote, getGeneratedDocuments, getActivationChecklist } from '@/l
 import { SemaforoBadge, ProspectoStatusBadge } from '@/components/admin/prospectos/SemaforoBadge'
 import { ResultadoCard } from '@/components/admin/prospectos/ResultadoCard'
 import {
-  ArrowLeft, Phone, Mail, ChevronRight, CheckCircle, Circle,
-  Clock, AlertTriangle, Users, FileText, Clipboard, DollarSign,
-  User
+  ArrowLeft, Phone, Mail, ChevronRight, CheckCircle,
+  Users, FileText,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'

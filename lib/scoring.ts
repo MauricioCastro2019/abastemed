@@ -98,7 +98,7 @@ export const COMPLEXITY_LABELS: Record<ComplexityLevel, string> = {
 export function getRecommendedProfile(
   physical: PhysicalAssessment,
   clinical: ClinicalAssessment,
-  operationalScore: number,
+  _operationalScore: number,
 ): RecommendedProfile {
   const cs = clinical.clinical_score
   const ps = physical.physical_score
@@ -225,7 +225,7 @@ export function getOperationalAlerts(oa: OperationalRiskAssessment): string[] {
 export function getBlockingFlags(
   ca: ClinicalAssessment,
   oa: OperationalRiskAssessment,
-  isUrgent: boolean,
+  _isUrgent: boolean,
 ): string[] {
   const flags: string[] = []
 
