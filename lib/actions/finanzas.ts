@@ -40,55 +40,6 @@ function calcularEstatusIngreso(total: number, recibido: number): string {
   return 'parcial'
 }
 
-// ─── Financial Calculation Utilities ─────────────────────────────────────────
-
-export function totalIngresosConfirmados(incomes: FinancialIncome[]): number {
-  return incomes
-    .filter(i => i.estatus === 'confirmado' || i.estatus === 'parcial')
-    .reduce((s, i) => s + i.monto_recibido, 0)
-}
-
-export function totalIngresosPendientes(incomes: FinancialIncome[]): number {
-  return incomes
-    .filter(i => i.estatus !== 'cancelado')
-    .reduce((s, i) => s + Math.max(0, i.monto_total - i.monto_recibido), 0)
-}
-
-export function totalSalidasPagadas(expenses: FinancialExpense[]): number {
-  return expenses
-    .filter(e => e.estatus === 'pagado' || e.estatus === 'por_comprobar')
-    .reduce((s, e) => s + e.monto, 0)
-}
-
-export function totalSalidasPendientes(expenses: FinancialExpense[]): number {
-  return expenses
-    .filter(e => e.estatus === 'pendiente' || e.estatus === 'en_revision')
-    .reduce((s, e) => s + e.monto, 0)
-}
-
-export function utilidadEstimada(ingresos: number, salidas: number): number {
-  return ingresos - salidas
-}
-
-export function margenEstimado(ingresos: number, salidas: number): number {
-  if (ingresos === 0) return 0
-  return ((ingresos - salidas) / ingresos) * 100
-}
-
-export function gastosPorComprobarCount(expenses: FinancialExpense[]): number {
-  return expenses.filter(e => e.estatus === 'por_comprobar').length
-}
-
-export function pagosPendientesPersonalMonto(expenses: FinancialExpense[]): number {
-  return expenses
-    .filter(
-      e =>
-        e.estatus === 'pendiente' &&
-        ['pago_enfermero', 'pago_jefe_enfermeria', 'pago_coordinador'].includes(e.tipo_salida)
-    )
-    .reduce((s, e) => s + e.monto, 0)
-}
-
 // ─── Data for select dropdowns ────────────────────────────────────────────────
 
 export async function getPacientesParaSelect() {
