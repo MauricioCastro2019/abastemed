@@ -959,3 +959,136 @@ export interface CarePlan {
   created_at: string
   updated_at: string
 }
+
+// ============================================================
+// MÓDULO FINANCIERO
+// ============================================================
+
+export type TipoIngreso =
+  | 'anticipo'
+  | 'pago_servicio'
+  | 'pago_semanal'
+  | 'pago_mensual'
+  | 'pago_parcial'
+  | 'regularizacion_adeudo'
+  | 'reembolso'
+  | 'otro_ingreso'
+
+export type TipoSalida =
+  | 'pago_enfermero'
+  | 'pago_jefe_enfermeria'
+  | 'pago_coordinador'
+  | 'insumos_medicos'
+  | 'medicamentos'
+  | 'traslado'
+  | 'viaticos'
+  | 'comida'
+  | 'comision'
+  | 'publicidad'
+  | 'papeleria'
+  | 'equipo_medico'
+  | 'uniformes'
+  | 'plataforma_software'
+  | 'reembolso'
+  | 'otro_gasto'
+
+export type MetodoPago = 'efectivo' | 'transferencia' | 'tarjeta' | 'deposito' | 'otro'
+
+export type StatusIngreso = 'pendiente' | 'parcial' | 'confirmado' | 'cancelado' | 'en_revision'
+
+export type StatusSalida = 'pendiente' | 'pagado' | 'por_comprobar' | 'cancelado' | 'en_revision'
+
+export interface FinancialIncome {
+  id: string
+  folio: string
+  fecha_pago: string
+  paciente_id?: string | null
+  caso_id?: string | null
+  responsable_pago_nombre: string
+  responsable_pago_contacto?: string | null
+  concepto: string
+  tipo_ingreso: TipoIngreso
+  periodo_cubierto_inicio?: string | null
+  periodo_cubierto_fin?: string | null
+  fecha_limite_pago?: string | null
+  monto_total: number
+  monto_recibido: number
+  metodo_pago: MetodoPago
+  cuenta_receptora?: string | null
+  referencia_pago?: string | null
+  comprobante_url?: string | null
+  estatus: StatusIngreso
+  observaciones?: string | null
+  registrado_por?: string | null
+  cancelado_por?: string | null
+  motivo_cancelacion?: string | null
+  fecha_cancelacion?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  paciente?: Pick<Paciente, 'id' | 'nombre' | 'apellido'>
+  caso?: Pick<Caso, 'id' | 'titulo'>
+}
+
+export interface FinancialExpense {
+  id: string
+  folio: string
+  fecha_salida: string
+  tipo_salida: TipoSalida
+  beneficiario_nombre: string
+  beneficiario_contacto?: string | null
+  enfermero_id?: string | null
+  paciente_id?: string | null
+  caso_id?: string | null
+  concepto: string
+  monto: number
+  metodo_pago: MetodoPago
+  cuenta_origen?: string | null
+  referencia_pago?: string | null
+  comprobante_url?: string | null
+  estatus: StatusSalida
+  observaciones?: string | null
+  registrado_por?: string | null
+  cancelado_por?: string | null
+  motivo_cancelacion?: string | null
+  fecha_cancelacion?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  paciente?: Pick<Paciente, 'id' | 'nombre' | 'apellido'>
+  caso?: Pick<Caso, 'id' | 'titulo'>
+  enfermero?: Pick<Enfermero, 'id' | 'nombre' | 'apellido'>
+}
+
+export interface BalancePaciente {
+  paciente: Paciente
+  ingresos_confirmados: number
+  ingresos_parciales: number
+  ingresos_pendientes: number
+  total_por_cobrar: number
+  salidas_pagadas: number
+  salidas_pendientes: number
+  utilidad_estimada: number
+  margen_estimado: number
+  incomes: FinancialIncome[]
+  expenses: FinancialExpense[]
+}
+
+export interface DashboardFinanciero {
+  ingresos_hoy: number
+  salidas_hoy: number
+  utilidad_hoy: number
+  ingresos_semana: number
+  salidas_semana: number
+  utilidad_semana: number
+  ingresos_mes: number
+  salidas_mes: number
+  utilidad_mes: number
+  cuentas_por_cobrar: number
+  cuentas_por_pagar: number
+  pacientes_con_adeudo: number
+  pagos_pendientes_personal: number
+  gastos_por_comprobar: number
+  total_ingresos_activos: number
+  total_salidas_activas: number
+}

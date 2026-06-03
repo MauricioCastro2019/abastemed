@@ -22,6 +22,7 @@ import {
   ClipboardCheck,
   KeyRound,
   UserPlus,
+  Banknote,
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -40,6 +41,7 @@ const NAV_ADMIN = [
   { href: '/familiares',       label: 'Familiares',      icon: Heart },
   { href: '/cobranza',         label: 'Cobranza',        icon: Receipt },
   { href: '/recibos',          label: 'Recibos',         icon: FileText },
+  { href: '/finanzas',         label: 'Finanzas',        icon: Banknote },
   { href: '/bitacora',         label: 'Bitácora',        icon: ScrollText },
 ]
 

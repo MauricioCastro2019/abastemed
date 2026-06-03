@@ -84,3 +84,53 @@ export const TurnoSchema = z.object({
   d => !d.fecha_inicio || !d.fecha_fin || new Date(d.fecha_fin) > new Date(d.fecha_inicio),
   { message: 'La fecha de fin debe ser posterior a la de inicio', path: ['fecha_fin'] }
 )
+
+// ============================================================
+// MÓDULO FINANCIERO
+// ============================================================
+
+export const IngresoSchema = z.object({
+  fecha_pago:                z.string().min(1, 'Fecha de pago requerida'),
+  paciente_id:               z.string().uuid().optional().or(z.literal('')),
+  caso_id:                   z.string().uuid().optional().or(z.literal('')),
+  responsable_pago_nombre:   z.string().min(2, 'Nombre del responsable requerido').max(120),
+  responsable_pago_contacto: z.string().max(80).optional().or(z.literal('')),
+  concepto:                  z.string().min(3, 'Concepto requerido (mín. 3 caracteres)').max(200),
+  tipo_ingreso:              z.enum([
+    'anticipo','pago_servicio','pago_semanal','pago_mensual','pago_parcial',
+    'regularizacion_adeudo','reembolso','otro_ingreso',
+  ], { message: 'Tipo de ingreso inválido' }),
+  periodo_cubierto_inicio:   z.string().optional().or(z.literal('')),
+  periodo_cubierto_fin:      z.string().optional().or(z.literal('')),
+  fecha_limite_pago:         z.string().optional().or(z.literal('')),
+  monto_total:               z.number().min(0.01, 'El monto total debe ser mayor a 0'),
+  monto_recibido:            z.number().min(0, 'El monto recibido no puede ser negativo'),
+  metodo_pago:               z.enum(['efectivo','transferencia','tarjeta','deposito','otro'], { message: 'Método de pago inválido' }),
+  cuenta_receptora:          z.string().max(100).optional().or(z.literal('')),
+  referencia_pago:           z.string().max(100).optional().or(z.literal('')),
+  observaciones:             z.string().max(500).optional().or(z.literal('')),
+}).refine(
+  d => d.monto_recibido <= d.monto_total,
+  { message: 'El monto recibido no puede superar el monto total', path: ['monto_recibido'] }
+)
+
+export const SalidaSchema = z.object({
+  fecha_salida:          z.string().min(1, 'Fecha de salida requerida'),
+  tipo_salida:           z.enum([
+    'pago_enfermero','pago_jefe_enfermeria','pago_coordinador','insumos_medicos',
+    'medicamentos','traslado','viaticos','comida','comision','publicidad',
+    'papeleria','equipo_medico','uniformes','plataforma_software','reembolso','otro_gasto',
+  ], { message: 'Tipo de salida inválido' }),
+  beneficiario_nombre:   z.string().min(2, 'Nombre del beneficiario requerido').max(120),
+  beneficiario_contacto: z.string().max(80).optional().or(z.literal('')),
+  enfermero_id:          z.string().uuid().optional().or(z.literal('')),
+  paciente_id:           z.string().uuid().optional().or(z.literal('')),
+  caso_id:               z.string().uuid().optional().or(z.literal('')),
+  concepto:              z.string().min(3, 'Concepto requerido (mín. 3 caracteres)').max(200),
+  monto:                 z.number().min(0.01, 'El monto debe ser mayor a 0'),
+  metodo_pago:           z.enum(['efectivo','transferencia','tarjeta','deposito','otro'], { message: 'Método de pago inválido' }),
+  cuenta_origen:         z.string().max(100).optional().or(z.literal('')),
+  referencia_pago:       z.string().max(100).optional().or(z.literal('')),
+  estatus:               z.enum(['pendiente','pagado','por_comprobar','en_revision']).optional(),
+  observaciones:         z.string().max(500).optional().or(z.literal('')),
+})
