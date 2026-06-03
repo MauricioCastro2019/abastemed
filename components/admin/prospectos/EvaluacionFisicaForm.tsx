@@ -150,7 +150,7 @@ export function EvaluacionFisicaForm({ preassessmentId, prospectId, existing }: 
   const defaultValues: Record<string, number> = {}
   if (existing) {
     QUESTIONS.forEach(q => {
-      defaultValues[q.key as string] = (existing as Record<string, unknown>)[q.key] as number ?? 0
+      defaultValues[q.key as string] = (existing as unknown as Record<string, unknown>)[q.key] as number ?? 0
     })
   }
 

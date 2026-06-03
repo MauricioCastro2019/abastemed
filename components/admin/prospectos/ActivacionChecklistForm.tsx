@@ -44,7 +44,7 @@ export function ActivacionChecklistForm({ prospectId, preassessmentId, quoteId, 
 
   const initial: Record<string, boolean> = {}
   if (existing) {
-    ITEMS.forEach(item => { initial[item.key as string] = (existing as Record<string, unknown>)[item.key] as boolean ?? false })
+    ITEMS.forEach(item => { initial[item.key as string] = (existing as unknown as Record<string, unknown>)[item.key] as boolean ?? false })
   }
   const [checks, setChecks] = useState<Record<string, boolean>>(initial)
 

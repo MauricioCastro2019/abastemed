@@ -63,7 +63,7 @@ export function EvaluacionOperativaForm({ preassessmentId, prospectId, existing,
 
   const init: Record<string, number> = {}
   if (existing) {
-    QUESTIONS.forEach(q => { init[q.key as string] = (existing as Record<string, unknown>)[q.key] as number ?? 0 })
+    QUESTIONS.forEach(q => { init[q.key as string] = (existing as unknown as Record<string, unknown>)[q.key] as number ?? 0 })
   }
   const [scores, setScores] = useState<Record<string, number>>(init)
   const total = Object.values(scores).reduce((a, b) => a + b, 0)

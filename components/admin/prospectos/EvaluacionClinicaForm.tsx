@@ -82,7 +82,7 @@ export function EvaluacionClinicaForm({ preassessmentId, prospectId, existing, p
 
   const init: Record<string, number> = {}
   if (existing) {
-    QUESTIONS.forEach(q => { init[q.key as string] = (existing as Record<string, unknown>)[q.key] as number ?? 0 })
+    QUESTIONS.forEach(q => { init[q.key as string] = (existing as unknown as Record<string, unknown>)[q.key] as number ?? 0 })
   }
   const [scores,  setScores]  = useState<Record<string, number>>(init)
   const [devices, setDevices] = useState<string[]>(existing?.devices_list ?? [])
