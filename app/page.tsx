@@ -12,7 +12,7 @@ import WhatsAppFloat from '@/components/landing/WhatsAppFloat'
 export const metadata: Metadata = {
   title: 'Enfermeras a Domicilio en León, Guanajuato | Abastemed',
   description:
-    'Tu tranquilidad, nuestra prioridad. Servicio profesional de enfermería a domicilio en León, Gto. Cuidado de adultos mayores, atención postoperatoria y más. Enfermeras certificadas disponibles 24/7. Llama al 479 105 4012.',
+    'Tu tranquilidad, nuestra prioridad. Servicio profesional de enfermería a domicilio en León, Gto. Cuidado de adultos mayores, atención postoperatoria y más. Enfermeras certificadas disponibles 24/7. Llama al 479 138 53 08.',
   keywords: [
     'enfermera a domicilio León Guanajuato',
     'enfermería domiciliaria León',

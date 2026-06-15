@@ -1,7 +1,7 @@
 import { getRecibo } from '@/lib/actions/recibos'
 import { EliminarReciboBtn } from '@/components/admin/recibos/EliminarReciboBtn'
 import { SeccionPago } from '@/components/recibos/SeccionPago'
-import { getTituloDocumento } from '@/lib/config/pagos'
+import { ABASTEMED_CONTACT_PHONE, getTituloDocumento } from '@/lib/config/pagos'
 import { ArrowLeft, Pencil, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -184,7 +184,7 @@ export default async function VerReciboPage({ params }: Props) {
             En ABASTEMED, nuestro compromiso es brindar cuidado profesional, humano y de calidad en la comodidad de tu hogar.
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Tel: 477 576 4099 &nbsp;·&nbsp;
+            Tel: {ABASTEMED_CONTACT_PHONE} &nbsp;·&nbsp;
             <a href="https://abastemed.vercel.app/login" className="underline hover:text-[#178C93]" target="_blank">
               abastemed.vercel.app
             </a>

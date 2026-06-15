@@ -9,7 +9,7 @@ export const ABASTEMED_PAYMENT_DATA = {
   clabe: '722969010269262658',
 }
 
-export const ABASTEMED_CONTACT_PHONE = '477 576 4099'
+export const ABASTEMED_CONTACT_PHONE = '479 138 53 08'
 
 export const METODO_PAGO_RECIBO_LABELS: Record<MetodoPagoRecibo, string> = {
   efectivo: 'Efectivo',

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { PrintButton } from '@/components/print/PrintButton'
 import { SeccionPago } from '@/components/recibos/SeccionPago'
-import { getTituloDocumento } from '@/lib/config/pagos'
+import { ABASTEMED_CONTACT_PHONE, getTituloDocumento } from '@/lib/config/pagos'
 
 function formatearFecha(iso: string) {
   const [y, m, d] = iso.split('-').map(Number)
@@ -198,7 +198,7 @@ export default async function ImprimirReciboPage({ params }: Props) {
               En ABASTEMED, nuestro compromiso es brindar cuidado profesional, humano y de calidad en la comodidad de tu hogar.
             </p>
             <p style={{ fontSize: '11px', color: '#9CA3AF', margin: 0 }}>
-              Tel: 477 576 4099 &nbsp;·&nbsp; abastemed.vercel.app
+              Tel: {ABASTEMED_CONTACT_PHONE} &nbsp;·&nbsp; abastemed.vercel.app
             </p>
           </div>
         </div>
