@@ -170,6 +170,12 @@ export interface ReciboItem {
   orden: number
 }
 
+// 'por_coordinar' es el valor de respaldo para recibos creados antes de
+// que existiera este campo; no debe usarse como opción nueva en el formulario.
+export type MetodoPagoRecibo = 'efectivo' | 'transferencia' | 'otro' | 'por_coordinar'
+
+export type EstadoRecibo = 'pendiente' | 'pagado' | 'cancelado'
+
 export interface Recibo {
   id: string
   folio: string
@@ -178,6 +184,10 @@ export interface Recibo {
   subtotal: number
   total: number
   observaciones?: string | null
+  metodo_pago: MetodoPagoRecibo
+  estado: EstadoRecibo
+  fecha_pago?: string | null         // ISO date YYYY-MM-DD, solo si estado='pagado'
+  referencia_pago?: string | null
   creado_en: string
   actualizado_en: string
   // Relación opcional (cuando se hace join con recibo_items)

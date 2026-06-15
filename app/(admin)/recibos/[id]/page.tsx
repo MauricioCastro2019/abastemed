@@ -1,5 +1,7 @@
 import { getRecibo } from '@/lib/actions/recibos'
 import { EliminarReciboBtn } from '@/components/admin/recibos/EliminarReciboBtn'
+import { SeccionPago } from '@/components/recibos/SeccionPago'
+import { getTituloDocumento } from '@/lib/config/pagos'
 import { ArrowLeft, Pencil, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -85,7 +87,7 @@ export default async function VerReciboPage({ params }: Props) {
             </div>
             {/* Folio */}
             <div className="text-right flex-shrink-0">
-              <p className="text-xs text-white/50 uppercase tracking-wider mb-1">Recibo de pago</p>
+              <p className="text-xs text-white/50 uppercase tracking-wider mb-1">{getTituloDocumento(recibo.estado)}</p>
               <p className="text-white font-bold text-lg font-mono">{recibo.folio}</p>
             </div>
           </div>
@@ -153,25 +155,13 @@ export default async function VerReciboPage({ params }: Props) {
         </div>
 
         {/* Datos de pago */}
-        <div className="mx-8 mb-6 rounded-xl p-5" style={{ backgroundColor: '#F4F8FA', border: '1px solid #e2eef2' }}>
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#0B2A44' }}>
-            Datos para el pago
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Titular</p>
-              <p className="font-medium" style={{ color: '#1F2933' }}>Alan Eduardo Martínez Navarro</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Número de tarjeta</p>
-              <p className="font-mono font-medium" style={{ color: '#1F2933' }}>5428 7805 8594 5967</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Plataforma</p>
-              <p className="font-medium" style={{ color: '#178C93' }}>Mercado Pago</p>
-            </div>
-          </div>
-        </div>
+        <SeccionPago
+          estado={recibo.estado}
+          metodoPago={recibo.metodo_pago}
+          fechaPago={recibo.fecha_pago}
+          referenciaPago={recibo.referencia_pago}
+          formatearFecha={formatearFecha}
+        />
 
         {/* Observaciones */}
         {recibo.observaciones && (

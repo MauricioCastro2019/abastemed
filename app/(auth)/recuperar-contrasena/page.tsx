@@ -36,7 +36,8 @@ function RecuperarForm() {
     setError(null)
 
     const supabase = createClient()
-    const redirectTo = `${window.location.origin}/actualizar-contrasena`
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
+    const redirectTo = `${base}/actualizar-contrasena`
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
 

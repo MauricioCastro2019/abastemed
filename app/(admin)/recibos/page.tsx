@@ -1,12 +1,19 @@
 import { getRecibos } from '@/lib/actions/recibos'
 import { crearReciboDemo } from '@/lib/actions/recibos'
+import { getTituloDocumento, ESTADO_RECIBO_LABELS } from '@/lib/config/pagos'
 import { FileText, Plus, ChevronRight, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import type { Recibo } from '@/types'
+import type { EstadoRecibo, Recibo } from '@/types'
 
 function formatearFecha(iso: string) {
   const [y, m, d] = iso.split('-')
   return `${d}/${m}/${y}`
+}
+
+const ESTADO_BADGE_STYLE: Record<EstadoRecibo, { bg: string; color: string }> = {
+  pendiente: { bg: '#FEF6E7', color: '#A66A00' },
+  pagado:    { bg: '#EAFAF5', color: '#178C93' },
+  cancelado: { bg: '#FDF1F1', color: '#B91C1C' },
 }
 
 export default async function RecibosPage() {
@@ -76,6 +83,7 @@ export default async function RecibosPage() {
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Folio</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Paciente</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider hidden sm:table-cell">Fecha</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
                 <th className="text-right px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
                 <th className="px-6 py-3"></th>
               </tr>
@@ -106,6 +114,15 @@ export default async function RecibosPage() {
                   </td>
                   <td className="px-6 py-4 hidden sm:table-cell">
                     <span className="text-sm text-gray-500">{formatearFecha(r.fecha_emision)}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className="text-xs font-semibold px-2 py-1 rounded-md"
+                      style={{ backgroundColor: ESTADO_BADGE_STYLE[r.estado].bg, color: ESTADO_BADGE_STYLE[r.estado].color }}
+                      title={getTituloDocumento(r.estado)}
+                    >
+                      {ESTADO_RECIBO_LABELS[r.estado]}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className="text-sm font-bold" style={{ color: '#178C93' }}>

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearRecibo, actualizarRecibo } from '@/lib/actions/recibos'
 import type { Recibo, ReciboItem, Paciente, InsumoCatalogo } from '@/types'
+import { METODO_PAGO_RECIBO_LABELS, ESTADO_RECIBO_LABELS } from '@/lib/config/pagos'
 import { Plus, Trash2 } from 'lucide-react'
 
 const INPUT  = 'w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#2AABBF] transition-all bg-white'
@@ -41,6 +42,8 @@ export function ReciboForm({ recibo, pacientes = [], catalogo = [] }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [estado, setEstado] = useState(recibo?.estado ?? 'pendiente')
+  const metodoPagoActual = recibo?.metodo_pago
 
   const [items, setItems] = useState<ItemRow[]>(() => {
     if (recibo?.recibo_items?.length) {
@@ -145,6 +148,57 @@ export function ReciboForm({ recibo, pacientes = [], catalogo = [] }: Props) {
               className={INPUT} />
           </div>
         </div>
+      </section>
+
+      {/* ── Estado y método de pago ── */}
+      <section className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1B2B4B] mb-4">Estado y método de pago</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL}>Estado del cobro *</label>
+            <select name="estado" required value={estado}
+              onChange={e => setEstado(e.target.value as Recibo['estado'])}
+              className={INPUT}>
+              {Object.entries(ESTADO_RECIBO_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={LABEL}>Método de pago *</label>
+            <select name="metodo_pago" required
+              defaultValue={metodoPagoActual ?? ''}
+              className={INPUT}>
+              {!metodoPagoActual && (
+                <option value="" disabled>Selecciona un método de pago...</option>
+              )}
+              <option value="efectivo">{METODO_PAGO_RECIBO_LABELS.efectivo}</option>
+              <option value="transferencia">{METODO_PAGO_RECIBO_LABELS.transferencia}</option>
+              <option value="otro">{METODO_PAGO_RECIBO_LABELS.otro}</option>
+              {metodoPagoActual === 'por_coordinar' && (
+                <option value="por_coordinar">{METODO_PAGO_RECIBO_LABELS.por_coordinar} (sin definir)</option>
+              )}
+            </select>
+          </div>
+        </div>
+
+        {estado === 'pagado' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+            <div>
+              <label className={LABEL}>Fecha de pago</label>
+              <input name="fecha_pago" type="date"
+                defaultValue={recibo?.fecha_pago ?? ''}
+                className={INPUT} />
+            </div>
+            <div>
+              <label className={LABEL}>Referencia o folio de pago</label>
+              <input name="referencia_pago" type="text"
+                defaultValue={recibo?.referencia_pago ?? ''}
+                placeholder="Opcional"
+                className={INPUT} />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── Conceptos ── */}

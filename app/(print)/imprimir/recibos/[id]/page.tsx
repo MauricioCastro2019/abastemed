@@ -2,6 +2,8 @@ import { getRecibo } from '@/lib/actions/recibos'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { PrintButton } from '@/components/print/PrintButton'
+import { SeccionPago } from '@/components/recibos/SeccionPago'
+import { getTituloDocumento } from '@/lib/config/pagos'
 
 function formatearFecha(iso: string) {
   const [y, m, d] = iso.split('-').map(Number)
@@ -91,7 +93,7 @@ export default async function ImprimirReciboPage({ params }: Props) {
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 4px 0' }}>
-                  Recibo de pago
+                  {getTituloDocumento(recibo.estado)}
                 </p>
                 <p style={{ color: '#ffffff', fontWeight: 700, fontSize: '18px', fontFamily: 'monospace', margin: 0 }}>
                   {recibo.folio}
@@ -167,25 +169,13 @@ export default async function ImprimirReciboPage({ params }: Props) {
           </div>
 
           {/* Datos de pago */}
-          <div style={{ margin: '0 40px 32px', padding: '20px', backgroundColor: '#F4F8FA', border: '1px solid #e2eef2', borderRadius: '12px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#0B2A44', margin: '0 0 12px 0' }}>
-              Datos para el pago
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '13px' }}>
-              <div>
-                <p style={{ fontSize: '11px', color: '#8a9ba8', margin: '0 0 3px 0' }}>Titular</p>
-                <p style={{ fontWeight: 500, color: '#1F2933', margin: 0 }}>Alan Eduardo Martínez Navarro</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', color: '#8a9ba8', margin: '0 0 3px 0' }}>Número de tarjeta</p>
-                <p style={{ fontWeight: 500, color: '#1F2933', fontFamily: 'monospace', margin: 0 }}>5428 7805 8594 5967</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', color: '#8a9ba8', margin: '0 0 3px 0' }}>Plataforma</p>
-                <p style={{ fontWeight: 600, color: '#178C93', margin: 0 }}>Mercado Pago</p>
-              </div>
-            </div>
-          </div>
+          <SeccionPago
+            estado={recibo.estado}
+            metodoPago={recibo.metodo_pago}
+            fechaPago={recibo.fecha_pago}
+            referenciaPago={recibo.referencia_pago}
+            formatearFecha={formatearFecha}
+          />
 
           {/* Observaciones */}
           {recibo.observaciones && (

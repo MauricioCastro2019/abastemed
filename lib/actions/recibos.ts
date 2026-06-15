@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Recibo, ReciboItem } from '@/types'
+import type { EstadoRecibo, MetodoPagoRecibo, Recibo, ReciboItem } from '@/types'
 import { requireAuth, requireRole, fd } from './utils'
 
 type ItemInput = {
@@ -10,6 +10,25 @@ type ItemInput = {
   cantidad: number
   precio_unitario: number
   importe: number
+}
+
+const METODOS_PAGO_VALIDOS: MetodoPagoRecibo[] = ['efectivo', 'transferencia', 'otro', 'por_coordinar']
+const ESTADOS_RECIBO_VALIDOS: EstadoRecibo[] = ['pendiente', 'pagado', 'cancelado']
+
+function parseMetodoPagoRecibo(formData: FormData): MetodoPagoRecibo {
+  const value = fd(formData, 'metodo_pago')
+  if (!METODOS_PAGO_VALIDOS.includes(value as MetodoPagoRecibo)) {
+    throw new Error('Método de pago inválido')
+  }
+  return value as MetodoPagoRecibo
+}
+
+function parseEstadoRecibo(formData: FormData): EstadoRecibo {
+  const value = fd(formData, 'estado') || 'pendiente'
+  if (!ESTADOS_RECIBO_VALIDOS.includes(value as EstadoRecibo)) {
+    throw new Error('Estado de recibo inválido')
+  }
+  return value as EstadoRecibo
 }
 
 type ReciboConItems = Recibo & { recibo_items: ReciboItem[] }
@@ -64,6 +83,8 @@ export async function crearRecibo(formData: FormData) {
   const folio = await generarFolio(supabase, fechaEmision)
   const items = JSON.parse(fd(formData, 'items') || '[]') as ItemInput[]
   const subtotal = items.reduce((sum, i) => sum + i.importe, 0)
+  const metodoPago = parseMetodoPagoRecibo(formData)
+  const estado = parseEstadoRecibo(formData)
 
   const { data: recibo, error } = await supabase
     .from('recibos')
@@ -74,6 +95,10 @@ export async function crearRecibo(formData: FormData) {
       subtotal,
       total:           subtotal,
       observaciones:   fd(formData, 'observaciones') || null,
+      metodo_pago:     metodoPago,
+      estado,
+      fecha_pago:      fd(formData, 'fecha_pago') || null,
+      referencia_pago: fd(formData, 'referencia_pago') || null,
     })
     .select()
     .single()
@@ -102,6 +127,8 @@ export async function actualizarRecibo(id: string, formData: FormData) {
 
   const items = JSON.parse(fd(formData, 'items') || '[]') as ItemInput[]
   const subtotal = items.reduce((sum, i) => sum + i.importe, 0)
+  const metodoPago = parseMetodoPagoRecibo(formData)
+  const estado = parseEstadoRecibo(formData)
 
   const { error } = await supabase
     .from('recibos')
@@ -111,6 +138,10 @@ export async function actualizarRecibo(id: string, formData: FormData) {
       subtotal,
       total:           subtotal,
       observaciones:   fd(formData, 'observaciones') || null,
+      metodo_pago:     metodoPago,
+      estado,
+      fecha_pago:      fd(formData, 'fecha_pago') || null,
+      referencia_pago: fd(formData, 'referencia_pago') || null,
     })
     .eq('id', id)
 
@@ -177,6 +208,10 @@ export async function crearReciboDemo() {
       subtotal,
       total:           subtotal,
       observaciones:   null,
+      metodo_pago:     'transferencia',
+      estado:          'pendiente',
+      fecha_pago:      null,
+      referencia_pago: null,
     })
     .select()
     .single()
