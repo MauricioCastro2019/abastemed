@@ -108,32 +108,48 @@ export async function actualizarPrecioFinal(
   const finalPrice = fdNum(formData, 'final_price')
   const reason     = fd(formData, 'adjustment_reason')
 
-  const { data: quote } = await supabase
+  // Buscar cotización por ID; si no la encuentra (puede haber sido recalculada),
+  // usar la más reciente del prospecto como fallback
+  let { data: quoteData } = await supabase
     .from('care_quotes')
-    .select('minimum_recommended_price, risk_color')
+    .select('id, minimum_recommended_price, risk_color')
     .eq('id', quoteId)
-    .single()
+    .maybeSingle()
 
-  if (!quote) return { error: 'Cotización no encontrada.' }
-
-  const validation = validateFinalPrice(finalPrice, quote.minimum_recommended_price, quote.risk_color)
-
-  if (!validation.valid) return { error: validation.message ?? 'Precio no autorizado.' }
-
-  const update: Record<string, unknown> = {
-    final_price:      finalPrice,
-    adjustment_reason: reason || null,
-    status:           'lista_para_enviar',
+  if (!quoteData) {
+    const { data: latest } = await supabase
+      .from('care_quotes')
+      .select('id, minimum_recommended_price, risk_color')
+      .eq('prospect_id', prospectId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    quoteData = latest
   }
 
-  if (validation.requiresAuth) {
+  if (!quoteData) return { error: 'Cotización no encontrada.' }
+
+  const validation = validateFinalPrice(finalPrice, quoteData.minimum_recommended_price, quoteData.risk_color)
+
+  // El admin puede sobrepasar cualquier restricción con motivo obligatorio
+  if (!validation.valid && !reason?.trim()) {
+    return { error: `${validation.message ?? 'Precio no autorizado.'} Ingresa un motivo de ajuste para continuar.` }
+  }
+
+  const update: Record<string, unknown> = {
+    final_price:       finalPrice,
+    adjustment_reason: reason || null,
+    status:            'lista_para_enviar',
+  }
+
+  if (validation.requiresAuth || !validation.valid) {
     update.authorized_by = perfil.id
   }
 
   const { error } = await supabase
     .from('care_quotes')
     .update(update)
-    .eq('id', quoteId)
+    .eq('id', quoteData.id)
 
   if (error) return { error: error.message }
   revalidatePath(`/prospectos/${prospectId}`)

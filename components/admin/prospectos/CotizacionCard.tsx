@@ -70,6 +70,10 @@ export function CotizacionCard({ quote, adjustments, result, serviceRequest, pro
   function handleSavePrice() {
     setError('')
     setSuccess('')
+    if (isBelowMinimum && !reason.trim()) {
+      setError('El motivo de ajuste es obligatorio cuando el precio está por debajo del mínimo recomendado.')
+      return
+    }
     const fd = new FormData()
     fd.set('final_price', String(finalPrice))
     fd.set('adjustment_reason', reason)
@@ -167,7 +171,7 @@ export function CotizacionCard({ quote, adjustments, result, serviceRequest, pro
                 />
                 {isBelowMinimum && (
                   <p className="mt-1 text-xs text-orange-600">
-                    ⚠ Precio por debajo del mínimo recomendado ({fmt(Number(quote.minimum_recommended_price))}). Requerirá autorización.
+                    ⚠ Precio por debajo del mínimo ({fmt(Number(quote.minimum_recommended_price))}). Motivo de ajuste obligatorio.
                   </p>
                 )}
               </div>
