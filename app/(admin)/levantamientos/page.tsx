@@ -6,21 +6,35 @@ import { ToastSuccess } from '@/components/ToastSuccess'
 import type { LevantamientoPaciente } from '@/types'
 
 const ESTADO_LABEL: Record<string, string> = {
-  borrador:           'Borrador',
-  pendiente_revision: 'Pendiente revisión',
-  revisado:           'Revisado',
-  aprobado:           'Aprobado',
-  convertido:         'Convertido',
-  cancelado:          'Cancelado',
+  borrador:                    'Borrador',
+  pendiente_revision:          'Pendiente revisión',
+  en_revision:                 'En revisión',
+  requiere_correcciones:       'Requiere correcciones',
+  requiere_revision_clinica:   'Revisión clínica',
+  requiere_revision_comercial: 'Revisión comercial',
+  revisado:                    'Revisado',
+  aprobado:                    'Aprobado',
+  rechazado:                   'Rechazado',
+  archivado:                   'Archivado',
+  sustituido:                  'Sustituido',
+  convertido:                  'Convertido',
+  cancelado:                   'Cancelado',
 }
 
 const ESTADO_COLOR: Record<string, { bg: string; text: string }> = {
-  borrador:           { bg: '#F3F4F6', text: '#6B7280' },
-  pendiente_revision: { bg: '#FEF9C3', text: '#854D0E' },
-  revisado:           { bg: '#DBEAFE', text: '#1D4ED8' },
-  aprobado:           { bg: '#DCFCE7', text: '#166534' },
-  convertido:         { bg: '#EBF8FB', text: '#1B2B4B' },
-  cancelado:          { bg: '#FEE2E2', text: '#991B1B' },
+  borrador:                    { bg: '#F3F4F6', text: '#6B7280' },
+  pendiente_revision:          { bg: '#FEF9C3', text: '#854D0E' },
+  en_revision:                 { bg: '#DBEAFE', text: '#1D4ED8' },
+  requiere_correcciones:       { bg: '#FFEDD5', text: '#9A3412' },
+  requiere_revision_clinica:   { bg: '#EDE9FE', text: '#5B21B6' },
+  requiere_revision_comercial: { bg: '#FFF7ED', text: '#C2410C' },
+  revisado:                    { bg: '#DBEAFE', text: '#1D4ED8' },
+  aprobado:                    { bg: '#DCFCE7', text: '#166534' },
+  rechazado:                   { bg: '#FEE2E2', text: '#991B1B' },
+  archivado:                   { bg: '#F3F4F6', text: '#9CA3AF' },
+  sustituido:                  { bg: '#F3F4F6', text: '#9CA3AF' },
+  convertido:                  { bg: '#EBF8FB', text: '#1B2B4B' },
+  cancelado:                   { bg: '#FEE2E2', text: '#991B1B' },
 }
 
 const RIESGO_COLOR: Record<string, { bg: string; text: string }> = {
@@ -106,7 +120,16 @@ export default async function LevantamientosPage({
         <select name="estado" defaultValue={estado ?? ''}
           className="px-3 py-2 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2AABBF] bg-white transition-all">
           <option value="">Todos los estados</option>
-          {Object.entries(ESTADO_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          <optgroup label="Activos">
+            {['borrador','pendiente_revision','en_revision','requiere_correcciones','requiere_revision_clinica','requiere_revision_comercial','revisado','aprobado'].map(v =>
+              <option key={v} value={v}>{ESTADO_LABEL[v]}</option>
+            )}
+          </optgroup>
+          <optgroup label="Inactivos">
+            {['rechazado','archivado','sustituido','convertido','cancelado'].map(v =>
+              <option key={v} value={v}>{ESTADO_LABEL[v]}</option>
+            )}
+          </optgroup>
         </select>
         <select name="riesgo" defaultValue={riesgo ?? ''}
           className="px-3 py-2 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2AABBF] bg-white transition-all">

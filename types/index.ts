@@ -274,10 +274,23 @@ export interface EventoIndicacion {
 export type EstadoLevantamiento =
   | 'borrador'
   | 'pendiente_revision'
+  | 'en_revision'
+  | 'requiere_correcciones'
+  | 'requiere_revision_clinica'
+  | 'requiere_revision_comercial'
   | 'revisado'
   | 'aprobado'
+  | 'rechazado'
+  | 'archivado'
+  | 'sustituido'
   | 'convertido'
   | 'cancelado'
+
+export type LevantamientoOrigen =
+  | 'prelevantamiento'
+  | 'urgencia_provisional'
+  | 'migracion_historica'
+  | 'manual'
 
 export type RiesgoNivel = 'bajo' | 'medio' | 'alto'
 export type PrioridadNivel = 'baja' | 'media' | 'alta' | 'urgente'
@@ -344,6 +357,71 @@ export interface ConsentimientoLevantamiento {
   obs_consentimiento?: string
 }
 
+// ----------------------------------------------------------------
+// Tipos del flujo Prospecto → Levantamiento
+
+export interface ProspectoElegible {
+  prospect_id: string
+  preassessment_id: string
+  quote_id: string
+  patient_name: string
+  patient_age: number | null
+  patient_gender: string | null
+  diagnosis: string | null
+  service_address: string | null
+  city: string | null
+  requester_name: string
+  requester_phone: string
+  relationship_to_patient: string
+  physical_score: number
+  clinical_score: number
+  operational_score: number
+  total_score: number
+  risk_color: RiskColor
+  recommended_profile: RecommendedProfile
+  complexity_level: ComplexityLevel
+  blocking_flags: string[]
+  warning_flags: string[]
+  final_price: number | null
+  suggested_price: number
+  calculated_price: number
+  deposit_required: number | null
+  payment_terms: string | null
+  payment_method: string | null
+  accepted_at: string | null
+  requested_service_type: string | null
+  shift_duration_hours: number | null
+  requested_start_date: string | null
+  prospect_created_at: string
+  physical_alerts: string[]
+  clinical_alerts: string[]
+  operational_alerts: string[]
+}
+
+export type BloqueoStep =
+  | 'prelevantamiento'
+  | 'evaluacion_fisica'
+  | 'evaluacion_clinica'
+  | 'evaluacion_operativa'
+  | 'resultado'
+  | 'cotizacion'
+  | 'aceptacion_cotizacion'
+  | 'levantamiento_activo'
+
+export interface ProspectoBloqueado {
+  prospect_id: string
+  patient_name: string
+  requester_name: string
+  prospect_status: ProspectoStatus
+  blocking_reason: string
+  blocking_step: BloqueoStep
+  action_label: string
+  action_url: string
+  active_levantamiento_id: string | null
+  prospect_created_at: string
+}
+
+// ----------------------------------------------------------------
 export interface LevantamientoPaciente {
   id: string
   // Datos del paciente
@@ -446,6 +524,27 @@ export interface LevantamientoPaciente {
   levantado_por?: string | null
   created_at: string
   updated_at: string
+  // Trazabilidad de flujo (post-migración)
+  prospect_id?: string | null
+  preassessment_id?: string | null
+  cotizacion_id?: string | null
+  resultado_evaluacion_id?: string | null
+  levantamiento_origen?: LevantamientoOrigen | null
+  score_prelevantamiento?: number | null
+  score_levantamiento?: number | null
+  diferencias_detectadas?: unknown[]
+  requiere_revision_comercial?: boolean
+  requiere_revision_clinica?: boolean
+  datos_heredados_pendientes?: boolean
+  motivo_archivo?: string | null
+  archivado_por?: string | null
+  archivado_at?: string | null
+  sustituido_por?: string | null
+  urgencia_motivo?: string | null
+  urgencia_fecha_limite?: string | null
+  costo_historico?: number | null
+  costo_cotizado?: number | null
+  costo_vigente?: number | null
   // Relaciones opcionales (joins)
   medicamentos?: LevantamientoMedicamento[]
   materiales?: LevantamientoMaterial[]

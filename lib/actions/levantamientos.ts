@@ -6,6 +6,13 @@ import type {
   LevantamientoPaciente,
   LevantamientoMedicamento,
   LevantamientoMaterial,
+  ProspectoElegible,
+  ProspectoBloqueado,
+  RiskColor,
+  RecommendedProfile,
+  ComplexityLevel,
+  ProspectoStatus,
+  BloqueoStep,
 } from '@/types'
 
 // ============================================================
@@ -202,6 +209,514 @@ export async function cambiarEstadoLevantamiento(
     .from('levantamientos_paciente')
     .update({ estado })
     .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/levantamientos')
+  revalidatePath(`/levantamientos/${id}`)
+  return {}
+}
+
+// ============================================================
+// PROSPECTOS PARA LEVANTAMIENTO
+// ============================================================
+
+// Estados que se consideran "activos" (bloquean la creación de otro levantamiento)
+const ESTADOS_ACTIVOS: string[] = [
+  'borrador',
+  'pendiente_revision',
+  'en_revision',
+  'requiere_correcciones',
+  'requiere_revision_clinica',
+  'requiere_revision_comercial',
+  'revisado',
+  'aprobado',
+]
+
+export async function getProspectosParaLevantamiento(): Promise<{
+  elegibles: ProspectoElegible[]
+  bloqueados: ProspectoBloqueado[]
+}> {
+  const { supabase } = await requireAuth()
+
+  // Todos los prospectos que siguen activos en el flujo
+  const { data: prospects, error: pErr } = await supabase
+    .from('prospects')
+    .select('id, requester_name, requester_phone, requester_whatsapp, requester_email, relationship_to_patient, is_payer, payment_responsible_name, status, urgency, created_at')
+    .not('status', 'in', '(paciente_activo,rechazado,cancelado)')
+    .order('created_at', { ascending: false })
+
+  if (pErr) throw new Error(pErr.message)
+  if (!prospects?.length) return { elegibles: [], bloqueados: [] }
+
+  const prospectIds = prospects.map(p => p.id)
+
+  // Preassessments existentes
+  const { data: preassessments } = await supabase
+    .from('patient_preassessments')
+    .select('id, prospect_id, patient_name, patient_age, patient_gender, service_address, city, diagnosis')
+    .in('prospect_id', prospectIds)
+
+  const preassessmentIds = (preassessments ?? []).map(p => p.id)
+
+  // Evaluaciones (sólo necesitamos saber si existen)
+  const [
+    { data: physicals },
+    { data: clinicals },
+    { data: operationals },
+    { data: results },
+    { data: quotes },
+    { data: serviceRequests },
+    { data: activeLevs },
+  ] = await Promise.all([
+    supabase
+      .from('physical_assessments')
+      .select('id, preassessment_id, physical_score, physical_alerts')
+      .in('preassessment_id', preassessmentIds.length ? preassessmentIds : ['none']),
+    supabase
+      .from('clinical_assessments')
+      .select('id, preassessment_id, clinical_score, clinical_alerts')
+      .in('preassessment_id', preassessmentIds.length ? preassessmentIds : ['none']),
+    supabase
+      .from('operational_risk_assessments')
+      .select('id, preassessment_id, operational_score, operational_alerts')
+      .in('preassessment_id', preassessmentIds.length ? preassessmentIds : ['none']),
+    supabase
+      .from('assessment_results')
+      .select('id, prospect_id, preassessment_id, physical_score, clinical_score, operational_score, total_score, risk_color, recommended_profile, general_complexity_level, blocking_flags, warning_flags')
+      .in('prospect_id', prospectIds)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('care_quotes')
+      .select('id, prospect_id, status, final_price, suggested_price, calculated_price, deposit_required, payment_terms, updated_at')
+      .in('prospect_id', prospectIds)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('service_requests')
+      .select('id, prospect_id, requested_service_type, shift_duration_hours, requested_start_date, payment_method')
+      .in('prospect_id', prospectIds),
+    supabase
+      .from('levantamientos_paciente')
+      .select('id, prospect_id, estado')
+      .in('prospect_id', prospectIds)
+      .in('estado', ESTADOS_ACTIVOS),
+  ])
+
+  // Mapas para lookups O(1) — tipos explícitos porque los arrays pueden ser null
+  type PreRow = { id: string; prospect_id: string; patient_name: string; patient_age: number | null; patient_gender: string | null; service_address: string | null; city: string | null; diagnosis: string | null }
+  type PhysRow = { id: string; preassessment_id: string; physical_score: number; physical_alerts: string[] }
+  type ClRow  = { id: string; preassessment_id: string; clinical_score: number; clinical_alerts: string[] }
+  type OpRow  = { id: string; preassessment_id: string; operational_score: number; operational_alerts: string[] }
+  type ResRow = { id: string; prospect_id: string; physical_score: number; clinical_score: number; operational_score: number; total_score: number; risk_color: string; recommended_profile: string; general_complexity_level: string; blocking_flags: unknown; warning_flags: unknown }
+  type QuoteRow = { id: string; prospect_id: string; status: string; final_price: number | null; suggested_price: number; calculated_price: number; deposit_required: number | null; payment_terms: string | null; updated_at: string }
+  type SrRow  = { id: string; prospect_id: string; requested_service_type: string | null; shift_duration_hours: number | null; requested_start_date: string | null; payment_method: string | null }
+  type LevRow = { id: string; prospect_id: string | null; estado: string }
+
+  const preByProspect = new Map<string, PreRow>()
+  for (const pa of (preassessments as PreRow[] | null) ?? []) preByProspect.set(pa.prospect_id, pa)
+
+  const physicalByPre = new Map<string, PhysRow>()
+  for (const ph of (physicals as PhysRow[] | null) ?? []) physicalByPre.set(ph.preassessment_id, ph)
+
+  const clinicalByPre = new Map<string, ClRow>()
+  for (const cl of (clinicals as ClRow[] | null) ?? []) clinicalByPre.set(cl.preassessment_id, cl)
+
+  const operationalByPre = new Map<string, OpRow>()
+  for (const op of (operationals as OpRow[] | null) ?? []) operationalByPre.set(op.preassessment_id, op)
+
+  // Primer resultado por prospecto (más reciente)
+  const resultByProspect = new Map<string, ResRow>()
+  for (const ar of (results as ResRow[] | null) ?? []) {
+    if (!resultByProspect.has(ar.prospect_id)) resultByProspect.set(ar.prospect_id, ar)
+  }
+
+  // Primera cotización por prospecto (más reciente)
+  const quoteByProspect = new Map<string, QuoteRow>()
+  const acceptedQuoteByProspect = new Map<string, QuoteRow>()
+  for (const cq of (quotes as QuoteRow[] | null) ?? []) {
+    if (!quoteByProspect.has(cq.prospect_id)) quoteByProspect.set(cq.prospect_id, cq)
+    if (cq.status === 'aceptada' && !acceptedQuoteByProspect.has(cq.prospect_id)) {
+      acceptedQuoteByProspect.set(cq.prospect_id, cq)
+    }
+  }
+
+  const srByProspect = new Map<string, SrRow>()
+  for (const sr of (serviceRequests as SrRow[] | null) ?? []) srByProspect.set(sr.prospect_id, sr)
+
+  const activeLevByProspect = new Map<string, LevRow>()
+  for (const lev of (activeLevs as LevRow[] | null) ?? []) {
+    if (lev.prospect_id) activeLevByProspect.set(lev.prospect_id, lev)
+  }
+
+  const elegibles: ProspectoElegible[] = []
+  const bloqueados: ProspectoBloqueado[] = []
+
+  for (const prospect of prospects) {
+    const pre = preByProspect.get(prospect.id)
+    const activeLev = activeLevByProspect.get(prospect.id)
+    const hasPhysical = pre ? physicalByPre.has(pre.id) : false
+    const hasClinical = pre ? clinicalByPre.has(pre.id) : false
+    const hasOperational = pre ? operationalByPre.has(pre.id) : false
+    const hasResult = resultByProspect.has(prospect.id)
+    const acceptedQuote = acceptedQuoteByProspect.get(prospect.id)
+
+    const isEligible =
+      !!pre &&
+      hasPhysical &&
+      hasClinical &&
+      hasOperational &&
+      hasResult &&
+      !!acceptedQuote &&
+      !activeLev
+
+    if (isEligible) {
+      const result = resultByProspect.get(prospect.id)!
+      const sr = srByProspect.get(prospect.id)
+      const physData = physicalByPre.get(pre!.id)
+      const clData = clinicalByPre.get(pre!.id)
+      const opData = operationalByPre.get(pre!.id)
+
+      elegibles.push({
+        prospect_id: prospect.id,
+        preassessment_id: pre!.id,
+        quote_id: acceptedQuote!.id,
+        patient_name: pre!.patient_name,
+        patient_age: pre!.patient_age ?? null,
+        patient_gender: pre!.patient_gender ?? null,
+        diagnosis: pre!.diagnosis ?? null,
+        service_address: pre!.service_address ?? null,
+        city: pre!.city ?? null,
+        requester_name: prospect.requester_name,
+        requester_phone: prospect.requester_phone,
+        relationship_to_patient: prospect.relationship_to_patient,
+        physical_score: result.physical_score,
+        clinical_score: result.clinical_score,
+        operational_score: result.operational_score,
+        total_score: result.total_score,
+        risk_color: result.risk_color as RiskColor,
+        recommended_profile: result.recommended_profile as RecommendedProfile,
+        complexity_level: result.general_complexity_level as ComplexityLevel,
+        blocking_flags: (result.blocking_flags as string[]) ?? [],
+        warning_flags: (result.warning_flags as string[]) ?? [],
+        final_price: acceptedQuote!.final_price ?? null,
+        suggested_price: acceptedQuote!.suggested_price,
+        calculated_price: acceptedQuote!.calculated_price,
+        deposit_required: acceptedQuote!.deposit_required ?? null,
+        payment_terms: acceptedQuote!.payment_terms ?? null,
+        payment_method: sr?.payment_method ?? null,
+        accepted_at: acceptedQuote!.updated_at ?? null,
+        requested_service_type: sr?.requested_service_type ?? null,
+        shift_duration_hours: sr?.shift_duration_hours ?? null,
+        requested_start_date: sr?.requested_start_date ?? null,
+        prospect_created_at: prospect.created_at,
+        physical_alerts: (physData?.physical_alerts as string[]) ?? [],
+        clinical_alerts: (clData?.clinical_alerts as string[]) ?? [],
+        operational_alerts: (opData?.operational_alerts as string[]) ?? [],
+      })
+    } else {
+      // Determinar el paso bloqueado más prioritario
+      let blocking_reason: string
+      let blocking_step: BloqueoStep
+      let action_label: string
+      let action_url: string
+
+      if (activeLev) {
+        blocking_reason = 'Ya existe un levantamiento activo para este paciente'
+        blocking_step = 'levantamiento_activo'
+        action_label = 'Abrir levantamiento'
+        action_url = `/levantamientos/${activeLev.id}`
+      } else if (!pre) {
+        blocking_reason = 'Falta capturar el prelevantamiento (datos del paciente)'
+        blocking_step = 'prelevantamiento'
+        action_label = 'Iniciar prelevantamiento'
+        action_url = `/prospectos/${prospect.id}/prelevantamiento`
+      } else if (!hasPhysical) {
+        blocking_reason = 'Falta completar la evaluación física'
+        blocking_step = 'evaluacion_fisica'
+        action_label = 'Ir a evaluación física'
+        action_url = `/prospectos/${prospect.id}/evaluacion-fisica`
+      } else if (!hasClinical) {
+        blocking_reason = 'Falta completar la evaluación clínica'
+        blocking_step = 'evaluacion_clinica'
+        action_label = 'Ir a evaluación clínica'
+        action_url = `/prospectos/${prospect.id}/evaluacion-clinica`
+      } else if (!hasOperational) {
+        blocking_reason = 'Falta completar la evaluación operativa'
+        blocking_step = 'evaluacion_operativa'
+        action_label = 'Ir a evaluación operativa'
+        action_url = `/prospectos/${prospect.id}/evaluacion-operativa`
+      } else if (!hasResult) {
+        blocking_reason = 'Falta calcular el resultado de evaluación (score de riesgo)'
+        blocking_step = 'resultado'
+        action_label = 'Calcular resultado'
+        action_url = `/prospectos/${prospect.id}/resultado`
+      } else {
+        const quote = quoteByProspect.get(prospect.id)
+        if (!quote) {
+          blocking_reason = 'Falta generar la cotización del servicio'
+          blocking_step = 'cotizacion'
+          action_label = 'Ir a cotización'
+          action_url = `/prospectos/${prospect.id}/cotizacion`
+        } else {
+          blocking_reason = `Cotización generada (${quote.status}), pendiente de aceptación por la familia`
+          blocking_step = 'aceptacion_cotizacion'
+          action_label = 'Ver cotización'
+          action_url = `/prospectos/${prospect.id}/cotizacion`
+        }
+      }
+
+      bloqueados.push({
+        prospect_id: prospect.id,
+        patient_name: pre?.patient_name ?? `Paciente (solicita: ${prospect.requester_name})`,
+        requester_name: prospect.requester_name,
+        prospect_status: prospect.status as ProspectoStatus,
+        blocking_reason,
+        blocking_step,
+        action_label,
+        action_url,
+        active_levantamiento_id: activeLev?.id ?? null,
+        prospect_created_at: prospect.created_at,
+      })
+    }
+  }
+
+  return { elegibles, bloqueados }
+}
+
+// ============================================================
+// CREAR LEVANTAMIENTO DESDE PROSPECTO (FLUJO OFICIAL)
+// ============================================================
+
+export async function crearLevantamientoDesdeProspecto(
+  prospectId: string,
+  cotizacionId: string
+): Promise<ActionResult & { id?: string }> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
+  // VALIDACIÓN BACKEND: no crear si ya existe levantamiento activo
+  const { data: existingLev } = await supabase
+    .from('levantamientos_paciente')
+    .select('id, estado')
+    .eq('prospect_id', prospectId)
+    .in('estado', ESTADOS_ACTIVOS)
+    .limit(1)
+    .maybeSingle()
+
+  if (existingLev) {
+    return { error: 'Ya existe un levantamiento activo para este prospecto. Archívalo antes de crear uno nuevo.' }
+  }
+
+  // Obtener cotización aceptada
+  const { data: quote, error: qErr } = await supabase
+    .from('care_quotes')
+    .select('*')
+    .eq('id', cotizacionId)
+    .eq('prospect_id', prospectId)
+    .eq('status', 'aceptada')
+    .single()
+
+  if (qErr || !quote) return { error: 'La cotización no existe o no ha sido aceptada' }
+
+  // Obtener prospecto
+  const { data: prospect, error: proErr } = await supabase
+    .from('prospects')
+    .select('*')
+    .eq('id', prospectId)
+    .single()
+
+  if (proErr || !prospect) return { error: 'Prospecto no encontrado' }
+
+  // Obtener preassessment
+  const { data: pre, error: preErr } = await supabase
+    .from('patient_preassessments')
+    .select('*')
+    .eq('prospect_id', prospectId)
+    .single()
+
+  if (preErr || !pre) return { error: 'Prelevantamiento no encontrado. Completa el flujo antes de crear el levantamiento.' }
+
+  // Obtener resultado de evaluación
+  const { data: result } = await supabase
+    .from('assessment_results')
+    .select('*')
+    .eq('prospect_id', prospectId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!result) return { error: 'Resultado de evaluación no encontrado. Calcula el score antes de crear el levantamiento.' }
+
+  // Obtener datos complementarios
+  const { data: sr } = await supabase
+    .from('service_requests')
+    .select('*')
+    .eq('prospect_id', prospectId)
+    .maybeSingle()
+
+  const { data: clinicalData } = await supabase
+    .from('clinical_assessments')
+    .select('*')
+    .eq('preassessment_id', pre.id)
+    .maybeSingle()
+
+  const { data: physicalData } = await supabase
+    .from('physical_assessments')
+    .select('*')
+    .eq('preassessment_id', pre.id)
+    .maybeSingle()
+
+  // Mapear datos clínicos al levantamiento
+  const usaOxigeno = clinicalData ? clinicalData.oxygen_use >= 2 : false
+  const devicesList: string[] = (clinicalData?.devices_list as string[]) ?? []
+  const usaSonda = devicesList.some(d => d.toLowerCase().includes('sonda') || d.toLowerCase().includes('foley'))
+  const usaCateter = devicesList.some(d => d.toLowerCase().includes('cateter') || d.toLowerCase().includes('central'))
+
+  // Mapear movilidad desde score físico
+  const mobScore = (physicalData?.mobility_status ?? 1) as number
+  const movilidadMap: Record<number, string> = {
+    1: 'independiente', 2: 'con_apoyo_minimo', 3: 'con_apoyo_moderado', 4: 'dependiente', 5: 'postrado',
+  }
+  const movilidad = movilidadMap[Math.min(mobScore, 5)] ?? 'independiente'
+
+  // Separar nombre/apellido del paciente (preassessment guarda nombre completo)
+  const nameParts = (pre.patient_name ?? '').trim().split(/\s+/)
+  const pacienteNombre = nameParts[0] ?? pre.patient_name
+  const pacienteApellido = nameParts.slice(1).join(' ') || '—'
+
+  // Calcular riesgo y prioridad desde el resultado
+  const riesgoMap: Record<string, string> = { verde: 'bajo', amarillo: 'bajo', naranja: 'medio', rojo: 'alto' }
+  const prioridadMap: Record<string, string> = { bajo: 'baja', medio: 'media', alto: 'alta', especializado: 'urgente' }
+  const riesgoFinal = riesgoMap[result.risk_color as string] ?? 'bajo'
+  const prioridad = prioridadMap[result.general_complexity_level as string] ?? 'media'
+
+  const precioFinal = (quote.final_price as number | null) ?? (quote.suggested_price as number)
+
+  const { data: lev, error: levErr } = await supabase
+    .from('levantamientos_paciente')
+    .insert({
+      // Trazabilidad
+      prospect_id:              prospectId,
+      preassessment_id:         pre.id,
+      cotizacion_id:            cotizacionId,
+      resultado_evaluacion_id:  result.id,
+      levantamiento_origen:     'prelevantamiento',
+      score_prelevantamiento:   result.total_score,
+      datos_heredados_pendientes: true,
+
+      // Datos del paciente (del preassessment)
+      paciente_nombre:           pacienteNombre,
+      paciente_apellido:         pacienteApellido,
+      paciente_sexo:             (pre.patient_gender as string | null) ?? null,
+      paciente_domicilio:        (pre.service_address as string | null) ?? null,
+      paciente_ciudad:           (pre.city as string | null) ?? null,
+      paciente_fecha_nacimiento: null,
+      paciente_telefono:         null,
+      paciente_referencias:      null,
+      paciente_estado_geo:       null,
+      paciente_cp:               null,
+      paciente_obs_ubicacion:    null,
+
+      // Responsable (del prospecto)
+      responsable_nombre:          prospect.requester_name,
+      responsable_parentesco:      prospect.relationship_to_patient,
+      responsable_tel_principal:   prospect.requester_phone,
+      responsable_tel_alternativo: (prospect.requester_whatsapp as string | null) ?? null,
+      responsable_email:           (prospect.requester_email as string | null) ?? null,
+      responsable_es_pagador:      prospect.is_payer ?? false,
+      responsable_obs:             null,
+
+      // Información clínica básica
+      diagnostico_principal:    (pre.diagnosis as string | null) ?? null,
+      diagnosticos_secundarios: null,
+      medico_tratante:          (pre.doctor_name as string | null) ?? null,
+      hospital_referencia:      (pre.hospital_reference as string | null) ?? null,
+      movilidad,
+      usa_oxigeno:  usaOxigeno,
+      usa_sonda:    usaSonda,
+      usa_cateter:  usaCateter,
+      usa_panal:    false,
+      tiene_dolor:  false,
+      tiene_heridas: false,
+
+      // Plan de servicio
+      tipo_turno:              (sr?.shift_schedule as string | null) ?? null,
+      horario_requerido:       (sr?.shift_schedule as string | null) ?? null,
+      frecuencia_servicio:     (sr?.frequency as string | null) ?? null,
+      fecha_inicio_estimada:   (sr?.requested_start_date as string | null) ?? null,
+      nivel_personal:          result.recommended_profile as string,
+      requiere_supervision:    (result.requires_clinical_supervision as boolean) ?? false,
+      num_personas_requeridas: 1,
+      tipos_servicio:          sr?.requested_service_type ? [sr.requested_service_type] : [],
+
+      // Riesgo y prioridad
+      riesgo_sugerido:          riesgoFinal,
+      riesgo_final:             riesgoFinal,
+      riesgo_modificado_manual: false,
+      prioridad,
+
+      // Costos diferenciados
+      costo_historico:   null,
+      costo_cotizado:    precioFinal,
+      costo_vigente:     precioFinal,
+      costo_autorizado:  precioFinal,
+      costo_estimado:    precioFinal,
+      forma_pago:        (sr?.payment_method as string | null) ?? null,
+      responsable_pago:  prospect.is_payer
+        ? prospect.requester_name
+        : ((prospect.payment_responsible_name as string | null) ?? null),
+
+      // Solicitud
+      fecha_solicitud:     new Date().toISOString(),
+      urgencia_percibida:  (prospect.urgency as string) ?? 'media',
+      medio_contacto:      null,
+      persona_solicita:    prospect.requester_name,
+      relacion_solicitante: prospect.relationship_to_patient,
+      motivo_general:      (pre.general_observations as string | null) ?? null,
+
+      // Defaults
+      orientacion:            [],
+      actividades_enfermeria: [],
+      entorno:                {},
+      consentimiento:         {},
+      signos_vitales:         {},
+      estado:                 'borrador',
+      levantado_por:          perfil.id,
+    })
+    .select('id')
+    .single()
+
+  if (levErr) return { error: levErr.message }
+
+  revalidatePath('/levantamientos')
+  return { id: lev.id }
+}
+
+// ============================================================
+// ARCHIVAR LEVANTAMIENTO
+// ============================================================
+
+export async function archivarLevantamiento(
+  id: string,
+  motivo: string
+): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
+
+  if (!motivo?.trim()) {
+    return { error: 'Se requiere un motivo para archivar el levantamiento' }
+  }
+
+  const { error } = await supabase
+    .from('levantamientos_paciente')
+    .update({
+      estado:        'archivado',
+      motivo_archivo: motivo.trim(),
+      archivado_por:  perfil.id,
+      archivado_at:   new Date().toISOString(),
+    })
+    .eq('id', id)
+    .not('estado', 'in', '(archivado,sustituido,convertido)')
 
   if (error) return { error: error.message }
 
