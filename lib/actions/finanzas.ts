@@ -84,7 +84,8 @@ export type IngresosFilter = {
 }
 
 export async function getIngresos(filters?: IngresosFilter): Promise<FinancialIncome[]> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
 
   let query = supabase
     .from('financial_incomes')
@@ -109,7 +110,8 @@ export async function getIngresos(filters?: IngresosFilter): Promise<FinancialIn
 }
 
 export async function getIngreso(id: string): Promise<FinancialIncome> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data, error } = await supabase
     .from('financial_incomes')
     .select('*, paciente:pacientes(id,nombre,apellido), caso:casos(id,titulo)')
@@ -276,7 +278,8 @@ export type SalidasFilter = {
 }
 
 export async function getSalidas(filters?: SalidasFilter): Promise<FinancialExpense[]> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
 
   let query = supabase
     .from('financial_expenses')
@@ -303,7 +306,8 @@ export async function getSalidas(filters?: SalidasFilter): Promise<FinancialExpe
 }
 
 export async function getSalida(id: string): Promise<FinancialExpense> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data, error } = await supabase
     .from('financial_expenses')
     .select(
@@ -489,7 +493,8 @@ export async function marcarSalidaPorComprobar(id: string): Promise<ActionResult
 // ─── DASHBOARD FINANCIERO ─────────────────────────────────────────────────────
 
 export async function getDashboardFinanciero(): Promise<DashboardFinanciero> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
 
   const hoy         = new Date().toISOString().split('T')[0]
   const inicioSemana = new Date(Date.now() - 6 * 86_400_000).toISOString().split('T')[0]
@@ -567,7 +572,8 @@ export async function getDashboardFinanciero(): Promise<DashboardFinanciero> {
 // ─── CUENTAS POR COBRAR ───────────────────────────────────────────────────────
 
 export async function getCuentasPorCobrar(): Promise<FinancialIncome[]> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data, error } = await supabase
     .from('financial_incomes')
     .select('*, paciente:pacientes(id,nombre,apellido), caso:casos(id,titulo)')
@@ -581,7 +587,8 @@ export async function getCuentasPorCobrar(): Promise<FinancialIncome[]> {
 // ─── CUENTAS POR PAGAR ────────────────────────────────────────────────────────
 
 export async function getCuentasPorPagar(): Promise<FinancialExpense[]> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data, error } = await supabase
     .from('financial_expenses')
     .select(
@@ -597,7 +604,8 @@ export async function getCuentasPorPagar(): Promise<FinancialExpense[]> {
 // ─── BALANCE POR PACIENTE ──────────────────────────────────────────────────────
 
 export async function getBalancePaciente(pacienteId: string): Promise<BalancePaciente> {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
 
   const [{ data: paciente }, { data: incomes }, { data: expenses }] = await Promise.all([
     supabase.from('pacientes').select('*').eq('id', pacienteId).single(),
@@ -661,7 +669,8 @@ export async function getBalancePaciente(pacienteId: string): Promise<BalancePac
 // ─── BALANCE POR CASO/SERVICIO ────────────────────────────────────────────────
 
 export async function getBalanceCaso(casoId: string) {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
 
   const [{ data: caso }, { data: incomes }, { data: expenses }] = await Promise.all([
     supabase

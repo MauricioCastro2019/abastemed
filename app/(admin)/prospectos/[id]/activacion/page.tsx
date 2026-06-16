@@ -1,11 +1,19 @@
 import { getActivationChecklist, getCareQuote } from '@/lib/actions/cotizacion'
 import { getPreassessment } from '@/lib/actions/evaluaciones'
 import { ActivacionChecklistForm } from '@/components/admin/prospectos/ActivacionChecklistForm'
+import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 export default async function ActivacionPage({ params }: { params: { id: string } }) {
   const { id } = params
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const { data: perfil } = await supabase.from('perfiles').select('rol').eq('id', user.id).single()
+  if (perfil?.rol !== 'admin') redirect(`/prospectos/${id}`)
   const [preassessment, checklist, quote] = await Promise.all([
     getPreassessment(id),
     getActivationChecklist(id),

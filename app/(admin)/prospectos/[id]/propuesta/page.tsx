@@ -1,10 +1,18 @@
 import { getCareQuote, getGeneratedDocuments } from '@/lib/actions/cotizacion'
 import { PropuestaPageClient } from '@/components/admin/prospectos/PropuestaPageClient'
+import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 export default async function PropuestaPage({ params }: { params: { id: string } }) {
   const { id } = params
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const { data: perfil } = await supabase.from('perfiles').select('rol').eq('id', user.id).single()
+  if (perfil?.rol !== 'admin') redirect(`/prospectos/${id}`)
   const [documents, quote] = await Promise.all([
     getGeneratedDocuments(id),
     getCareQuote(id),

@@ -8,7 +8,8 @@ import { calculatePrice, validateFinalPrice, type PriceCalculationInput } from '
 // ─── COTIZACIÓN ───────────────────────────────────────────────
 
 export async function getCareQuote(prospectId: string) {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data } = await supabase
     .from('care_quotes')
     .select('*')
@@ -20,7 +21,8 @@ export async function getCareQuote(prospectId: string) {
 }
 
 export async function getCareQuoteAdjustments(quoteId: string) {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data } = await supabase
     .from('quote_adjustments')
     .select('*')
@@ -37,7 +39,7 @@ export async function calcularCotizacion(
   formData: FormData,
 ): Promise<ActionResult & { quoteId?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
 
   const [srRes, arRes] = await Promise.all([
     supabase.from('service_requests').select('*').eq('id', serviceRequestId).single(),
@@ -101,7 +103,7 @@ export async function actualizarPrecioFinal(
   formData: FormData,
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
 
   const finalPrice = fdNum(formData, 'final_price')
   const reason     = fd(formData, 'adjustment_reason')
@@ -146,7 +148,7 @@ export async function aceptarCotizacion(
   nota: string,
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
 
   const { data: quote } = await supabase
     .from('care_quotes')
@@ -184,7 +186,8 @@ export async function aceptarCotizacion(
 // ─── DOCUMENTOS / PROPUESTAS ──────────────────────────────────
 
 export async function getGeneratedDocuments(prospectId: string) {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data } = await supabase
     .from('generated_documents')
     .select('*')
@@ -199,7 +202,7 @@ export async function generarDocumento(
   documentType: string,
 ): Promise<ActionResult & { docId?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
 
   const [prospectRes, preassessmentRes, quoteRes, arRes] = await Promise.all([
     supabase.from('prospects').select('*').eq('id', prospectId).single(),
@@ -429,7 +432,7 @@ _Abastemed — Cuidado con estructura._`
 
 export async function marcarDocumentoEnviado(docId: string, prospectId: string): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
   const { error } = await supabase
     .from('generated_documents')
     .update({ status: 'enviado', sent_at: new Date().toISOString() })
@@ -442,7 +445,7 @@ export async function marcarDocumentoEnviado(docId: string, prospectId: string):
 
 export async function marcarDocumentoAceptado(docId: string, prospectId: string): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
   const { error } = await supabase
     .from('generated_documents')
     .update({ status: 'aceptado', accepted_at: new Date().toISOString() })
@@ -456,7 +459,8 @@ export async function marcarDocumentoAceptado(docId: string, prospectId: string)
 // ─── CHECKLIST DE ACTIVACIÓN ──────────────────────────────────
 
 export async function getActivationChecklist(prospectId: string) {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
   const { data } = await supabase
     .from('activation_checklists')
     .select('*')
@@ -472,7 +476,7 @@ export async function upsertActivationChecklist(
   formData: FormData,
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
 
   const boolFields = [
     'patient_data_complete', 'address_confirmed', 'payment_responsible_confirmed',
@@ -546,7 +550,7 @@ export async function convertirAPaciente(
   prospectId: string,
 ): Promise<ActionResult & { pacienteId?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin')
 
   // Validar checklist
   const { data: checklist } = await supabase

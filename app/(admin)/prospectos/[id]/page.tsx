@@ -10,12 +10,13 @@ import {
 import { getCareQuote, getGeneratedDocuments, getActivationChecklist } from '@/lib/actions/cotizacion'
 import { SemaforoBadge, ProspectoStatusBadge } from '@/components/admin/prospectos/SemaforoBadge'
 import { ResultadoCard } from '@/components/admin/prospectos/ResultadoCard'
+import { createClient } from '@/lib/supabase/server'
 import {
   ArrowLeft, Phone, Mail, ChevronRight, CheckCircle,
   Users, FileText,
 } from 'lucide-react'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
 import type { RiskColor, ComplexityLevel } from '@/types'
@@ -35,6 +36,12 @@ export default async function ProspectoDetailPage({
 }) {
   const { id } = params
 
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const { data: perfilData } = await supabase.from('perfiles').select('rol').eq('id', user.id).single()
+  const esAdmin = perfilData?.rol === 'admin'
+
   let data: Awaited<ReturnType<typeof getProspectoConRelaciones>>
   try {
     data = await getProspectoConRelaciones(id)
@@ -47,9 +54,9 @@ export default async function ProspectoDetailPage({
   const [preassessment, result, quote, documents, checklist, serviceRequest] = await Promise.all([
     getPreassessment(id),
     getAssessmentResult(id),
-    getCareQuote(id),
-    getGeneratedDocuments(id),
-    getActivationChecklist(id),
+    esAdmin ? getCareQuote(id) : Promise.resolve(null),
+    esAdmin ? getGeneratedDocuments(id) : Promise.resolve([]),
+    esAdmin ? getActivationChecklist(id) : Promise.resolve(null),
     getServiceRequest(id),
   ])
 
@@ -57,17 +64,22 @@ export default async function ProspectoDetailPage({
   const clinicalDone  = preassessment ? await getClinicalAssessment(preassessment.id).then(Boolean) : false
   const operatDone    = preassessment ? await getOperationalAssessment(preassessment.id).then(Boolean) : false
 
-  const STEPS: StepConfig[] = [
+  const STEPS_BASE: StepConfig[] = [
     { id: 'prelevantamiento', label: 'Pre-levantamiento del paciente', href: id => `/prospectos/${id}/prelevantamiento`, done: !!preassessment },
     { id: 'fisica',           label: 'Evaluación física',              href: id => `/prospectos/${id}/evaluacion-fisica`,    done: physicalDone },
     { id: 'clinica',          label: 'Evaluación clínica',             href: id => `/prospectos/${id}/evaluacion-clinica`,   done: clinicalDone },
     { id: 'operativa',        label: 'Evaluación operativa/familiar',  href: id => `/prospectos/${id}/evaluacion-operativa`, done: operatDone },
-    { id: 'comercial',        label: 'Datos comerciales',              href: id => `/prospectos/${id}/datos-comerciales`,    done: !!serviceRequest },
+    { id: 'comercial',        label: 'Datos del servicio',             href: id => `/prospectos/${id}/datos-comerciales`,    done: !!serviceRequest },
     { id: 'resultado',        label: 'Resultado / Motor de score',     href: id => `/prospectos/${id}/resultado`,            done: !!result },
+  ]
+
+  const STEPS_ADMIN_EXTRA: StepConfig[] = [
     { id: 'cotizacion',       label: 'Cotización',                     href: id => `/prospectos/${id}/cotizacion`,           done: !!quote },
     { id: 'propuesta',        label: 'Propuesta',                      href: id => `/prospectos/${id}/propuesta`,            done: documents.length > 0 },
     { id: 'activacion',       label: 'Checklist de activación',        href: id => `/prospectos/${id}/activacion`,           done: !!checklist?.is_ready_to_activate },
   ]
+
+  const STEPS: StepConfig[] = esAdmin ? [...STEPS_BASE, ...STEPS_ADMIN_EXTRA] : STEPS_BASE
 
   const relationship: Record<string, string> = {
     hijo_a: 'Hijo/a', esposo_a: 'Esposo/a', hermano_a: 'Hermano/a', nieto_a: 'Nieto/a',
@@ -140,7 +152,7 @@ export default async function ProspectoDetailPage({
                     <span className="font-medium">Autoriza:</span> {prospect.authorization_responsible_name}
                   </p>
                 )}
-                {!prospect.is_payer && prospect.payment_responsible_name && (
+                {esAdmin && !prospect.is_payer && prospect.payment_responsible_name && (
                   <p className="text-xs text-gray-500">
                     <span className="font-medium">Paga:</span> {prospect.payment_responsible_name}
                     {prospect.payment_responsible_phone && ` · ${prospect.payment_responsible_phone}`}
@@ -190,8 +202,8 @@ export default async function ProspectoDetailPage({
             </div>
           )}
 
-          {/* Cotización */}
-          {quote && (
+          {/* Cotización — solo administración */}
+          {esAdmin && quote && (
             <div className="bg-white rounded-xl shadow-sm p-5">
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Cotización</h2>
               <p className="text-3xl font-bold" style={{ color: '#2AABBF' }}>
@@ -249,8 +261,8 @@ export default async function ProspectoDetailPage({
             </div>
           )}
 
-          {/* Propuestas generadas */}
-          {documents.length > 0 && (
+          {/* Propuestas generadas — solo administración */}
+          {esAdmin && documents.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Documentos generados</h2>
               <div className="space-y-2">
@@ -269,8 +281,8 @@ export default async function ProspectoDetailPage({
             </div>
           )}
 
-          {/* Checklist status */}
-          {checklist && (
+          {/* Checklist status — solo administración */}
+          {esAdmin && checklist && (
             <div className={`rounded-xl shadow-sm p-5 border-2 ${checklist.is_ready_to_activate ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
               <div className="flex items-center justify-between">
                 <p className={`text-sm font-semibold ${checklist.is_ready_to_activate ? 'text-green-700' : 'text-amber-700'}`}>
