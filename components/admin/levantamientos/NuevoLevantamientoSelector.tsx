@@ -156,9 +156,10 @@ function ArchivarModal({ levId, onCancel, onSuccess }: ArchivarModalProps) {
 
 interface ElegibleCardProps {
   p: ProspectoElegible
+  esAdmin: boolean
 }
 
-function ElegibleCard({ p }: ElegibleCardProps) {
+function ElegibleCard({ p, esAdmin }: ElegibleCardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -210,10 +211,12 @@ function ElegibleCard({ p }: ElegibleCardProps) {
               {p.diagnosis ? ` · ${p.diagnosis}` : ''}
             </p>
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-xl font-bold" style={{ color: '#2AABBF' }}>{fmtMoney(precioDisplay)}</p>
-            <p className="text-xs text-gray-400">/turno · cotización aceptada</p>
-          </div>
+          {esAdmin && (
+            <div className="text-right shrink-0">
+              <p className="text-xl font-bold" style={{ color: '#2AABBF' }}>{fmtMoney(precioDisplay)}</p>
+              <p className="text-xs text-gray-400">/turno · cotización aceptada</p>
+            </div>
+          )}
         </div>
 
         {/* Scores */}
@@ -266,7 +269,7 @@ function ElegibleCard({ p }: ElegibleCardProps) {
               <span>Aceptado: {fmtDate(p.accepted_at)}</span>
             </div>
           )}
-          {p.deposit_required && (
+          {esAdmin && p.deposit_required && (
             <div className="flex items-center gap-1.5 text-gray-600">
               <Shield size={13} className="text-gray-400 shrink-0" />
               <span>Anticipo: {fmtMoney(p.deposit_required)}</span>
@@ -420,9 +423,10 @@ function BloqueadoCard({ p, onArchivado }: BloqueadoCardProps) {
 interface Props {
   elegibles: ProspectoElegible[]
   bloqueados: ProspectoBloqueado[]
+  esAdmin: boolean
 }
 
-export function NuevoLevantamientoSelector({ elegibles: initialElegibles, bloqueados: initialBloqueados }: Props) {
+export function NuevoLevantamientoSelector({ elegibles: initialElegibles, bloqueados: initialBloqueados, esAdmin }: Props) {
   const router = useRouter()
   const [elegibles] = useState(initialElegibles)
   const [bloqueados] = useState(initialBloqueados)
@@ -478,7 +482,7 @@ export function NuevoLevantamientoSelector({ elegibles: initialElegibles, bloque
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {elegibles.map(p => (
-              <ElegibleCard key={p.prospect_id} p={p} />
+              <ElegibleCard key={p.prospect_id} p={p} esAdmin={esAdmin} />
             ))}
           </div>
         </section>

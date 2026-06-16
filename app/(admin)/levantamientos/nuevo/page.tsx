@@ -1,10 +1,18 @@
 import { getProspectosParaLevantamiento } from '@/lib/actions/levantamientos'
 import { NuevoLevantamientoSelector } from '@/components/admin/levantamientos/NuevoLevantamientoSelector'
+import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import type { ProspectoElegible, ProspectoBloqueado } from '@/types'
 
 export default async function NuevoLevantamientoPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const { data: perfilData } = await supabase.from('perfiles').select('rol').eq('id', user.id).single()
+  const esAdmin = perfilData?.rol === 'admin'
+
   let elegibles: ProspectoElegible[] = []
   let bloqueados: ProspectoBloqueado[] = []
   let fetchError: string | null = null
@@ -48,7 +56,7 @@ export default async function NuevoLevantamientoPage() {
           </Link>
         </div>
       ) : (
-        <NuevoLevantamientoSelector elegibles={elegibles} bloqueados={bloqueados} />
+        <NuevoLevantamientoSelector elegibles={elegibles} bloqueados={bloqueados} esAdmin={esAdmin} />
       )}
     </div>
   )
