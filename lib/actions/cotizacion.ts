@@ -138,6 +138,49 @@ export async function actualizarPrecioFinal(
   return {}
 }
 
+// ─── ACEPTAR COTIZACIÓN (ADMIN) ───────────────────────────────
+
+export async function aceptarCotizacion(
+  quoteId: string,
+  prospectId: string,
+  nota: string,
+): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
+  const { data: quote } = await supabase
+    .from('care_quotes')
+    .select('status')
+    .eq('id', quoteId)
+    .single()
+
+  if (!quote) return { error: 'Cotización no encontrada.' }
+  if (quote.status === 'aceptada') return { error: 'La cotización ya está aceptada.' }
+  if (quote.status === 'rechazada' || quote.status === 'vencida') {
+    return { error: `No se puede aceptar una cotización con estado "${quote.status}".` }
+  }
+
+  const { error: qErr } = await supabase
+    .from('care_quotes')
+    .update({
+      status:           'aceptada',
+      authorized_by:    perfil.id,
+      adjustment_reason: nota ? `Aceptación admin: ${nota}` : (quote as { adjustment_reason?: string }).adjustment_reason ?? null,
+    })
+    .eq('id', quoteId)
+
+  if (qErr) return { error: qErr.message }
+
+  await supabase
+    .from('prospects')
+    .update({ status: 'propuesta_aceptada' })
+    .eq('id', prospectId)
+
+  revalidatePath(`/prospectos/${prospectId}`)
+  revalidatePath(`/prospectos/${prospectId}/cotizacion`)
+  return {}
+}
+
 // ─── DOCUMENTOS / PROPUESTAS ──────────────────────────────────
 
 export async function getGeneratedDocuments(prospectId: string) {

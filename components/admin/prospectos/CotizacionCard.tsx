@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { actualizarPrecioFinal } from '@/lib/actions/cotizacion'
+import { useRouter } from 'next/navigation'
+import { CheckCircle2, Loader2 } from 'lucide-react'
+import { actualizarPrecioFinal, aceptarCotizacion } from '@/lib/actions/cotizacion'
 import type { CareQuote, QuoteAdjustment, AssessmentResult, ServiceRequest } from '@/types'
 
 interface Props {
@@ -39,12 +41,29 @@ function fmt(n: number) {
 }
 
 export function CotizacionCard({ quote, adjustments, result, serviceRequest, prospectId, isAdmin }: Props) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error,   setError]   = useState('')
   const [success, setSuccess] = useState('')
   const [editPrice, setEditPrice]   = useState(false)
   const [finalPrice, setFinalPrice] = useState(Number(quote.final_price ?? quote.suggested_price))
   const [reason, setReason]         = useState(quote.adjustment_reason ?? '')
+
+  // Aceptación admin
+  const [notaAceptacion, setNotaAceptacion] = useState('')
+  const [acceptPending, startAcceptTransition] = useTransition()
+  const [acceptError, setAcceptError] = useState('')
+
+  const yaAceptada = quote.status === 'aceptada'
+
+  function handleAceptar() {
+    setAcceptError('')
+    startAcceptTransition(async () => {
+      const res = await aceptarCotizacion(quote.id, prospectId, notaAceptacion)
+      if (res.error) { setAcceptError(res.error); return }
+      router.refresh()
+    })
+  }
 
   const isBelowMinimum = finalPrice < Number(quote.minimum_recommended_price)
 
@@ -207,6 +226,60 @@ export function CotizacionCard({ quote, adjustments, result, serviceRequest, pro
           )}
         </div>
       </div>
+
+      {/* ── Aceptación admin ───────────────────────────────────── */}
+      {isAdmin && (
+        <div className={`rounded-xl shadow-sm p-6 border-2 ${yaAceptada ? 'bg-green-50 border-green-200' : 'bg-white border-dashed border-gray-200'}`}>
+          {yaAceptada ? (
+            <div className="flex items-center gap-3">
+              <CheckCircle2 size={22} className="text-green-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-green-700">Cotización aceptada</p>
+                <p className="text-sm text-green-600 mt-0.5">
+                  Esta cotización fue aceptada y el prospecto está listo para levantamiento.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+                  Aceptar cotización (Admin)
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Úsalo cuando la familia confirmó verbalmente o por WhatsApp sin una cuenta en el sistema.
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Nota de aceptación (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={notaAceptacion}
+                  onChange={e => setNotaAceptacion(e.target.value)}
+                  placeholder="Ej: Familia confirmó por WhatsApp el 16-jun"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2AABBF] bg-white"
+                />
+              </div>
+              {acceptError && (
+                <p className="text-sm text-red-600">{acceptError}</p>
+              )}
+              <button
+                onClick={handleAceptar}
+                disabled={acceptPending}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg hover:opacity-90 disabled:opacity-60 transition-all"
+                style={{ backgroundColor: '#166534' }}
+              >
+                {acceptPending
+                  ? <><Loader2 size={15} className="animate-spin" /> Aceptando…</>
+                  : <><CheckCircle2 size={15} /> Marcar como aceptada</>
+                }
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
