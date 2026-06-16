@@ -7,6 +7,7 @@ export type CategoriaInsumo = 'solucion' | 'medicamento' | 'material' | 'servici
 export type StatusPaciente = 'activo' | 'cerrado'
 export type StatusCaso = 'activo' | 'pausado' | 'cerrado'
 export type StatusTurno = 'programado' | 'activo' | 'completado'
+export type ValidacionStatusTurno = 'pendiente' | 'en_revision' | 'validado' | 'rechazado' | 'en_aclaracion'
 export type StatusCobranza = 'pendiente' | 'pagado'
 export type RolUsuario = 'admin' | 'enfermero' | 'familiar' | 'jefe_enfermeros'
 
@@ -1101,4 +1102,216 @@ export interface DashboardFinanciero {
   gastos_por_comprobar: number
   total_ingresos_activos: number
   total_salidas_activas: number
+}
+
+// ============================================================
+// MÓDULO NÓMINA — Cortes y pagos de personal
+// ============================================================
+
+export type EstadoPayrollPeriod =
+  | 'borrador'
+  | 'en_revision'
+  | 'validado'
+  | 'autorizado'
+  | 'parcialmente_pagado'
+  | 'pagado'
+  | 'cerrado'
+  | 'cancelado'
+
+export type EstadoValidacionPayrollItem = 'pendiente' | 'validado' | 'rechazado' | 'en_aclaracion'
+export type EstadoPagoPayrollItem = 'pendiente' | 'autorizado' | 'pagado' | 'cancelado'
+
+export interface PayrollPeriod {
+  id: string
+  nombre: string
+  fecha_inicio: string
+  fecha_fin: string
+  fecha_corte?: string | null
+  fecha_programada_pago?: string | null
+  estado: EstadoPayrollPeriod
+  total_turnos: number
+  total_horas: number
+  total_bruto: number
+  total_ajustes: number
+  total_pagar: number
+  observaciones?: string | null
+  created_by?: string | null
+  reviewed_by?: string | null
+  reviewed_at?: string | null
+  approved_by?: string | null
+  approved_at?: string | null
+  paid_at?: string | null
+  cancelled_by?: string | null
+  motivo_cancelacion?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  creador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
+  aprobador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
+  items?: PayrollItem[]
+}
+
+export interface PayrollItem {
+  id: string
+  periodo_id: string
+  enfermero_id: string
+  turno_id?: string | null
+  caso_id?: string | null
+  paciente_id?: string | null
+  horas_programadas: number
+  horas_reales: number
+  horas_pagables: number
+  tarifa_hora: number
+  importe_base: number
+  horas_extra: number
+  tarifa_hora_extra: number
+  importe_extra: number
+  apoyo_transporte: number
+  bono: number
+  descuento: number
+  ajuste: number
+  motivo_ajuste?: string | null
+  total_pagar: number
+  estado_validacion: EstadoValidacionPayrollItem
+  validado_por?: string | null
+  validado_at?: string | null
+  estado_pago: EstadoPagoPayrollItem
+  financial_expense_id?: string | null
+  metodo_pago?: string | null
+  referencia_pago?: string | null
+  comprobante_url?: string | null
+  pagado_at?: string | null
+  pagado_por?: string | null
+  observaciones?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  enfermero?: Pick<Enfermero, 'id' | 'nombre' | 'apellido' | 'telefono'> | null
+  turno?: Pick<Turno, 'id' | 'fecha_inicio' | 'fecha_fin' | 'status'> | null
+  caso?: Pick<Caso, 'id' | 'titulo'> | null
+  paciente?: Pick<Paciente, 'id' | 'nombre' | 'apellido'> | null
+  periodo?: Pick<PayrollPeriod, 'id' | 'nombre' | 'fecha_inicio' | 'fecha_fin' | 'estado' | 'fecha_programada_pago'> | null
+}
+
+export interface ResumenPagoEnfermero {
+  enfermero_id: string
+  enfermero_nombre: string
+  enfermero_apellido: string
+  total_turnos: number
+  total_horas: number
+  total_pagar: number
+  items: PayrollItem[]
+}
+
+// ============================================================
+// MÓDULO BITÁCORA — Trazabilidad de acciones
+// ============================================================
+
+export interface BitacoraEntry {
+  id: string
+  accion: string
+  entidad: string
+  entidad_id?: string | null
+  descripcion?: string | null
+  valores_previos?: Record<string, unknown> | null
+  valores_nuevos?: Record<string, unknown> | null
+  motivo?: string | null
+  realizado_por?: string | null
+  realizado_at: string
+  metadata?: Record<string, unknown> | null
+  // Relaciones opcionales
+  usuario?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido' | 'rol'> | null
+}
+
+// ============================================================
+// MÓDULO ALERTAS — Sistema de alertas internas
+// ============================================================
+
+export type TipoAlerta =
+  | 'turno_sin_enfermero'
+  | 'turno_sin_iniciar'
+  | 'turno_sin_reporte'
+  | 'turno_sin_entrega'
+  | 'enfermero_no_confirmo'
+  | 'reporte_pendiente'
+  | 'incidencia_critica'
+  | 'incidencia_grave'
+  | 'medicamento_sin_existencia'
+  | 'cuenta_por_cobrar_vencida'
+  | 'pago_enfermero_proximo'
+  | 'pago_vencido'
+  | 'documento_por_vencer'
+  | 'caso_margen_negativo'
+  | 'propuesta_sin_respuesta'
+  | 'paciente_sin_atencion'
+  | 'corte_sin_autorizar'
+  | 'turno_en_aclaracion'
+  | 'otro'
+
+export type GravedadAlerta = 'baja' | 'media' | 'alta' | 'critica'
+export type EstadoAlerta = 'activa' | 'en_proceso' | 'resuelta' | 'ignorada'
+
+export interface Alerta {
+  id: string
+  tipo: TipoAlerta
+  gravedad: GravedadAlerta
+  titulo: string
+  descripcion?: string | null
+  entidad?: string | null
+  entidad_id?: string | null
+  responsable_id?: string | null
+  estado: EstadoAlerta
+  accion_sugerida?: string | null
+  url_accion?: string | null
+  fecha_limite?: string | null
+  resuelta_por?: string | null
+  resuelta_at?: string | null
+  dedup_key?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  responsable?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
+}
+
+// ============================================================
+// MÓDULO SALUD DEL SISTEMA — Chequeos de integridad
+// ============================================================
+
+export type GravedadProblema = 'critico' | 'alto' | 'medio' | 'bajo'
+
+export interface ProblemaIntegridad {
+  entidad: string
+  entidad_id: string
+  descripcion_entidad: string
+  problema: string
+  gravedad: GravedadProblema
+  posible_solucion: string
+  url_correccion: string
+}
+
+export interface ResumenSaludSistema {
+  total_problemas: number
+  criticos: number
+  altos: number
+  medios: number
+  bajos: number
+  problemas: ProblemaIntegridad[]
+  generado_at: string
+}
+
+// ============================================================
+// TURNO EXTENDIDO — con campos de validación y nómina
+// ============================================================
+
+export interface TurnoConValidacion extends Turno {
+  validacion_status: ValidacionStatusTurno
+  horas_pagables?: number | null
+  motivo_validacion?: string | null
+  validado_por?: string | null
+  validado_at?: string | null
+  tarifa_costo_hora?: number | null
+  // Relaciones opcionales
+  validador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
+  reporte?: Pick<ReporteTurno, 'id' | 'created_at'> | null
+  entrega?: Pick<EntregaTurno, 'id' | 'created_at'> | null
 }

@@ -1,6 +1,73 @@
 'use server'
 
 import { requireAuth } from './utils'
+import type { BitacoraEntry } from '@/types'
+
+// ── Registro de eventos en tabla bitacora_entries ─────────────
+
+interface RegistrarEventoParams {
+  accion: string
+  entidad: string
+  entidad_id?: string
+  descripcion?: string
+  valores_previos?: Record<string, unknown>
+  valores_nuevos?: Record<string, unknown>
+  motivo?: string
+  metadata?: Record<string, unknown>
+}
+
+/**
+ * Registra un evento en la bitácora persistente.
+ * No bloquea el flujo principal en caso de error.
+ */
+export async function registrarEvento(params: RegistrarEventoParams): Promise<void> {
+  try {
+    const { supabase, perfil } = await requireAuth()
+    await supabase.from('bitacora_entries').insert({
+      accion:          params.accion,
+      entidad:         params.entidad,
+      entidad_id:      params.entidad_id ?? null,
+      descripcion:     params.descripcion ?? null,
+      valores_previos: params.valores_previos ?? null,
+      valores_nuevos:  params.valores_nuevos ?? null,
+      motivo:          params.motivo ?? null,
+      realizado_por:   perfil.id,
+      metadata:        params.metadata ?? null,
+    })
+  } catch {
+    // Silencioso: la bitácora no debe bloquear operaciones críticas
+  }
+}
+
+export async function getBitacoraEntradas(limite = 100): Promise<BitacoraEntry[]> {
+  const { supabase } = await requireAuth()
+  const { data, error } = await supabase
+    .from('bitacora_entries')
+    .select('*, usuario:perfiles(id, nombre, apellido, rol)')
+    .order('realizado_at', { ascending: false })
+    .limit(limite)
+  if (error) return []
+  return (data ?? []) as BitacoraEntry[]
+}
+
+export async function getBitacoraEntradaPorEntidad(
+  entidad: string,
+  entidad_id: string,
+  limite = 50
+): Promise<BitacoraEntry[]> {
+  const { supabase } = await requireAuth()
+  const { data, error } = await supabase
+    .from('bitacora_entries')
+    .select('*, usuario:perfiles(id, nombre, apellido, rol)')
+    .eq('entidad', entidad)
+    .eq('entidad_id', entidad_id)
+    .order('realizado_at', { ascending: false })
+    .limit(limite)
+  if (error) return []
+  return (data ?? []) as BitacoraEntry[]
+}
+
+// ── Tipos para la bitácora de movimientos (modo legacy agregado) ──
 
 export type TipoMovimiento =
   | 'turno_creado'

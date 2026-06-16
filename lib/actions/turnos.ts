@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { requireAuth, requireRole, fd, zodActionError, type ActionResult } from './utils'
 import { TurnoSchema } from '@/lib/validations'
+import { registrarEvento } from './bitacora'
+import { crearAlerta } from './alertas'
+import type { TurnoConValidacion } from '@/types'
 
 export async function getTurnos(search?: string) {
   const { supabase } = await requireAuth()
@@ -119,27 +122,183 @@ export async function cambiarStatusTurno(id: string, status: 'programado' | 'act
 
   if (error) throw new Error(error.message)
 
-  // Auto-generar cobranza al completar
+  // Al completar: calcular horas reales y marcar para revisión
   if (status === 'completado' && turno) {
     const horas = turno.horas_trabajadas > 0
       ? turno.horas_trabajadas
       : (new Date(turno.fecha_fin).getTime() - new Date(turno.fecha_inicio).getTime()) / 3600000
+
+    const horasRedondeadas = Math.round(horas * 10) / 10
     const tarifa = (turno.caso as { tarifa_hora: number } | null)?.tarifa_hora ?? 0
 
+    // Actualizar horas_trabajadas si estaban en 0
+    if (turno.horas_trabajadas === 0) {
+      await supabase
+        .from('turnos')
+        .update({ horas_trabajadas: horasRedondeadas, horas_pagables: horasRedondeadas })
+        .eq('id', id)
+    }
+
+    // Auto-generar cobranza al completar
     await supabase.from('cobranza_items').insert({
       caso_id:  turno.caso_id,
       turno_id: id,
-      concepto: `Turno ${new Date(turno.fecha_inicio).toLocaleDateString('es-VE')}`,
-      horas:    Math.round(horas * 10) / 10,
+      concepto: `Turno ${new Date(turno.fecha_inicio).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`,
+      horas:    horasRedondeadas,
       tarifa,
-      subtotal: Math.round(horas * tarifa * 100) / 100,
+      subtotal: Math.round(horasRedondeadas * tarifa * 100) / 100,
       status:   'pendiente',
+    })
+
+    // Registrar en bitácora
+    await registrarEvento({
+      accion:     'turno_completado',
+      entidad:    'turnos',
+      entidad_id: id,
+      descripcion: `Turno completado. Horas: ${horasRedondeadas}`,
+      metadata:   { horas: horasRedondeadas, tarifa, caso_id: turno.caso_id },
+    })
+
+    // Crear alerta de revisión para jefatura
+    await crearAlerta({
+      tipo:           'turno_sin_reporte',
+      gravedad:       'media',
+      titulo:         'Turno completado — pendiente de validación',
+      descripcion:    `Turno del ${new Date(turno.fecha_inicio).toLocaleDateString('es-MX')} completado`,
+      entidad:        'turnos',
+      entidad_id:     id,
+      accion_sugerida: 'Revisar y validar el turno',
+      url_accion:     `/turnos/${id}/validar`,
+      dedup_key:      `turno_validacion_${id}`,
     })
   }
 
   revalidatePath('/turnos')
   revalidatePath('/cobranza')
   revalidatePath('/dashboard')
+}
+
+// ── VALIDACIÓN DE TURNOS (JEFATURA) ──────────────────────────
+
+export async function getTurnosPendientesValidacion(): Promise<TurnoConValidacion[]> {
+  const { supabase } = await requireAuth()
+
+  const { data, error } = await supabase
+    .from('turnos')
+    .select(`
+      *,
+      caso:casos(id, titulo, direccion, tarifa_hora,
+        paciente:pacientes(id, nombre, apellido, diagnostico)
+      ),
+      enfermero:enfermeros(id, nombre, apellido, cedula, telefono),
+      validador:perfiles!validado_por(id, nombre, apellido),
+      reporte:reportes_turno(id, created_at),
+      entrega:entregas_turno!turno_saliente_id(id, created_at)
+    `)
+    .eq('status', 'completado')
+    .in('validacion_status', ['pendiente', 'en_revision', 'en_aclaracion'])
+    .order('fecha_fin', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as TurnoConValidacion[]
+}
+
+export async function getTurnoConValidacion(id: string): Promise<TurnoConValidacion | null> {
+  const { supabase } = await requireAuth()
+
+  const { data, error } = await supabase
+    .from('turnos')
+    .select(`
+      *,
+      caso:casos(id, titulo, direccion, tarifa_hora, tarifa_costo_hora, notas,
+        paciente:pacientes(id, nombre, apellido, diagnostico, medicamentos, alergias, contacto_familiar)
+      ),
+      enfermero:enfermeros(id, nombre, apellido, cedula, telefono, especialidades),
+      validador:perfiles!validado_por(id, nombre, apellido),
+      reporte:reportes_turno(id, created_at, signos_vitales, estado_general, medicamentos_administrados, observaciones, pendientes),
+      entrega:entregas_turno!turno_saliente_id(id, created_at, observaciones, incidentes)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) return null
+  return data as TurnoConValidacion
+}
+
+export async function validarTurno(
+  id: string,
+  params: {
+    validacion_status: 'validado' | 'rechazado' | 'en_aclaracion'
+    horas_pagables?: number
+    motivo?: string
+  }
+): Promise<{ error?: string }> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
+  // Jefatura NO puede marcar pagos — solo puede validar o rechazar
+  if (perfil.rol === 'jefe_enfermeros' && params.validacion_status === 'validado') {
+    // Verificar que hay reporte
+    const { data: reporte } = await supabase
+      .from('reportes_turno')
+      .select('id')
+      .eq('turno_id', id)
+      .maybeSingle()
+
+    if (!reporte) {
+      return { error: 'No se puede validar un turno sin reporte clínico registrado' }
+    }
+  }
+
+  const updates: Record<string, unknown> = {
+    validacion_status: params.validacion_status,
+    validado_por:      perfil.id,
+    validado_at:       new Date().toISOString(),
+  }
+  if (params.horas_pagables !== undefined) updates.horas_pagables = params.horas_pagables
+  if (params.motivo) updates.motivo_validacion = params.motivo
+
+  const { error } = await supabase
+    .from('turnos')
+    .update(updates)
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  const accionLabel = {
+    validado:       'Turno validado por jefatura',
+    rechazado:      'Turno rechazado por jefatura',
+    en_aclaracion:  'Turno enviado a aclaración',
+  }[params.validacion_status]
+
+  await registrarEvento({
+    accion:     `turno_${params.validacion_status}`,
+    entidad:    'turnos',
+    entidad_id: id,
+    descripcion: accionLabel,
+    motivo:     params.motivo,
+    metadata:   { horas_pagables: params.horas_pagables },
+  })
+
+  // Si se envía a aclaración, crear alerta
+  if (params.validacion_status === 'en_aclaracion') {
+    await crearAlerta({
+      tipo:           'turno_en_aclaracion',
+      gravedad:       'alta',
+      titulo:         'Turno requiere aclaración',
+      descripcion:    params.motivo ?? 'El turno fue enviado a aclaración por jefatura',
+      entidad:        'turnos',
+      entidad_id:     id,
+      url_accion:     `/turnos/${id}`,
+      dedup_key:      `turno_aclaracion_${id}`,
+    })
+  }
+
+  revalidatePath('/turnos')
+  revalidatePath('/turnos/validacion')
+  revalidatePath(`/turnos/${id}`)
+  revalidatePath('/dashboard')
+  return {}
 }
 
 export async function editarFechasTurno(id: string, formData: FormData): Promise<ActionResult> {
