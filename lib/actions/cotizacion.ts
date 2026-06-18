@@ -117,21 +117,23 @@ export async function actualizarPrecioFinal(
     .maybeSingle()
 
   let quoteData = quoteById
+  let errByProspect: { message?: string } | null = null
 
   if (!quoteData) {
-    const { data: latest, error: errByProspect } = await supabase
+    const { data: latest, error: latestErr } = await supabase
       .from('care_quotes')
       .select('id, minimum_recommended_price, risk_color')
       .eq('prospect_id', prospectId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
+    errByProspect = latestErr
     quoteData = latest
+  }
 
-    if (!latest) {
-      return {
-        error: `[DEBUG] quoteId=${quoteId} | prospectId=${prospectId} | adminId=${perfil.id} | errById=${errById?.message ?? 'null'} | errByProspect=${errByProspect?.message ?? 'null'}`,
-      }
+  if (!quoteData) {
+    return {
+      error: `[DEBUG] quoteId=${quoteId} | prospectId=${prospectId} | adminId=${perfil.id} | errById=${errById?.message ?? 'null'} | errByProspect=${errByProspect?.message ?? 'null'}`,
     }
   }
 
