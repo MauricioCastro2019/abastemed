@@ -69,6 +69,19 @@ function fmtDate(iso: string | null | undefined) {
   return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+const START_DATE_LABELS: Record<string, string> = {
+  hoy_mismo:       'Hoy mismo',
+  manana:          'Mañana',
+  esta_semana:     'Esta semana',
+  sin_fecha:       'Sin fecha definida',
+  fecha_especifica: 'Fecha por definir',
+}
+
+function fmtStartDate(val: string | null | undefined) {
+  if (!val) return '—'
+  return START_DATE_LABELS[val] ?? fmtDate(val)
+}
+
 // ── Modal de confirmación / motivo de archivo ──────────────────
 
 interface ArchivarModalProps {
@@ -260,7 +273,7 @@ function ElegibleCard({ p, esAdmin }: ElegibleCardProps) {
           {p.requested_start_date && (
             <div className="flex items-center gap-1.5 text-gray-600">
               <Calendar size={13} className="text-gray-400 shrink-0" />
-              <span>Inicio: {fmtDate(p.requested_start_date)}</span>
+              <span>Inicio: {fmtStartDate(p.requested_start_date)}</span>
             </div>
           )}
           {p.accepted_at && (

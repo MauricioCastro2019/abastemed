@@ -16,6 +16,24 @@ import type {
 } from '@/types'
 
 // ============================================================
+// Helpers internos
+// ============================================================
+
+/** Convierte keywords de requested_start_date a una fecha ISO válida o null.
+ *  La columna fecha_inicio_estimada en levantamientos_paciente es DATE, no TEXT. */
+function resolveStartDate(val: string | null | undefined): string | null {
+  if (!val || val === 'sin_fecha' || val === 'fecha_especifica') return null
+  if (val === 'hoy_mismo') return new Date().toISOString().split('T')[0]
+  if (val === 'manana') {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d.toISOString().split('T')[0]
+  }
+  if (val === 'esta_semana') return null
+  return val // ya es una fecha ISO real
+}
+
+// ============================================================
 // Tipos internos para el payload del wizard
 // ============================================================
 
@@ -643,7 +661,7 @@ export async function crearLevantamientoDesdeProspecto(
       tipo_turno:              (sr?.shift_schedule as string | null) ?? null,
       horario_requerido:       (sr?.shift_schedule as string | null) ?? null,
       frecuencia_servicio:     (sr?.frequency as string | null) ?? null,
-      fecha_inicio_estimada:   (sr?.requested_start_date as string | null) ?? null,
+      fecha_inicio_estimada:   resolveStartDate(sr?.requested_start_date),
       nivel_personal:          result.recommended_profile as string,
       requiere_supervision:    (result.requires_clinical_supervision as boolean) ?? false,
       num_personas_requeridas: 1,

@@ -110,14 +110,16 @@ export async function actualizarPrecioFinal(
 
   // Buscar cotización por ID; si no la encuentra (puede haber sido recalculada),
   // usar la más reciente del prospecto como fallback
-  let { data: quoteData } = await supabase
+  const { data: quoteById, error: errById } = await supabase
     .from('care_quotes')
     .select('id, minimum_recommended_price, risk_color')
     .eq('id', quoteId)
     .maybeSingle()
 
+  let quoteData = quoteById
+
   if (!quoteData) {
-    const { data: latest } = await supabase
+    const { data: latest, error: errByProspect } = await supabase
       .from('care_quotes')
       .select('id, minimum_recommended_price, risk_color')
       .eq('prospect_id', prospectId)
@@ -125,9 +127,13 @@ export async function actualizarPrecioFinal(
       .limit(1)
       .maybeSingle()
     quoteData = latest
-  }
 
-  if (!quoteData) return { error: 'Cotización no encontrada.' }
+    if (!latest) {
+      return {
+        error: `[DEBUG] quoteId=${quoteId} | prospectId=${prospectId} | adminId=${perfil.id} | errById=${errById?.message ?? 'null'} | errByProspect=${errByProspect?.message ?? 'null'}`,
+      }
+    }
+  }
 
   const validation = validateFinalPrice(finalPrice, quoteData.minimum_recommended_price, quoteData.risk_color)
 
