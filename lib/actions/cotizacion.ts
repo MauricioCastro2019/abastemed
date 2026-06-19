@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { CareQuote, GeneratedDocument, ActivationChecklist } from '@/types'
+import type { CareQuote, GeneratedDocument, ActivationChecklist, RiskColor } from '@/types'
 import { requireAuth, requireRole, fd, fdNum, type ActionResult } from './utils'
 import { calculatePrice, validateFinalPrice, type PriceCalculationInput } from '@/lib/pricing'
 
@@ -109,35 +109,41 @@ export async function actualizarPrecioFinal(
   const reason     = fd(formData, 'adjustment_reason')
 
   // Buscar cotización por ID; si no la encuentra (puede haber sido recalculada),
-  // usar la más reciente del prospecto como fallback
-  const { data: quoteById, error: errById } = await supabase
+  // usar la más reciente del prospecto como fallback.
+  // NOTA: risk_color no existe en care_quotes — se obtiene de assessment_results.
+  const { data: quoteById } = await supabase
     .from('care_quotes')
-    .select('id, minimum_recommended_price, risk_color')
+    .select('id, minimum_recommended_price')
     .eq('id', quoteId)
     .maybeSingle()
 
   let quoteData = quoteById
-  let errByProspect: { message?: string } | null = null
 
   if (!quoteData) {
-    const { data: latest, error: latestErr } = await supabase
+    const { data: latest } = await supabase
       .from('care_quotes')
-      .select('id, minimum_recommended_price, risk_color')
+      .select('id, minimum_recommended_price')
       .eq('prospect_id', prospectId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    errByProspect = latestErr
     quoteData = latest
   }
 
-  if (!quoteData) {
-    return {
-      error: `[DEBUG] quoteId=${quoteId} | prospectId=${prospectId} | adminId=${perfil.id} | errById=${errById?.message ?? 'null'} | errByProspect=${errByProspect?.message ?? 'null'}`,
-    }
-  }
+  if (!quoteData) return { error: 'Cotización no encontrada.' }
 
-  const validation = validateFinalPrice(finalPrice, quoteData.minimum_recommended_price, quoteData.risk_color)
+  // risk_color vive en assessment_results, no en care_quotes
+  const { data: arData } = await supabase
+    .from('assessment_results')
+    .select('risk_color')
+    .eq('prospect_id', prospectId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const riskColor = (arData?.risk_color ?? 'verde') as RiskColor
+
+  const validation = validateFinalPrice(finalPrice, quoteData.minimum_recommended_price, riskColor)
 
   // El admin puede sobrepasar cualquier restricción con motivo obligatorio
   if (!validation.valid && !reason?.trim()) {
