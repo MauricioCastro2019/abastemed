@@ -40,96 +40,104 @@ export async function getCaso(id: string) {
 }
 
 export async function crearCaso(formData: FormData): Promise<ActionResult> {
-  const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  try {
+    const { supabase, perfil } = await requireAuth()
+    requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const horasTurno = fdNum(formData, 'horas_turno') || 8
-  const costoGuardia = fdNum(formData, 'costo_guardia')
+    const horasTurno = fdNum(formData, 'horas_turno') || 8
+    const costoGuardia = fdNum(formData, 'costo_guardia')
 
-  const parsed = CasoSchema.safeParse({
-    paciente_id:   fd(formData, 'paciente_id'),
-    titulo:        fd(formData, 'titulo'),
-    contexto:      fd(formData, 'contexto'),
-    direccion:     fd(formData, 'direccion'),
-    fecha_inicio:  fd(formData, 'fecha_inicio'),
-    costo_guardia: costoGuardia,
-    horas_turno:   horasTurno,
-  })
+    const parsed = CasoSchema.safeParse({
+      paciente_id:   fd(formData, 'paciente_id'),
+      titulo:        fd(formData, 'titulo'),
+      contexto:      fd(formData, 'contexto'),
+      direccion:     fd(formData, 'direccion'),
+      fecha_inicio:  fd(formData, 'fecha_inicio'),
+      costo_guardia: costoGuardia,
+      horas_turno:   horasTurno,
+    })
 
-  if (!parsed.success) return zodActionError(parsed.error)
+    if (!parsed.success) return zodActionError(parsed.error)
 
-  const v = parsed.data
-  const diasRaw = formData.getAll('dias_semana') as string[]
+    const v = parsed.data
+    const diasRaw = formData.getAll('dias_semana') as string[]
 
-  const { error } = await supabase.from('casos').insert({
-    paciente_id:   v.paciente_id,
-    titulo:        v.titulo,
-    contexto:      v.contexto,
-    direccion:     v.direccion,
-    fecha_inicio:  v.fecha_inicio,
-    fecha_fin:     fd(formData, 'fecha_fin') || null,
-    tarifa_hora:   v.horas_turno > 0 ? +(v.costo_guardia / v.horas_turno).toFixed(2) : 0,
-    costo_guardia: v.costo_guardia,
-    horas_turno:   v.horas_turno,
-    dias_semana:   diasRaw,
-    horario_inicio: fd(formData, 'horario_inicio') || null,
-    horario_fin:    fd(formData, 'horario_fin') || null,
-    notas:          fd(formData, 'notas') || null,
-    status:         'activo',
-  })
+    const { error } = await supabase.from('casos').insert({
+      paciente_id:    v.paciente_id,
+      titulo:         v.titulo,
+      contexto:       v.contexto,
+      direccion:      v.direccion,
+      fecha_inicio:   v.fecha_inicio,
+      fecha_fin:      fd(formData, 'fecha_fin') || null,
+      tarifa_hora:    v.horas_turno > 0 ? +(v.costo_guardia / v.horas_turno).toFixed(2) : 0,
+      costo_guardia:  v.costo_guardia,
+      horas_turno:    v.horas_turno,
+      dias_semana:    diasRaw,
+      horario_inicio: fd(formData, 'horario_inicio') || null,
+      horario_fin:    fd(formData, 'horario_fin') || null,
+      notas:          fd(formData, 'notas') || null,
+      status:         'activo',
+    })
 
-  if (error) return { error: error.message }
+    if (error) return { error: error.message }
 
-  revalidatePath('/casos')
-  revalidatePath('/dashboard')
-  return {}
+    revalidatePath('/casos')
+    revalidatePath('/dashboard')
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Error inesperado al crear el caso.' }
+  }
 }
 
 export async function actualizarCaso(id: string, formData: FormData): Promise<ActionResult> {
-  const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  try {
+    const { supabase, perfil } = await requireAuth()
+    requireRole(perfil, 'admin', 'jefe_enfermeros')
 
-  const horasTurnoU = fdNum(formData, 'horas_turno') || 8
-  const costoGuardiaU = fdNum(formData, 'costo_guardia')
+    const horasTurnoU = fdNum(formData, 'horas_turno') || 8
+    const costoGuardiaU = fdNum(formData, 'costo_guardia')
 
-  const parsed = CasoSchema.safeParse({
-    paciente_id:   fd(formData, 'paciente_id'),
-    titulo:        fd(formData, 'titulo'),
-    contexto:      fd(formData, 'contexto'),
-    direccion:     fd(formData, 'direccion'),
-    fecha_inicio:  fd(formData, 'fecha_inicio'),
-    costo_guardia: costoGuardiaU,
-    horas_turno:   horasTurnoU,
-  })
+    const parsed = CasoSchema.safeParse({
+      paciente_id:   fd(formData, 'paciente_id'),
+      titulo:        fd(formData, 'titulo'),
+      contexto:      fd(formData, 'contexto'),
+      direccion:     fd(formData, 'direccion'),
+      fecha_inicio:  fd(formData, 'fecha_inicio'),
+      costo_guardia: costoGuardiaU,
+      horas_turno:   horasTurnoU,
+    })
 
-  if (!parsed.success) return zodActionError(parsed.error)
+    if (!parsed.success) return zodActionError(parsed.error)
 
-  const v = parsed.data
-  const diasRawU = formData.getAll('dias_semana') as string[]
+    const v = parsed.data
+    const diasRawU = formData.getAll('dias_semana') as string[]
 
-  const { error } = await supabase.from('casos').update({
-    paciente_id:    v.paciente_id,
-    titulo:         v.titulo,
-    contexto:       v.contexto,
-    direccion:      v.direccion,
-    fecha_inicio:   v.fecha_inicio,
-    fecha_fin:      fd(formData, 'fecha_fin') || null,
-    tarifa_hora:    v.horas_turno > 0 ? +(v.costo_guardia / v.horas_turno).toFixed(2) : 0,
-    costo_guardia:  v.costo_guardia,
-    horas_turno:    v.horas_turno,
-    dias_semana:    diasRawU,
-    horario_inicio: fd(formData, 'horario_inicio') || null,
-    horario_fin:    fd(formData, 'horario_fin') || null,
-    notas:        fd(formData, 'notas') || null,
-    status:       fd(formData, 'status') || 'activo',
-  }).eq('id', id)
+    const { error } = await supabase.from('casos').update({
+      paciente_id:    v.paciente_id,
+      titulo:         v.titulo,
+      contexto:       v.contexto,
+      direccion:      v.direccion,
+      fecha_inicio:   v.fecha_inicio,
+      fecha_fin:      fd(formData, 'fecha_fin') || null,
+      tarifa_hora:    v.horas_turno > 0 ? +(v.costo_guardia / v.horas_turno).toFixed(2) : 0,
+      costo_guardia:  v.costo_guardia,
+      horas_turno:    v.horas_turno,
+      dias_semana:    diasRawU,
+      horario_inicio: fd(formData, 'horario_inicio') || null,
+      horario_fin:    fd(formData, 'horario_fin') || null,
+      notas:          fd(formData, 'notas') || null,
+      status:         fd(formData, 'status') || 'activo',
+    }).eq('id', id)
 
-  if (error) return { error: error.message }
+    if (error) return { error: error.message }
 
-  revalidatePath('/casos')
-  revalidatePath(`/casos/${id}`)
-  revalidatePath('/dashboard')
-  return {}
+    revalidatePath('/casos')
+    revalidatePath(`/casos/${id}`)
+    revalidatePath('/dashboard')
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Error inesperado al actualizar el caso.' }
+  }
 }
 
 export async function eliminarCaso(id: string): Promise<ActionResult> {
