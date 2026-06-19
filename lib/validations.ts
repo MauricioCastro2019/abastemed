@@ -21,12 +21,13 @@ export const EnfermeroSchema = z.object({
 })
 
 export const CasoSchema = z.object({
-  paciente_id:  z.string().uuid('Selecciona un paciente válido'),
-  titulo:       z.string().min(3, 'El título es muy corto').max(120, 'Máximo 120 caracteres'),
-  contexto:     z.enum(['domicilio', 'hospital', 'casa_reposo'], { message: 'Contexto inválido' }),
-  direccion:    z.string().min(5, 'Dirección requerida'),
-  fecha_inicio: z.string().min(1, 'Fecha de inicio requerida'),
-  tarifa_hora:  z.number().min(0, 'La tarifa no puede ser negativa'),
+  paciente_id:   z.string().uuid('Selecciona un paciente válido'),
+  titulo:        z.string().min(3, 'El título es muy corto').max(120, 'Máximo 120 caracteres'),
+  contexto:      z.enum(['domicilio', 'hospital', 'casa_reposo'], { message: 'Contexto inválido' }),
+  direccion:     z.string().min(5, 'Dirección requerida'),
+  fecha_inicio:  z.string().min(1, 'Fecha de inicio requerida'),
+  costo_guardia: z.number().min(0, 'El costo no puede ser negativo'),
+  horas_turno:   z.number().int().min(1, 'Mínimo 1 hora').max(24, 'Máximo 24 horas'),
 })
 
 export const IndicacionSchema = z.object({

@@ -61,7 +61,12 @@ export interface Caso {
   fecha_inicio: string               // ISO date
   fecha_fin?: string                 // ISO date, nullable
   status: StatusCaso
-  tarifa_hora: number                // en moneda local
+  tarifa_hora: number                // calculado: costo_guardia / horas_turno
+  costo_guardia?: number | null      // costo total por guardia/turno
+  horas_turno?: number | null        // duración del turno en horas (8, 12, 24)
+  dias_semana?: string[]             // ['lunes','martes',...]
+  horario_inicio?: string | null     // e.g. '07:00'
+  horario_fin?: string | null        // e.g. '19:00'
   notas?: string
   created_at: string
   // Relaciones opcionales (para joins)

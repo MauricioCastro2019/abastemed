@@ -10,12 +10,12 @@ export function EliminarCasoBtn({ casoId, titulo }: { casoId: string; titulo: st
   function handleClick() {
     if (!window.confirm(`¿Eliminar el caso "${titulo}"? Esta acción no se puede deshacer.`)) return
     startTransition(async () => {
-      try {
-        await eliminarCaso(casoId)
-        window.location.href = '/casos'
-      } catch (err) {
-        alert(err instanceof Error ? err.message : 'Error al eliminar')
+      const result = await eliminarCaso(casoId)
+      if (result?.error) {
+        alert(result.error)
+        return
       }
+      window.location.href = '/casos'
     })
   }
 
