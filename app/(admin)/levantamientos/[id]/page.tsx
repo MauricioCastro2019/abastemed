@@ -1,5 +1,6 @@
 import { getLevantamiento } from '@/lib/actions/levantamientos'
 import { LevantamientoDetalle } from '@/components/admin/levantamientos/LevantamientoDetalle'
+import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -12,6 +13,18 @@ export default async function LevantamientoDetailPage({ params }: { params: { id
     lev = await getLevantamiento(params.id)
   } catch {
     notFound()
+  }
+
+  // Buscar el paciente creado a partir de este levantamiento para los "Próximos pasos"
+  let pacienteId: string | null = null
+  if (lev.prospect_id) {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('pacientes')
+      .select('id')
+      .eq('source_prospect_id', lev.prospect_id)
+      .maybeSingle()
+    pacienteId = data?.id ?? null
   }
 
   return (
@@ -30,7 +43,7 @@ export default async function LevantamientoDetailPage({ params }: { params: { id
         </div>
       </div>
 
-      <LevantamientoDetalle lev={lev} />
+      <LevantamientoDetalle lev={lev} pacienteId={pacienteId} />
     </div>
   )
 }

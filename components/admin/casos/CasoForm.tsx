@@ -12,9 +12,11 @@ const FIELD_ERR = "text-xs text-red-500 mt-1"
 interface Props {
   caso?: Caso
   pacientes: Paciente[]
+  defaultPacienteId?: string
+  defaultCosto?: number
 }
 
-export function CasoForm({ caso, pacientes }: Props) {
+export function CasoForm({ caso, pacientes, defaultPacienteId, defaultCosto }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -52,7 +54,7 @@ export function CasoForm({ caso, pacientes }: Props) {
         <div className="space-y-4">
           <div>
             <label className={LABEL}>Paciente *</label>
-            <select name="paciente_id" defaultValue={caso?.paciente_id ?? ''} className={inp('paciente_id')}>
+            <select name="paciente_id" defaultValue={caso?.paciente_id ?? defaultPacienteId ?? ''} className={inp('paciente_id')}>
               <option value="" disabled>Selecciona un paciente...</option>
               {pacientes.map(p => (
                 <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
@@ -102,6 +104,11 @@ export function CasoForm({ caso, pacientes }: Props) {
             <input name="tarifa_hora" type="number" step="0.01" min="0"
               defaultValue={caso?.tarifa_hora} className={inp('tarifa_hora')} placeholder="0.00" />
             {fieldErrors.tarifa_hora && <p className={FIELD_ERR}>{fieldErrors.tarifa_hora}</p>}
+            {defaultCosto && !caso && (
+              <p className="text-xs text-[#2AABBF] mt-1">
+                Costo autorizado en cotización: ${defaultCosto.toLocaleString('es-MX')} por guardia
+              </p>
+            )}
           </div>
           <div className="sm:col-span-2">
             <label className={LABEL}>Dirección / Ubicación *</label>

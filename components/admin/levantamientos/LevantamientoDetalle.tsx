@@ -6,6 +6,7 @@ import type { LevantamientoPaciente } from '@/types'
 import {
   AlertTriangle, Phone, Mail, MapPin, Calendar, User, Activity,
   Pill, Package, Home, ClipboardList, DollarSign, CheckCircle, Pencil,
+  ChevronRight, Briefcase, UserCheck, HeartPulse,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -135,12 +136,105 @@ function AccionesEstado({ id, estado }: { id: string; estado: LevantamientoPacie
   )
 }
 
+// ── Tarjeta "Próximos pasos" (solo cuando está convertido) ────
+function ProximosPasos({ lev, pacienteId }: { lev: LevantamientoPaciente; pacienteId?: string | null }) {
+  if (lev.estado !== 'convertido') return null
+
+  const tieneAlertas =
+    !lev.consentimiento?.autorizado_por ||
+    (!lev.medicamentos?.length && !!lev.diagnostico_principal)
+
+  const pasos = [
+    tieneAlertas && {
+      icon: AlertTriangle,
+      color: '#C2410C',
+      bg: '#FFF7ED',
+      border: '#FED7AA',
+      label: 'Completar alertas pendientes',
+      desc: 'Autorización del responsable y/o medicamentos faltantes',
+      href: `/levantamientos/${lev.id}/editar`,
+      cta: 'Editar levantamiento',
+    },
+    {
+      icon: Briefcase,
+      color: '#1B2B4B',
+      bg: '#EBF8FB',
+      border: '#A5D8E2',
+      label: 'Crear Caso de Servicio',
+      desc: 'Define la tarifa operativa y vincula el caso a la paciente',
+      href: pacienteId ? `/casos/nuevo?paciente_id=${pacienteId}&costo=${lev.costo_autorizado ?? ''}` : '/casos/nuevo',
+      cta: 'Crear Caso',
+    },
+    {
+      icon: UserCheck,
+      color: '#166534',
+      bg: '#DCFCE7',
+      border: '#86EFAC',
+      label: 'Asignar Enfermero al Turno',
+      desc: 'Programa el primer turno con el profesional adecuado',
+      href: '/turnos/nuevo',
+      cta: 'Asignar enfermero',
+    },
+    pacienteId && {
+      icon: HeartPulse,
+      color: '#1D4ED8',
+      bg: '#DBEAFE',
+      border: '#93C5FD',
+      label: 'Plan de Cuidado',
+      desc: 'Registra medicamentos, curaciones y actividades de enfermería',
+      href: `/pacientes/${pacienteId}/plan-cuidado`,
+      cta: 'Ver plan de cuidado',
+    },
+  ].filter(Boolean) as Array<{
+    icon: React.ElementType
+    color: string
+    bg: string
+    border: string
+    label: string
+    desc: string
+    href: string
+    cta: string
+  }>
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg, #1B2B4B 0%, #162B4C 100%)' }}>
+        <h2 className="text-white font-semibold">Próximos pasos para activar el servicio</h2>
+        <p className="text-xs text-blue-200 mt-0.5">Levantamiento convertido · completa estos pasos para iniciar el caso</p>
+      </div>
+      <div className="divide-y divide-gray-50">
+        {pasos.map((paso, i) => {
+          const Icon = paso.icon
+          return (
+            <Link key={i} href={paso.href}
+              className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: paso.bg, border: `1px solid ${paso.border}` }}>
+                <Icon size={18} style={{ color: paso.color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800">{paso.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{paso.desc}</p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-xs font-medium hidden sm:block" style={{ color: paso.color }}>{paso.cta}</span>
+                <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Componente principal ──────────────────────────────────────
 interface Props {
   lev: LevantamientoPaciente
+  pacienteId?: string | null
 }
 
-export function LevantamientoDetalle({ lev }: Props) {
+export function LevantamientoDetalle({ lev, pacienteId }: Props) {
   const estadoCfg = ESTADO_CONFIG[lev.estado] ?? ESTADO_CONFIG.borrador
   const riesgoCfg = RIESGO_CONFIG[lev.riesgo_final] ?? RIESGO_CONFIG.bajo
   const prioridadCfg = PRIORIDAD_CONFIG[lev.prioridad] ?? PRIORIDAD_CONFIG.media
@@ -458,6 +552,9 @@ export function LevantamientoDetalle({ lev }: Props) {
           ))}
         </div>
       </Section>
+
+      {/* Próximos pasos */}
+      <ProximosPasos lev={lev} pacienteId={pacienteId} />
 
       {/* Meta */}
       <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between text-xs text-gray-400">

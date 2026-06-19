@@ -4,7 +4,11 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import type { Paciente } from '@/types'
 
-export default async function NuevoCasoPage() {
+export default async function NuevoCasoPage({
+  searchParams,
+}: {
+  searchParams: { paciente_id?: string; costo?: string }
+}) {
   let pacientes: Paciente[] = []
   try {
     pacientes = await getPacientes()
@@ -24,7 +28,11 @@ export default async function NuevoCasoPage() {
           <p className="text-sm text-gray-500 mt-0.5">Vincula un paciente y define los parámetros del caso</p>
         </div>
       </div>
-      <CasoForm pacientes={pacientes} />
+      <CasoForm
+        pacientes={pacientes}
+        defaultPacienteId={searchParams.paciente_id}
+        defaultCosto={searchParams.costo ? Number(searchParams.costo) : undefined}
+      />
     </div>
   )
 }
