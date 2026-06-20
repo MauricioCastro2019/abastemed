@@ -65,7 +65,7 @@ Ver [`docs/IMPLEMENTACION_FLUJO_ABASTEMED.md`](docs/IMPLEMENTACION_FLUJO_ABASTEM
 | `admin` | Acceso completo. Autoriza y ejecuta pagos. Ve rentabilidad y salud del sistema. |
 | `jefe_enfermeros` | Valida turnos, revisa cortes, gestiona incidencias. No puede pagar. |
 | `enfermero` | Solo ve sus propios turnos, reportes y pagos. |
-| `familiar` | Solo ve información de su paciente: recibos, saldos, reportes resumidos. |
+| `familiar` | Portal propio mobile-first: reportes resumidos, medicamentos, agenda, cobranza y contacto directo con el equipo. |
 
 ---
 
@@ -97,6 +97,38 @@ Ver [`docs/IMPLEMENTACION_FLUJO_ABASTEMED.md`](docs/IMPLEMENTACION_FLUJO_ABASTEM
 - **Recibos** — Documentos de cobro al familiar
 - **Finanzas** — Ingresos (`financial_incomes`) y egresos (`financial_expenses`) con balance
 
+### Portal Familiar
+
+Módulo mobile-first independiente bajo `/familiar/*`. Acceso restringido exclusivamente al rol `familiar`.
+
+| Ruta | Descripción |
+|---|---|
+| `/familiar/dashboard` | Resumen: estado del paciente, alertas, último reporte, medicamentos activos, agenda próxima y saldo pendiente |
+| `/familiar/evolucion` | Timeline de reportes de turno visibles (signos vitales, alimentación, cuidados, incidencias) |
+| `/familiar/medicamentos` | Kardex activo y suspendido con próxima toma calculada |
+| `/familiar/agenda` | Vista 8 días unificando turnos, indicaciones y citas médicas |
+| `/familiar/cobranza` | Historial de cargos/pagos con resumen y botón de reporte por WhatsApp |
+| `/familiar/contacto` | Llamada directa, WhatsApp y formulario de solicitud con validación Zod |
+| `/familiar/expediente` | Datos del paciente, caso activo y plan de cuidado |
+| `/familiar/configuracion` | Perfil, cambio de contraseña y cierre de sesión |
+
+**Seguridad del portal familiar:**
+- Middleware redirige cualquier rol no-familiar que intente acceder a `/familiar/*`
+- Server Actions validan `rol === 'familiar'` con `getContextoFamiliar()` antes de cualquier consulta
+- Acceso a paciente verificado en dos capas: tabla `familiar_paciente` (nueva) + `perfiles.paciente_id` (compatibilidad)
+- IDs de paciente nunca provienen del cliente — se resuelven desde el perfil autenticado en el servidor
+- Incidencias visibles solo cuando `visible_para_familia = TRUE` (requiere activación explícita por admin)
+
+**Nuevas tablas DB para el portal:**
+
+| Tabla | Descripción |
+|---|---|
+| `familiar_paciente` | Relación M:M con permisos JSONB granulares por paciente |
+| `citas_medicas` | Citas programadas del paciente (médico, especialidad, fecha, preparación) |
+| `solicitudes_familia` | Mensajes y solicitudes enviadas por el familiar al equipo |
+
+Migración: [`supabase/migration_portal_familiar.sql`](supabase/migration_portal_familiar.sql)
+
 ### Sistema
 - **Bitácora** — Registro persistente de todas las acciones críticas
 - **Alertas** — Sistema de alertas con deduplicación por `dedup_key`
@@ -118,7 +150,16 @@ app/
   (enfermero)/      # Rutas del enfermero
     mis-pagos/
     ...
-  (familiar)/       # Rutas de familiares
+  (familiar)/       # Portal Familiar (mobile-first, rol familiar)
+    familiar/
+      dashboard/    # Resumen integral del paciente
+      evolucion/    # Timeline de reportes
+      medicamentos/ # Kardex + administraciones
+      agenda/       # Turnos + indicaciones + citas unificadas
+      cobranza/     # Historial de pagos
+      contacto/     # Formulario + llamada/WhatsApp
+      expediente/   # Datos clínicos del paciente
+      configuracion/
 lib/
   actions/          # Server Actions (lógica de negocio)
     bitacora.ts
@@ -136,7 +177,8 @@ components/
 types/
   index.ts          # Tipos globales TypeScript
 supabase/
-  migration_*.sql   # Migraciones de BD
+  migration_*.sql               # Migraciones de BD
+  migration_portal_familiar.sql # Portal Familiar: tablas, RLS, funciones helper
 docs/
   AUDITORIA_FLUJO_ABASTEMED.md
   FLUJO_OPERATIVO_ABASTEMED.md
@@ -203,6 +245,8 @@ Variables de entorno requeridas en Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUB
 - **Server Actions** validan rol en cada operación crítica (`requireRole()`)
 - **Sin secrets en cliente** — la `SERVICE_ROLE_KEY` solo se usa en Server Actions
 - **Doble validación** — las operaciones de pago requieren autorización explícita del admin
+- **Portal Familiar aislado** — IDs resueltos desde el servidor, nunca del cliente; RLS con función `SECURITY DEFINER` para evitar recursión
+- **RBAC por capa** — middleware + server actions + RLS en DB (triple barrera)
 
 ---
 
