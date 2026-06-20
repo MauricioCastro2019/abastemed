@@ -100,7 +100,7 @@ export function AccionesCasoMenu({
             <Dialog>
               <DialogHeader icon={<Archive size={18} className="text-[#2AABBF]" />} title="Cerrar caso" onClose={() => setModal(null)} />
               <p className="text-sm text-gray-600 px-6 pb-2">
-                El caso <strong>"{titulo}"</strong> quedará marcado como cerrado y visible en el historial.
+                El caso <strong>{`"${titulo}"`}</strong> quedará marcado como cerrado y visible en el historial.
               </p>
               {err && <ErrBox msg={err} />}
               <DialogFooter
@@ -128,7 +128,7 @@ export function AccionesCasoMenu({
               />
               <div className="px-6 pb-2 space-y-2">
                 <p className="text-sm text-gray-600 mb-3">
-                  <strong>"{titulo}"</strong> tiene datos vinculados. Elige qué hacer:
+                  <strong>{`"${titulo}"`}</strong> tiene datos vinculados. Elige qué hacer:
                 </p>
                 <button onClick={cerrar} disabled={isPending}
                   className="w-full flex items-start gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2AABBF] hover:bg-[#f0fbfd] transition-all text-left disabled:opacity-50">
@@ -168,7 +168,7 @@ export function AccionesCasoMenu({
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-1">
                   <p className="text-sm font-medium text-red-800">Se eliminarán permanentemente:</p>
                   <ul className="text-xs text-red-600 space-y-0.5 list-disc list-inside">
-                    <li>El caso "{titulo}"</li>
+                    <li>El caso {`"${titulo}"`}</li>
                     <li>Todos sus turnos</li>
                     <li>Reportes de turno y bitácora</li>
                     <li>Cobros, kardex e insumos</li>

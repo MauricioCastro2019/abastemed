@@ -91,7 +91,7 @@ export function EliminarCasoBtn({ casoId, titulo }: { casoId: string; titulo: st
                   </button>
                 </div>
                 <p className="text-sm text-gray-600">
-                  ¿Eliminar <strong>"{titulo}"</strong>?
+                  ¿Eliminar <strong>{`"${titulo}"`}</strong>?
                 </p>
                 {error && (
                   <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
@@ -128,7 +128,7 @@ export function EliminarCasoBtn({ casoId, titulo }: { casoId: string; titulo: st
                 </div>
 
                 <p className="text-sm text-gray-600">
-                  El caso <strong>"{titulo}"</strong> tiene datos vinculados. Elige qué hacer:
+                  El caso <strong>{`"${titulo}"`}</strong> tiene datos vinculados. Elige qué hacer:
                 </p>
 
                 <div className="space-y-2">
@@ -184,7 +184,7 @@ export function EliminarCasoBtn({ casoId, titulo }: { casoId: string; titulo: st
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-2">
                   <p className="text-sm font-medium text-red-800">Se eliminarán permanentemente:</p>
                   <ul className="text-xs text-red-600 space-y-1 list-disc list-inside">
-                    <li>El caso "{titulo}"</li>
+                    <li>El caso {`"${titulo}"`}</li>
                     <li>Todos sus turnos asignados</li>
                     <li>Reportes de turno y bitácora del caso</li>
                     <li>Cobros, kardex e insumos del caso</li>
