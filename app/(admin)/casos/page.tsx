@@ -4,6 +4,7 @@ import { FolderOpen, Plus, ChevronRight, MapPin, Clock, Search } from 'lucide-re
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
+import { AccionesCasoMenu } from '@/components/admin/casos/AccionesCasoMenu'
 import type { Caso } from '@/types'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -100,47 +101,55 @@ export default async function CasosPage({
             const paciente = c.paciente as { nombre: string; apellido: string } | undefined
 
             return (
-              <Link key={c.id} href={`/casos/${c.id}`}
-                className="flex items-center gap-4 bg-white rounded-xl px-6 py-4 shadow-sm hover:shadow-md border border-transparent hover:border-[#2AABBF] transition-all group">
+              <div key={c.id}
+                className="flex items-center bg-white rounded-xl shadow-sm border border-transparent hover:shadow-md hover:border-[#2AABBF] transition-all group">
 
-                <div className="w-2 h-10 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: st.color }} />
+                {/* Área clickeable → navega al detalle */}
+                <Link href={`/casos/${c.id}`} className="flex items-center gap-4 flex-1 min-w-0 px-6 py-4">
+                  <div className="w-2 h-10 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: st.color }} />
 
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate" style={{ color: '#1B2B4B' }}>
-                    {c.titulo}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1 flex-wrap">
-                    {paciente && (
-                      <span className="text-xs text-gray-500">
-                        {paciente.nombre} {paciente.apellido}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate" style={{ color: '#1B2B4B' }}>
+                      {c.titulo}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                      {paciente && (
+                        <span className="text-xs text-gray-500">
+                          {paciente.nombre} {paciente.apellido}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <MapPin size={10} />
+                        <span className="capitalize">{c.contexto.replace('_', ' ')}</span>
                       </span>
-                    )}
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
-                      <MapPin size={10} />
-                      <span className="capitalize">{c.contexto.replace('_', ' ')}</span>
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
-                      <Clock size={10} />
-                      {diasActivo === 0 ? 'Hoy' : `${diasActivo}d`}
-                    </span>
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <Clock size={10} />
+                        {diasActivo === 0 ? 'Hoy' : `${diasActivo}d`}
+                      </span>
+                    </div>
                   </div>
+
+                  <div className="text-right hidden sm:block flex-shrink-0">
+                    <p className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+                      ${c.tarifa_hora}/h
+                    </p>
+                    <p className="text-xs text-gray-400">tarifa</p>
+                  </div>
+
+                  <Badge variant="outline" className="text-xs flex-shrink-0"
+                    style={{ borderColor: st.border, color: st.color, backgroundColor: st.bg }}>
+                    {st.label}
+                  </Badge>
+
+                  <ChevronRight size={16} className="text-gray-300 group-hover:text-[#2AABBF] transition-colors flex-shrink-0" />
+                </Link>
+
+                {/* Menú de acciones (fuera del Link para no navegar) */}
+                <div className="pr-3 flex-shrink-0">
+                  <AccionesCasoMenu casoId={c.id} titulo={c.titulo} status={c.status} />
                 </div>
-
-                <div className="text-right hidden sm:block flex-shrink-0">
-                  <p className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
-                    ${c.tarifa_hora}/h
-                  </p>
-                  <p className="text-xs text-gray-400">tarifa</p>
-                </div>
-
-                <Badge variant="outline" className="text-xs flex-shrink-0"
-                  style={{ borderColor: st.border, color: st.color, backgroundColor: st.bg }}>
-                  {st.label}
-                </Badge>
-
-                <ChevronRight size={16} className="text-gray-300 group-hover:text-[#2AABBF] transition-colors flex-shrink-0" />
-              </Link>
+              </div>
             )
           })}
         </div>

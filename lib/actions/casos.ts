@@ -146,12 +146,32 @@ export async function eliminarCaso(id: string): Promise<ActionResult> {
 
   const { error } = await supabase.from('casos').delete().eq('id', id)
   if (error) {
-    // FK RESTRICT: hay turnos u otros registros vinculados
     if (error.code === '23503') {
-      return { error: 'No se puede eliminar este caso porque tiene turnos, cobranzas u otros registros vinculados. Ciérralo en lugar de eliminarlo.' }
+      return { error: 'TIENE_DEPENDENCIAS' }
     }
     return { error: error.message }
   }
+  revalidatePath('/casos')
+  revalidatePath('/dashboard')
+  return {}
+}
+
+export async function eliminarCasoForzado(id: string): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin')
+
+  // Anular referencias en bitácora (FK nullable sin ON DELETE)
+  await supabase.from('bitacora').update({ caso_id: null }).eq('caso_id', id)
+
+  // Borrar en orden para respetar FKs RESTRICT
+  await supabase.from('reportes_turno').delete().eq('caso_id', id)
+  await supabase.from('cobranza_items').delete().eq('caso_id', id)
+  await supabase.from('turnos').delete().eq('caso_id', id)
+
+  // Borrar el caso (ON DELETE CASCADE limpia: kardex, incidencias, insumos_usados)
+  const { error } = await supabase.from('casos').delete().eq('id', id)
+  if (error) return { error: error.message }
+
   revalidatePath('/casos')
   revalidatePath('/dashboard')
   return {}
