@@ -64,7 +64,7 @@ export async function getTurnosByCaso(casoId: string) {
 
 export async function crearTurno(formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = TurnoSchema.safeParse({
     caso_id:      fd(formData, 'caso_id'),
@@ -94,7 +94,7 @@ export async function crearTurno(formData: FormData): Promise<ActionResult> {
 
 export async function cambiarStatusTurno(id: string, status: 'programado' | 'activo' | 'completado') {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros', 'enfermero')
+  requireRole(perfil, 'admin', 'coordinador', 'enfermero')
 
   // Si es enfermero, verificar que el turno le pertenece
   if (perfil.rol === 'enfermero') {
@@ -234,10 +234,10 @@ export async function validarTurno(
   }
 ): Promise<{ error?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   // Jefatura NO puede marcar pagos — solo puede validar o rechazar
-  if (perfil.rol === 'jefe_enfermeros' && params.validacion_status === 'validado') {
+  if (perfil.rol === 'coordinador' && params.validacion_status === 'validado') {
     // Verificar que hay reporte
     const { data: reporte } = await supabase
       .from('reportes_turno')
@@ -303,7 +303,7 @@ export async function validarTurno(
 
 export async function editarFechasTurno(id: string, formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const fecha_inicio = fd(formData, 'fecha_inicio')
   const fecha_fin    = fd(formData, 'fecha_fin')

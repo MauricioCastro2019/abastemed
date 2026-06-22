@@ -20,7 +20,7 @@ export async function getCobranza() {
 
 export async function marcarPagado(id: string) {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('cobranza_items')

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { Caso } from '@/types'
-import { requireAuth, requireRole, fd, fdNum, zodActionError, type ActionResult } from './utils'
+import { requireAuth, requireRole, fd, fdNum, zodActionError, DEFAULT_ORG_ID, type ActionResult } from './utils'
 import { CasoSchema } from '@/lib/validations'
 
 export async function getCasos(search?: string) {
@@ -42,7 +42,7 @@ export async function getCaso(id: string) {
 export async function crearCaso(formData: FormData): Promise<ActionResult> {
   try {
     const { supabase, perfil } = await requireAuth()
-    requireRole(perfil, 'admin', 'jefe_enfermeros')
+    requireRole(perfil, 'admin', 'coordinador')
 
     const horasTurno = fdNum(formData, 'horas_turno') || 8
     const costoGuardia = fdNum(formData, 'costo_guardia')
@@ -75,8 +75,9 @@ export async function crearCaso(formData: FormData): Promise<ActionResult> {
       dias_semana:    diasRaw,
       horario_inicio: fd(formData, 'horario_inicio') || null,
       horario_fin:    fd(formData, 'horario_fin') || null,
-      notas:          fd(formData, 'notas') || null,
-      status:         'activo',
+      notas:           fd(formData, 'notas') || null,
+      status:          'activo',
+      organization_id: DEFAULT_ORG_ID,
     })
 
     if (error) return { error: error.message }
@@ -92,7 +93,7 @@ export async function crearCaso(formData: FormData): Promise<ActionResult> {
 export async function actualizarCaso(id: string, formData: FormData): Promise<ActionResult> {
   try {
     const { supabase, perfil } = await requireAuth()
-    requireRole(perfil, 'admin', 'jefe_enfermeros')
+    requireRole(perfil, 'admin', 'coordinador')
 
     const horasTurnoU = fdNum(formData, 'horas_turno') || 8
     const costoGuardiaU = fdNum(formData, 'costo_guardia')
@@ -191,7 +192,7 @@ export async function getCasosByPaciente(pacienteId: string): Promise<Caso[]> {
 
 export async function cambiarStatusCaso(id: string, status: 'activo' | 'pausado' | 'cerrado') {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('casos')

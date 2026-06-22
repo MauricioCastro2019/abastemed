@@ -9,7 +9,7 @@ import type {
   DashboardFinanciero,
   Paciente,
 } from '@/types'
-import { requireAuth, requireRole, fd, fdNum, type ActionResult, zodActionError } from './utils'
+import { requireAuth, requireRole, fd, fdNum, type ActionResult, zodActionError, DEFAULT_ORG_ID } from './utils'
 import { IngresoSchema, SalidaSchema } from '@/lib/validations'
 
 // ─── Folio generators ────────────────────────────────────────────────────────
@@ -170,6 +170,7 @@ export async function crearIngreso(formData: FormData): Promise<ActionResult> {
     observaciones:             d.observaciones || null,
     estatus:                   calcularEstatusIngreso(d.monto_total, d.monto_recibido),
     registrado_por:            perfil.id,
+    organization_id:           DEFAULT_ORG_ID,
   })
 
   if (error) return { error: error.message }
@@ -363,6 +364,7 @@ export async function crearSalida(formData: FormData): Promise<ActionResult> {
     observaciones:         d.observaciones || null,
     estatus:               d.estatus ?? 'pendiente',
     registrado_por:        perfil.id,
+    organization_id:       DEFAULT_ORG_ID,
   })
 
   if (error) return { error: error.message }

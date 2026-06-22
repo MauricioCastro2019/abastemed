@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (perfil?.rol === 'enfermero')     redirect('/enfermero/dashboard')
   if (perfil?.rol === 'familiar')      redirect('/familiar/dashboard')
-  // admin y jefe_enfermeros pasan aquí
+  // admin, coordinador, superadmin, administrativo, auditor pasan aquí
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F5F5F0' }}>

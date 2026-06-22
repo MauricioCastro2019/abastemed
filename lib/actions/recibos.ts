@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { EstadoRecibo, MetodoPagoRecibo, Recibo, ReciboItem } from '@/types'
-import { requireAuth, requireRole, fd } from './utils'
+import { requireAuth, requireRole, fd, DEFAULT_ORG_ID } from './utils'
 
 type ItemInput = {
   descripcion: string
@@ -75,7 +75,7 @@ export async function getRecibo(id: string): Promise<ReciboConItems> {
 
 export async function crearRecibo(formData: FormData) {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const fechaEmision = fd(formData, 'fecha_emision')
   if (!fechaEmision) throw new Error('Fecha de emisión requerida')
@@ -99,6 +99,7 @@ export async function crearRecibo(formData: FormData) {
       estado,
       fecha_pago:      fd(formData, 'fecha_pago') || null,
       referencia_pago: fd(formData, 'referencia_pago') || null,
+      organization_id: DEFAULT_ORG_ID,
     })
     .select()
     .single()
@@ -123,7 +124,7 @@ export async function crearRecibo(formData: FormData) {
 
 export async function actualizarRecibo(id: string, formData: FormData) {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const items = JSON.parse(fd(formData, 'items') || '[]') as ItemInput[]
   const subtotal = items.reduce((sum, i) => sum + i.importe, 0)

@@ -1,6 +1,7 @@
 'use server'
 
 import { createServiceClient } from '@/lib/supabase/service'
+import { DEFAULT_ORG_ID } from './utils'
 
 type RegistroResult = { ok: true } | { ok: false; error: string }
 
@@ -50,9 +51,10 @@ export async function registrarEnfermero(formData: FormData): Promise<RegistroRe
     email,
     telefono,
     especialidades,
-    disponible:  false,
-    rating:      0,
-    total_casos: 0,
+    disponible:      false,
+    rating:          0,
+    total_casos:     0,
+    organization_id: DEFAULT_ORG_ID,
   })
 
   if (enfermeroError) {

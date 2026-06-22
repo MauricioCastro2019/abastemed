@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { Enfermero } from '@/types'
-import { requireAuth, requireRole, fd, fdBool, fdLines, zodActionError, type ActionResult } from './utils'
+import { requireAuth, requireRole, fd, fdBool, fdLines, zodActionError, DEFAULT_ORG_ID, type ActionResult } from './utils'
 import { EnfermeroSchema } from '@/lib/validations'
 
 export async function getEnfermeros(search?: string) {
@@ -37,7 +37,7 @@ export async function getEnfermero(id: string) {
 
 export async function crearEnfermero(formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = EnfermeroSchema.safeParse({
     nombre:   fd(formData, 'nombre'),
@@ -57,9 +57,10 @@ export async function crearEnfermero(formData: FormData): Promise<ActionResult> 
     especialidades: fdLines(formData, 'especialidades'),
     telefono:      v.telefono,
     email:         v.email,
-    bio:           fd(formData, 'bio') || null,
-    disponible:    fdBool(formData, 'disponible'),
-    cv_url:        fd(formData, 'cv_url') || null,
+    bio:             fd(formData, 'bio') || null,
+    disponible:      fdBool(formData, 'disponible'),
+    cv_url:          fd(formData, 'cv_url') || null,
+    organization_id: DEFAULT_ORG_ID,
   })
 
   if (error) return { error: error.message }
@@ -70,7 +71,7 @@ export async function crearEnfermero(formData: FormData): Promise<ActionResult> 
 
 export async function actualizarEnfermero(id: string, formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = EnfermeroSchema.safeParse({
     nombre:   fd(formData, 'nombre'),
@@ -104,7 +105,7 @@ export async function actualizarEnfermero(id: string, formData: FormData): Promi
 
 export async function aprobarEnfermero(id: string) {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('enfermeros')

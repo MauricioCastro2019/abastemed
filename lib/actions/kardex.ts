@@ -32,7 +32,7 @@ export async function getKardexActivo(casoId: string): Promise<KardexMedicamento
 
 export async function crearKardexMed(formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const casoId = fd(formData, 'caso_id')
   const nombre = fd(formData, 'nombre')
@@ -71,7 +71,7 @@ export async function actualizarKardexMed(
   formData: FormData
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const horariosRaw = fd(formData, 'horarios')
   const horarios = horariosRaw
@@ -103,7 +103,7 @@ export async function actualizarKardexMed(
 
 export async function suspenderKardexMed(id: string, casoId: string): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('kardex_medicamentos')

@@ -21,7 +21,7 @@ export default async function CobranzaPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
     const { data: perfil } = await supabase.from('perfiles').select('rol').eq('id', user.id).single()
-    if (perfil?.rol === 'jefe_enfermeros') redirect('/dashboard')
+    if (perfil?.rol === 'coordinador') redirect('/dashboard')
   }
 
   let items: Awaited<ReturnType<typeof getCobranza>> = []

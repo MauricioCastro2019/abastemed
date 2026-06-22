@@ -25,7 +25,7 @@ function formatFecha(iso: string) {
 
 export default async function ValidacionTurnosPage() {
   const { perfil } = await requireAuth()
-  if (!['admin', 'jefe_enfermeros'].includes(perfil.rol)) {
+  if (!['admin', 'coordinador'].includes(perfil.rol)) {
     return <div className="p-8 text-red-600">Acceso no autorizado.</div>
   }
 

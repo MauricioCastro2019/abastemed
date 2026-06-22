@@ -58,7 +58,7 @@ export async function getReporte(id: string): Promise<ReporteTurno> {
 
 export async function crearReporteTurno(formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros', 'enfermero')
+  requireRole(perfil, 'admin', 'coordinador', 'enfermero')
 
   const turnoId  = fd(formData, 'turno_id')
   const casoId   = fd(formData, 'caso_id')

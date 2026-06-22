@@ -51,7 +51,7 @@ const NAV_ADMIN = [
   { href: '/salud-sistema',       label: 'Salud del Sistema', icon: Activity },
 ]
 
-const NAV_JEFE = [
+const NAV_COORDINADOR = [
   { href: '/dashboard',           label: 'Dashboard',       icon: LayoutDashboard },
   { href: '/prospectos',          label: 'Prospectos',      icon: UserPlus },
   { href: '/levantamientos',      label: 'Levantamientos',  icon: ClipboardCheck },
@@ -80,8 +80,8 @@ export function Sidebar({ rol, nombre, apellido }: Props) {
   const router      = useRouter()
   const [open, setOpen] = useState(false)
 
-  const NAV_ITEMS = rol === 'jefe_enfermeros' ? NAV_JEFE : NAV_ADMIN
-  const rolLabel  = rol === 'jefe_enfermeros' ? 'Jefe de Enfermeros' : 'Admin'
+  const NAV_ITEMS = rol === 'coordinador' ? NAV_COORDINADOR : NAV_ADMIN
+  const rolLabel  = rol === 'coordinador' ? 'Coordinador' : 'Admin'
 
   async function handleLogout() {
     const supabase = createClient()

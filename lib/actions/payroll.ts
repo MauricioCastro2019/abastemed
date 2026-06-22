@@ -1,7 +1,7 @@
 ﻿'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireAuth, requireRole } from './utils'
+import { requireAuth, requireRole, DEFAULT_ORG_ID } from './utils'
 import { registrarEvento } from './bitacora'
 import type {
   PayrollPeriod,
@@ -73,6 +73,7 @@ export async function crearPayrollPeriod(formData: FormData): Promise<{ error?: 
       observaciones:         observaciones || null,
       estado:                'borrador',
       created_by:            perfil.id,
+      organization_id:       DEFAULT_ORG_ID,
     })
     .select('id')
     .single()
@@ -92,7 +93,7 @@ export async function crearPayrollPeriod(formData: FormData): Promise<{ error?: 
 
 export async function generarPartidas(periodoId: string): Promise<{ error?: string; insertados?: number }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { data: periodo, error: pError } = await supabase
     .from('payroll_periods')
@@ -182,7 +183,7 @@ export async function validarPayrollItem(
   }
 ): Promise<{ error?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const updates: Record<string, unknown> = {
     estado_validacion: params.estado,
@@ -203,7 +204,7 @@ export async function validarPayrollItem(
 
 export async function marcarPeriodoEnRevision(periodoId: string): Promise<{ error?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('payroll_periods')
@@ -220,7 +221,7 @@ export async function marcarPeriodoEnRevision(periodoId: string): Promise<{ erro
 
 export async function marcarPeriodoValidado(periodoId: string): Promise<{ error?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { data: problemas } = await supabase
     .from('payroll_items')

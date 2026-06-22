@@ -30,7 +30,7 @@ export default async function FamiliarLayout({
   if (!perfil) redirect('/login')
   if (perfil.rol === 'admin') redirect('/dashboard')
   if (perfil.rol === 'enfermero') redirect('/enfermero/dashboard')
-  if (perfil.rol === 'jefe_enfermeros') redirect('/dashboard')
+  if (perfil.rol === 'coordinador') redirect('/dashboard')
 
   async function handleLogout() {
     'use server'

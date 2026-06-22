@@ -27,7 +27,7 @@ export async function getCatalogo(search?: string): Promise<InsumoCatalogo[]> {
 
 export async function crearInsumo(formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const nombre = fd(formData, 'nombre')
   if (!nombre) return { error: 'Nombre requerido' }
@@ -49,7 +49,7 @@ export async function crearInsumo(formData: FormData): Promise<ActionResult> {
 
 export async function actualizarInsumo(id: string, formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase.from('insumos_catalogo').update({
     nombre:      fd(formData, 'nombre'),
@@ -67,7 +67,7 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
 
 export async function eliminarInsumo(id: string) {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   // Soft delete
   const { error } = await supabase
@@ -180,7 +180,7 @@ export async function registrarUso(formData: FormData): Promise<ActionResult> {
 
 export async function eliminarUso(id: string) {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase.from('insumos_usados').delete().eq('id', id)
   if (error) throw new Error(error.message)

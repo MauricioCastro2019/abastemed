@@ -2,6 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import type { PerfilUsuario } from '@/types'
 import type { ZodError } from 'zod'
 
+// UUID de la organización por defecto (Abastemed).
+// Cuando se implemente multi-organización real, se reemplaza con user_organization_id().
+export const DEFAULT_ORG_ID = '00000000-0000-0000-0000-000000000001'
+
 export type ActionResult = {
   error?: string
   fieldErrors?: Record<string, string>

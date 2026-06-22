@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireAuth, requireRole, type ActionResult } from './utils'
+import { requireAuth, requireRole, DEFAULT_ORG_ID, type ActionResult } from './utils'
 import type {
   LevantamientoPaciente,
   LevantamientoMedicamento,
@@ -129,7 +129,7 @@ export async function crearLevantamiento(
   materiales: Omit<LevantamientoMaterial, 'id' | 'levantamiento_id'>[]
 ): Promise<ActionResult & { id?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const insertData = buildInsertPayload(payload, perfil.id)
 
@@ -178,7 +178,7 @@ export async function actualizarLevantamiento(
   materiales: Omit<LevantamientoMaterial, 'id' | 'levantamiento_id'>[]
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const insertData = buildInsertPayload(payload, perfil.id)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -221,7 +221,7 @@ export async function cambiarEstadoLevantamiento(
   estado: LevantamientoPaciente['estado']
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('levantamientos_paciente')
@@ -510,7 +510,7 @@ export async function crearLevantamientoDesdeProspecto(
   cotizacionId: string
 ): Promise<ActionResult & { id?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   // VALIDACIÓN BACKEND: no crear si ya existe levantamiento activo
   const { data: existingLev } = await supabase
@@ -700,6 +700,7 @@ export async function crearLevantamientoDesdeProspecto(
       signos_vitales:         {},
       estado:                 'borrador',
       levantado_por:          perfil.id,
+      organization_id:        DEFAULT_ORG_ID,
     })
     .select('id')
     .single()
@@ -718,7 +719,7 @@ export async function convertirLevantamiento(
   id: string
 ): Promise<ActionResult & { pacienteId?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { data: lev, error: levErr } = await supabase
     .from('levantamientos_paciente')
@@ -773,6 +774,7 @@ export async function convertirLevantamiento(
         contexto:           'domicilio',
         status:             'activo',
         source_prospect_id: lev.prospect_id ?? null,
+        organization_id:    DEFAULT_ORG_ID,
       })
       .select('id')
       .single()
@@ -941,7 +943,8 @@ function buildInsertPayload(payload: LevantamientoPayload, levantadoPor: string)
     // Consentimiento
     consentimiento: payload.consentimiento ?? {},
     // Control
-    estado:        payload.estado || 'borrador',
-    levantado_por: levantadoPor,
+    estado:          payload.estado || 'borrador',
+    levantado_por:   levantadoPor,
+    organization_id: DEFAULT_ORG_ID,
   }
 }

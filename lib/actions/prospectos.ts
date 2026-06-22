@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { Prospect, ProspectoStatus } from '@/types'
-import { requireAuth, requireRole, fd, fdBool, zodActionError, type ActionResult } from './utils'
+import { requireAuth, requireRole, fd, fdBool, zodActionError, DEFAULT_ORG_ID, type ActionResult } from './utils'
 import { z } from 'zod'
 
 const ProspectoSchema = z.object({
@@ -72,7 +72,7 @@ export async function getProspectoConRelaciones(id: string) {
 
 export async function crearProspecto(formData: FormData): Promise<ActionResult & { id?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = ProspectoSchema.safeParse({
     requester_name:          fd(formData, 'requester_name'),
@@ -110,6 +110,7 @@ export async function crearProspecto(formData: FormData): Promise<ActionResult &
     initial_observations:          v.initial_observations || null,
     status:                        'nuevo',
     created_by:                    perfil.id,
+    organization_id:               DEFAULT_ORG_ID,
   }).select('id').single()
 
   if (error) return { error: error.message }
@@ -120,7 +121,7 @@ export async function crearProspecto(formData: FormData): Promise<ActionResult &
 
 export async function actualizarProspecto(id: string, formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = ProspectoSchema.safeParse({
     requester_name:          fd(formData, 'requester_name'),
@@ -169,7 +170,7 @@ export async function cambiarStatusProspecto(
   status: ProspectoStatus,
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('prospects')

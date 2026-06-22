@@ -25,7 +25,7 @@ interface Props {
 }
 
 export function InsumosClient({ rol }: Props) {
-  const esJefe   = rol === 'jefe_enfermeros'
+  const esJefe   = rol === 'coordinador'
   const esAdmin  = rol === 'admin'
 
   const [catalogo, setCatalogo]           = useState<InsumoCatalogo[]>([])

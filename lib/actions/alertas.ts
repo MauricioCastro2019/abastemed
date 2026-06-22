@@ -90,7 +90,7 @@ export async function resolverAlerta(
   motivo?: string
 ): Promise<{ error?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('alertas')
@@ -109,7 +109,7 @@ export async function resolverAlerta(
 
 export async function ignorarAlerta(id: string): Promise<{ error?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('alertas')

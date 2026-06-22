@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { Paciente } from '@/types'
-import { requireAuth, requireRole, fd, fdLines, zodActionError, type ActionResult } from './utils'
+import { requireAuth, requireRole, fd, fdLines, zodActionError, DEFAULT_ORG_ID, type ActionResult } from './utils'
 import { PacienteSchema } from '@/lib/validations'
 
 export async function getPacientes(search?: string) {
@@ -37,7 +37,7 @@ export async function getPaciente(id: string) {
 
 export async function crearPaciente(formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = PacienteSchema.safeParse({
     nombre:            fd(formData, 'nombre'),
@@ -67,8 +67,9 @@ export async function crearPaciente(formData: FormData): Promise<ActionResult> {
       email:    v.contacto_email || null,
       relacion: v.contacto_relacion,
     },
-    contexto: v.contexto,
-    status:   'activo',
+    contexto:         v.contexto,
+    status:           'activo',
+    organization_id:  DEFAULT_ORG_ID,
   })
 
   if (error) return { error: error.message }
@@ -79,7 +80,7 @@ export async function crearPaciente(formData: FormData): Promise<ActionResult> {
 
 export async function actualizarPaciente(id: string, formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = PacienteSchema.safeParse({
     nombre:            fd(formData, 'nombre'),
@@ -122,7 +123,7 @@ export async function actualizarPaciente(id: string, formData: FormData): Promis
 
 export async function cambiarStatusPaciente(id: string, status: 'activo' | 'cerrado') {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { error } = await supabase
     .from('pacientes')

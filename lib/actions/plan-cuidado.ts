@@ -214,7 +214,7 @@ export async function crearIndicacion(
   formData: FormData
 ): Promise<ActionResult & { id?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const horarios = (formData.getAll('horarios') as string[])
     .map(h => h.trim())
@@ -278,7 +278,7 @@ export async function toggleIndicacion(
   activa: boolean
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const { data: ind, error: fetchErr } = await supabase
     .from('indicaciones')
@@ -305,7 +305,7 @@ export async function actualizarStatusEvento(
   notas?: string
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros', 'enfermero')
+  requireRole(perfil, 'admin', 'coordinador', 'enfermero')
 
   const { error } = await supabase
     .from('eventos_indicacion')

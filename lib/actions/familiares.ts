@@ -79,7 +79,7 @@ export async function getFamiliaresDelPaciente(pacienteId: string) {
 
 export async function invitarFamiliar(formData: FormData): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
   const { perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const raw = {
     email:               fd(formData, 'email'),
@@ -162,7 +162,7 @@ export async function actualizarFamiliar(
   formData: FormData,
 ): Promise<{ error?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const whatsappIgual = formData.get('whatsapp_igual_tel') === 'on'
   const telefono      = fd(formData, 'telefono') || null
@@ -198,7 +198,7 @@ export async function vincularPaciente(
   parentesco?: string,
 ): Promise<void> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   // Actualizar perfiles.paciente_id (compatibilidad)
   await supabase

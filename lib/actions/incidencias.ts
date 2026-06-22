@@ -40,7 +40,7 @@ export async function getIncidenciasRecientes(casoId: string): Promise<Incidenci
 
 export async function crearIncidencia(formData: FormData): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros', 'enfermero')
+  requireRole(perfil, 'admin', 'coordinador', 'enfermero')
 
   const casoId  = fd(formData, 'caso_id')
   const tipo    = fd(formData, 'tipo')

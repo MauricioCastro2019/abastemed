@@ -44,7 +44,7 @@ export async function upsertPreassessment(
   formData: FormData,
 ): Promise<ActionResult & { id?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const parsed = PreassessmentSchema.safeParse({
     patient_name: fd(formData, 'patient_name'),
@@ -137,7 +137,7 @@ export async function upsertPhysicalAssessment(
   formData: FormData,
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const scores = parsePhysicalForm(formData)
   const physical_score = Object.values(scores).reduce((a, b) => a + b, 0)
@@ -198,7 +198,7 @@ export async function upsertClinicalAssessment(
   formData: FormData,
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   // Multi-select devices
   const devicesRaw = formData.getAll('devices_list') as string[]
@@ -281,7 +281,7 @@ export async function upsertOperationalAssessment(
   formData: FormData,
 ): Promise<ActionResult> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const scores = {
     orientation_status:        Math.min(4, Math.max(0, fdNum(formData, 'orientation_status'))),
@@ -345,7 +345,7 @@ export async function upsertServiceRequest(
   formData: FormData,
 ): Promise<ActionResult & { id?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const staffPreference = formData.getAll('staff_preference') as string[]
   const shiftHours = fdNum(formData, 'shift_duration_hours') || 8
@@ -405,7 +405,7 @@ export async function calcularResultado(
   preassessmentId: string,
 ): Promise<ActionResult & { resultId?: string }> {
   const { supabase, perfil } = await requireAuth()
-  requireRole(perfil, 'admin', 'jefe_enfermeros')
+  requireRole(perfil, 'admin', 'coordinador')
 
   const [paRes, caRes, oaRes, srRes, prospectRes] = await Promise.all([
     supabase.from('physical_assessments').select('*').eq('preassessment_id', preassessmentId).maybeSingle(),

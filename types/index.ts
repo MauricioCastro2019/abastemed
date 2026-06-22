@@ -9,7 +9,7 @@ export type StatusCaso = 'activo' | 'pausado' | 'cerrado'
 export type StatusTurno = 'programado' | 'activo' | 'completado'
 export type ValidacionStatusTurno = 'pendiente' | 'en_revision' | 'validado' | 'rechazado' | 'en_aclaracion'
 export type StatusCobranza = 'pendiente' | 'pagado'
-export type RolUsuario = 'admin' | 'enfermero' | 'familiar' | 'jefe_enfermeros'
+export type RolUsuario = 'admin' | 'coordinador' | 'enfermero' | 'familiar' | 'superadmin' | 'administrativo' | 'auditor'
 
 // ----------------------------------------------------------------
 export interface Paciente {
@@ -1401,6 +1401,35 @@ export interface ResumenSaludSistema {
   bajos: number
   problemas: ProblemaIntegridad[]
   generado_at: string
+}
+
+// ============================================================
+// MÓDULO ORGANIZACIONAL — Fase 1
+// ============================================================
+
+export interface Organization {
+  id: string
+  nombre: string
+  razon_social?: string | null
+  rfc?: string | null
+  logo_url?: string | null
+  status: 'activo' | 'inactivo' | 'suspendido'
+  plan: 'interno' | 'basico' | 'profesional' | 'enterprise'
+  config: Record<string, unknown>
+  created_at: string
+}
+
+export interface Portfolio {
+  id: string
+  organization_id: string
+  nombre: string
+  descripcion?: string | null
+  responsable_id?: string | null
+  status: 'activo' | 'inactivo'
+  created_at: string
+  // Relaciones opcionales
+  organization?: Pick<Organization, 'id' | 'nombre'>
+  responsable?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'>
 }
 
 // ============================================================

@@ -15,7 +15,7 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  if (perfil?.rol === 'jefe_enfermeros') {
+  if (perfil?.rol === 'coordinador') {
     return <JefeDashboard nombre={perfil.nombre} />
   }
 
