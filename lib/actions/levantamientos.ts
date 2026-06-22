@@ -711,6 +711,102 @@ export async function crearLevantamientoDesdeProspecto(
 }
 
 // ============================================================
+// CONVERTIR LEVANTAMIENTO → PACIENTE + CASO
+// ============================================================
+
+export async function convertirLevantamiento(
+  id: string
+): Promise<ActionResult & { pacienteId?: string }> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'jefe_enfermeros')
+
+  const { data: lev, error: levErr } = await supabase
+    .from('levantamientos_paciente')
+    .select('*')
+    .eq('id', id)
+    .eq('estado', 'aprobado')
+    .single()
+
+  if (levErr || !lev) return { error: 'El levantamiento no existe o no está en estado aprobado.' }
+
+  // Verificar si el paciente ya fue creado (operación idempotente)
+  let pacienteId: string | null = null
+  if (lev.prospect_id) {
+    const { data: existing } = await supabase
+      .from('pacientes')
+      .select('id')
+      .eq('source_prospect_id', lev.prospect_id)
+      .maybeSingle()
+    pacienteId = existing?.id ?? null
+  }
+
+  if (!pacienteId) {
+    // Obtener medicamentos del levantamiento para poblar el perfil del paciente
+    const { data: meds } = await supabase
+      .from('levantamiento_medicamentos')
+      .select('nombre, dosis, frecuencia')
+      .eq('levantamiento_id', id)
+
+    const medicamentosArr = (meds ?? []).map(
+      (m: { nombre: string; dosis?: string; frecuencia?: string }) =>
+        [m.nombre, m.dosis, m.frecuencia].filter(Boolean).join(' ')
+    )
+    const alergiasArr = lev.alergias
+      ? String(lev.alergias).split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
+      : []
+
+    const { data: paciente, error: pacErr } = await supabase
+      .from('pacientes')
+      .insert({
+        nombre:            lev.paciente_nombre,
+        apellido:          lev.paciente_apellido,
+        fecha_nacimiento:  lev.paciente_fecha_nacimiento ?? '1950-01-01',
+        diagnostico:       lev.diagnostico_principal ?? 'Por definir',
+        medicamentos:      medicamentosArr,
+        alergias:          alergiasArr,
+        contacto_familiar: {
+          nombre:   lev.responsable_nombre ?? '',
+          telefono: lev.responsable_tel_principal ?? '',
+          email:    lev.responsable_email ?? null,
+          relacion: lev.responsable_parentesco ?? '',
+        },
+        contexto:           'domicilio',
+        status:             'activo',
+        source_prospect_id: lev.prospect_id ?? null,
+      })
+      .select('id')
+      .single()
+
+    if (pacErr) return { error: pacErr.message }
+    pacienteId = paciente.id
+  }
+
+  // Cambiar estado del levantamiento a convertido
+  const { error: updateErr } = await supabase
+    .from('levantamientos_paciente')
+    .update({ estado: 'convertido' })
+    .eq('id', id)
+
+  if (updateErr) return { error: updateErr.message }
+
+  // Marcar prospecto como paciente activo
+  if (lev.prospect_id) {
+    await supabase
+      .from('prospects')
+      .update({ status: 'paciente_activo' })
+      .eq('id', lev.prospect_id)
+      .neq('status', 'paciente_activo')
+  }
+
+  revalidatePath('/levantamientos')
+  revalidatePath(`/levantamientos/${id}`)
+  revalidatePath('/pacientes')
+  revalidatePath('/prospectos')
+
+  return { pacienteId: pacienteId! }
+}
+
+// ============================================================
 // ARCHIVAR LEVANTAMIENTO
 // ============================================================
 

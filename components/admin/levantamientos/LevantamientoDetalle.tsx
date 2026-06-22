@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
-import { cambiarEstadoLevantamiento } from '@/lib/actions/levantamientos'
+import { cambiarEstadoLevantamiento, convertirLevantamiento } from '@/lib/actions/levantamientos'
 import type { LevantamientoPaciente } from '@/types'
 import {
   AlertTriangle, Phone, Mail, MapPin, Calendar, User, Activity,
@@ -110,16 +110,28 @@ const TRANSICIONES: Record<string, { label: string; next: LevantamientoPaciente[
   cancelado:          [{ label: 'Reabrir como borrador', next: 'borrador' }],
 }
 
-function AccionesEstado({ id, estado }: { id: string; estado: LevantamientoPaciente['estado'] }) {
+function AccionesEstado({ lev }: { lev: LevantamientoPaciente }) {
   const [isPending, startTransition] = useTransition()
-  const transiciones = TRANSICIONES[estado] ?? []
+  const transiciones = TRANSICIONES[lev.estado] ?? []
 
   if (!transiciones.length) return null
 
   function cambiar(next: LevantamientoPaciente['estado']) {
     startTransition(async () => {
-      await cambiarEstadoLevantamiento(id, next)
-      window.location.reload()
+      if (next === 'convertido') {
+        const result = await convertirLevantamiento(lev.id)
+        if (result.error) {
+          alert(result.error)
+          return
+        }
+        const url = result.pacienteId
+          ? `/casos/nuevo?paciente_id=${result.pacienteId}&costo=${lev.costo_autorizado ?? ''}`
+          : '/casos/nuevo'
+        window.location.href = url
+      } else {
+        await cambiarEstadoLevantamiento(lev.id, next)
+        window.location.reload()
+      }
     })
   }
 
@@ -276,7 +288,7 @@ export function LevantamientoDetalle({ lev, pacienteId }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <AccionesEstado id={lev.id} estado={lev.estado} />
+          <AccionesEstado lev={lev} />
           <Link href={`/levantamientos/${lev.id}/editar`}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
             <Pencil size={14} /> Editar
