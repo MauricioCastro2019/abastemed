@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { Caso } from '@/types'
+import type { Caso, PerfilUsuario } from '@/types'
 import { requireAuth, requireRole, fd, fdNum, zodActionError, DEFAULT_ORG_ID, type ActionResult } from './utils'
 import { CasoSchema } from '@/lib/validations'
 
@@ -11,7 +11,8 @@ export async function getCasos(search?: string) {
     .from('casos')
     .select(`
       *,
-      paciente:pacientes(id, nombre, apellido, contexto)
+      paciente:pacientes(id, nombre, apellido, contexto),
+      coordinador:perfiles!coordinador_id(id, nombre, apellido)
     `)
     .order('created_at', { ascending: false })
 
@@ -30,13 +31,45 @@ export async function getCaso(id: string) {
     .from('casos')
     .select(`
       *,
-      paciente:pacientes(*)
+      paciente:pacientes(*),
+      coordinador:perfiles!coordinador_id(id, nombre, apellido)
     `)
     .eq('id', id)
     .single()
 
   if (error) throw new Error(error.message)
   return data as Caso
+}
+
+export async function getCoordinadores(): Promise<PerfilUsuario[]> {
+  const { supabase } = await requireAuth()
+  const { data, error } = await supabase
+    .from('perfiles')
+    .select('id, nombre, apellido, rol, email, telefono, foto_url, enfermero_id, paciente_id, created_at')
+    .eq('rol', 'coordinador')
+    .order('nombre')
+  if (error) throw new Error(error.message)
+  return (data ?? []) as PerfilUsuario[]
+}
+
+export async function asignarCoordinador(casoId: string, coordinadorId: string | null): Promise<ActionResult> {
+  try {
+    const { supabase, perfil } = await requireAuth()
+    requireRole(perfil, 'admin')
+
+    const { error } = await supabase
+      .from('casos')
+      .update({ coordinador_id: coordinadorId })
+      .eq('id', casoId)
+
+    if (error) return { error: error.message }
+
+    revalidatePath('/casos')
+    revalidatePath(`/casos/${casoId}`)
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Error inesperado al asignar coordinador.' }
+  }
 }
 
 export async function crearCaso(formData: FormData): Promise<ActionResult> {
@@ -62,22 +95,28 @@ export async function crearCaso(formData: FormData): Promise<ActionResult> {
     const v = parsed.data
     const diasRaw = formData.getAll('dias_semana') as string[]
 
+    // Coordinador se auto-asigna; admin puede elegir coordinador del form
+    const coordinadorId = perfil.rol === 'coordinador'
+      ? perfil.id
+      : (fd(formData, 'coordinador_id') || null)
+
     const { error } = await supabase.from('casos').insert({
-      paciente_id:    v.paciente_id,
-      titulo:         v.titulo,
-      contexto:       v.contexto,
-      direccion:      v.direccion,
-      fecha_inicio:   v.fecha_inicio,
-      fecha_fin:      fd(formData, 'fecha_fin') || null,
-      tarifa_hora:    v.horas_turno > 0 ? +(v.costo_guardia / v.horas_turno).toFixed(2) : 0,
-      costo_guardia:  v.costo_guardia,
-      horas_turno:    v.horas_turno,
-      dias_semana:    diasRaw,
-      horario_inicio: fd(formData, 'horario_inicio') || null,
-      horario_fin:    fd(formData, 'horario_fin') || null,
+      paciente_id:     v.paciente_id,
+      titulo:          v.titulo,
+      contexto:        v.contexto,
+      direccion:       v.direccion,
+      fecha_inicio:    v.fecha_inicio,
+      fecha_fin:       fd(formData, 'fecha_fin') || null,
+      tarifa_hora:     v.horas_turno > 0 ? +(v.costo_guardia / v.horas_turno).toFixed(2) : 0,
+      costo_guardia:   v.costo_guardia,
+      horas_turno:     v.horas_turno,
+      dias_semana:     diasRaw,
+      horario_inicio:  fd(formData, 'horario_inicio') || null,
+      horario_fin:     fd(formData, 'horario_fin') || null,
       notas:           fd(formData, 'notas') || null,
       status:          'activo',
       organization_id: DEFAULT_ORG_ID,
+      coordinador_id:  coordinadorId,
     })
 
     if (error) return { error: error.message }
@@ -113,7 +152,7 @@ export async function actualizarCaso(id: string, formData: FormData): Promise<Ac
     const v = parsed.data
     const diasRawU = formData.getAll('dias_semana') as string[]
 
-    const { error } = await supabase.from('casos').update({
+    const updateData: Record<string, unknown> = {
       paciente_id:    v.paciente_id,
       titulo:         v.titulo,
       contexto:       v.contexto,
@@ -128,7 +167,14 @@ export async function actualizarCaso(id: string, formData: FormData): Promise<Ac
       horario_fin:    fd(formData, 'horario_fin') || null,
       notas:          fd(formData, 'notas') || null,
       status:         fd(formData, 'status') || 'activo',
-    }).eq('id', id)
+    }
+
+    // Solo admin puede reasignar coordinador desde el formulario de edición
+    if (perfil.rol === 'admin') {
+      updateData.coordinador_id = fd(formData, 'coordinador_id') || null
+    }
+
+    const { error } = await supabase.from('casos').update(updateData).eq('id', id)
 
     if (error) return { error: error.message }
 

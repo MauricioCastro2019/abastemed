@@ -1,14 +1,16 @@
-import { getCaso } from '@/lib/actions/casos'
+import { getCaso, getCoordinadores } from '@/lib/actions/casos'
+import { requireAuth } from '@/lib/actions/utils'
 import { getTurnosByCaso } from '@/lib/actions/turnos'
 import { getBitacoraPorCaso } from '@/lib/actions/bitacora'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { EliminarCasoBtn } from '@/components/admin/casos/EliminarCasoBtn'
+import { AsignarCoordinadorForm } from '@/components/admin/casos/AsignarCoordinadorForm'
 import { BitacoraTimeline } from '@/components/admin/bitacora/BitacoraTimeline'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock, ScrollText } from 'lucide-react'
+import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock, ScrollText, UserCheck } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Paciente } from '@/types'
+import type { Paciente, PerfilUsuario } from '@/types'
 
 const STATUS_CASO: Record<string, { label: string; color: string; bg: string; border: string }> = {
   activo:  { label: 'Activo',  color: '#2AABBF', bg: '#EBF8FB', border: '#2AABBF' },
@@ -33,11 +35,23 @@ function formatFechaCorta(f: string) {
 }
 
 export default async function CasoDetailPage({ params }: { params: { id: string } }) {
+  let esAdmin = false
+  let coordinadores: PerfilUsuario[] = []
+
+  try {
+    const { perfil } = await requireAuth()
+    esAdmin = perfil.rol === 'admin'
+  } catch { /* layout ya maneja la auth */ }
+
   let caso
   try {
     caso = await getCaso(params.id)
   } catch {
     notFound()
+  }
+
+  if (esAdmin) {
+    try { coordinadores = await getCoordinadores() } catch { /* sin datos */ }
   }
 
   let turnos: Awaited<ReturnType<typeof getTurnosByCaso>> = []
@@ -48,6 +62,7 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
 
   const st = STATUS_CASO[caso.status]
   const paciente = caso.paciente as Paciente | undefined
+  const coordinadorActual = caso.coordinador as Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null | undefined
   const diasActivo = Math.floor(
     (Date.now() - new Date(caso.fecha_inicio).getTime()) / (1000 * 60 * 60 * 24)
   )
@@ -126,6 +141,37 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
               <p className="text-xs text-gray-400 capitalize">{paciente.contexto?.replace('_', ' ')}</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Coordinador — solo admin */}
+      {esAdmin && (
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <UserCheck size={15} style={{ color: '#2AABBF' }} />
+            <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Coordinador asignado</h2>
+          </div>
+          {coordinadorActual ? (
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                style={{ backgroundColor: '#1B2B4B' }}>
+                {coordinadorActual.nombre[0]}{coordinadorActual.apellido[0]}
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: '#1B2B4B' }}>
+                  {coordinadorActual.nombre} {coordinadorActual.apellido}
+                </p>
+                <p className="text-xs text-gray-400">Coordinador</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-amber-600 mb-4">Sin coordinador asignado</p>
+          )}
+          <AsignarCoordinadorForm
+            casoId={caso.id}
+            coordinadores={coordinadores}
+            coordinadorActual={coordinadorActual}
+          />
         </div>
       )}
 

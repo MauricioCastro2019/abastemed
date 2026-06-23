@@ -2,7 +2,7 @@
 
 import { useTransition, useState } from 'react'
 import { crearCaso, actualizarCaso } from '@/lib/actions/casos'
-import type { Caso, Paciente } from '@/types'
+import type { Caso, Paciente, PerfilUsuario, RolUsuario } from '@/types'
 
 const INPUT = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#2AABBF] transition-all bg-white"
 const INPUT_ERR = "w-full px-3 py-2 rounded-lg border border-red-300 text-sm outline-none focus:border-red-400 transition-all bg-white"
@@ -22,6 +22,8 @@ const DIAS_SEMANA = [
 interface Props {
   caso?: Caso
   pacientes: Paciente[]
+  coordinadores?: PerfilUsuario[]
+  rolActual?: RolUsuario
   defaultPacienteId?: string
   defaultCosto?: number
 }
@@ -30,13 +32,14 @@ function fmt(n: number) {
   return `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-export function CasoForm({ caso, pacientes, defaultPacienteId, defaultCosto }: Props) {
+export function CasoForm({ caso, pacientes, coordinadores, rolActual, defaultPacienteId, defaultCosto }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   // Estado controlado para auto-fill
   const [pacienteId, setPacienteId]       = useState(caso?.paciente_id ?? defaultPacienteId ?? '')
+  const [coordinadorId, setCoordinadorId] = useState(caso?.coordinador_id ?? '')
   const [contexto, setContexto]           = useState(caso?.contexto ?? 'domicilio')
   const [notas, setNotas]                 = useState(caso?.notas ?? '')
   const [titulo, setTitulo]               = useState(caso?.titulo ?? '')
@@ -159,6 +162,27 @@ export function CasoForm({ caso, pacientes, defaultPacienteId, defaultCosto }: P
           )}
         </div>
       </section>
+
+      {/* ── Coordinador (solo admin) ────────────────────────── */}
+      {rolActual === 'admin' && coordinadores && coordinadores.length > 0 && (
+        <section className="bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-[#1B2B4B] mb-4">Coordinador</h2>
+          <div>
+            <label className={LABEL}>Asignar coordinador</label>
+            <select
+              name="coordinador_id"
+              value={coordinadorId ?? ''}
+              onChange={e => setCoordinadorId(e.target.value)}
+              className={INPUT}
+            >
+              <option value="">Sin asignar</option>
+              {coordinadores.map(c => (
+                <option key={c.id} value={c.id}>{c.nombre} {c.apellido}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+      )}
 
       {/* ── Horario de atención ──────────────────────────────── */}
       <section className="bg-white rounded-xl p-6 shadow-sm">

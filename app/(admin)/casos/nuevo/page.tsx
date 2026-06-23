@@ -1,8 +1,10 @@
 import { CasoForm } from '@/components/admin/casos/CasoForm'
 import { getPacientes } from '@/lib/actions/pacientes'
+import { getCoordinadores } from '@/lib/actions/casos'
+import { requireAuth } from '@/lib/actions/utils'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import type { Paciente } from '@/types'
+import type { Paciente, PerfilUsuario } from '@/types'
 
 export default async function NuevoCasoPage({
   searchParams,
@@ -10,9 +12,24 @@ export default async function NuevoCasoPage({
   searchParams: { paciente_id?: string; costo?: string }
 }) {
   let pacientes: Paciente[] = []
+  let coordinadores: PerfilUsuario[] = []
+  let rolActual: string = 'coordinador'
+
   try {
-    pacientes = await getPacientes()
-    pacientes = pacientes.filter(p => p.status === 'activo')
+    const { perfil } = await requireAuth()
+    rolActual = perfil.rol
+
+    const results = await Promise.allSettled([
+      getPacientes(),
+      perfil.rol === 'admin' ? getCoordinadores() : Promise.resolve([]),
+    ])
+
+    if (results[0].status === 'fulfilled') {
+      pacientes = results[0].value.filter(p => p.status === 'activo')
+    }
+    if (results[1].status === 'fulfilled') {
+      coordinadores = results[1].value as PerfilUsuario[]
+    }
   } catch {
     pacientes = []
   }
@@ -30,6 +47,8 @@ export default async function NuevoCasoPage({
       </div>
       <CasoForm
         pacientes={pacientes}
+        coordinadores={coordinadores}
+        rolActual={rolActual as 'admin' | 'coordinador'}
         defaultPacienteId={searchParams.paciente_id}
         defaultCosto={searchParams.costo ? Number(searchParams.costo) : undefined}
       />

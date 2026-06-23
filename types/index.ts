@@ -55,6 +55,7 @@ export interface Enfermero {
 export interface Caso {
   id: string
   paciente_id: string
+  coordinador_id?: string | null
   titulo: string
   contexto: ContextoPaciente
   direccion: string
@@ -71,6 +72,7 @@ export interface Caso {
   created_at: string
   // Relaciones opcionales (para joins)
   paciente?: Paciente
+  coordinador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
 }
 
 // ----------------------------------------------------------------

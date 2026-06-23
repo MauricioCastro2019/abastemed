@@ -1,6 +1,7 @@
 import { getCasos } from '@/lib/actions/casos'
+import { requireAuth } from '@/lib/actions/utils'
 import { Badge } from '@/components/ui/badge'
-import { FolderOpen, Plus, ChevronRight, MapPin, Clock, Search } from 'lucide-react'
+import { FolderOpen, Plus, ChevronRight, MapPin, Clock, Search, UserCheck } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
@@ -21,6 +22,13 @@ export default async function CasosPage({
   const q = searchParams.q?.trim()
   let casos: Caso[] = []
   let fetchError: string | null = null
+  let esAdmin = false
+
+  try {
+    const { perfil } = await requireAuth()
+    esAdmin = perfil.rol === 'admin'
+  } catch { /* layout ya maneja la auth */ }
+
   try {
     casos = await getCasos(q)
   } catch (err) {
@@ -127,6 +135,16 @@ export default async function CasosPage({
                         <Clock size={10} />
                         {diasActivo === 0 ? 'Hoy' : `${diasActivo}d`}
                       </span>
+                      {esAdmin && c.coordinador && (
+                        <span className="flex items-center gap-1 text-xs text-[#2AABBF]">
+                          <UserCheck size={10} />
+                          {(c.coordinador as { nombre: string; apellido: string }).nombre}{' '}
+                          {(c.coordinador as { nombre: string; apellido: string }).apellido}
+                        </span>
+                      )}
+                      {esAdmin && !c.coordinador && (
+                        <span className="text-xs text-amber-500">Sin coordinador</span>
+                      )}
                     </div>
                   </div>
 
