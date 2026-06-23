@@ -21,12 +21,15 @@ CREATE TABLE IF NOT EXISTS organizations (
 
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "organizations_select" ON organizations;
 CREATE POLICY "organizations_select" ON organizations
   FOR SELECT USING (auth_rol() IN ('admin', 'superadmin', 'coordinador'));
 
+DROP POLICY IF EXISTS "organizations_insert" ON organizations;
 CREATE POLICY "organizations_insert" ON organizations
   FOR INSERT WITH CHECK (auth_rol() IN ('admin', 'superadmin'));
 
+DROP POLICY IF EXISTS "organizations_update" ON organizations;
 CREATE POLICY "organizations_update" ON organizations
   FOR UPDATE USING (auth_rol() IN ('admin', 'superadmin'));
 
@@ -54,12 +57,15 @@ CREATE TABLE IF NOT EXISTS portfolios (
 
 ALTER TABLE portfolios ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "portfolios_select" ON portfolios;
 CREATE POLICY "portfolios_select" ON portfolios
   FOR SELECT USING (auth_rol() IN ('admin', 'superadmin', 'coordinador'));
 
+DROP POLICY IF EXISTS "portfolios_insert" ON portfolios;
 CREATE POLICY "portfolios_insert" ON portfolios
   FOR INSERT WITH CHECK (auth_rol() IN ('admin', 'superadmin'));
 
+DROP POLICY IF EXISTS "portfolios_update" ON portfolios;
 CREATE POLICY "portfolios_update" ON portfolios
   FOR UPDATE USING (auth_rol() IN ('admin', 'superadmin'));
 
