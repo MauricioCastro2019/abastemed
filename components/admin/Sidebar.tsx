@@ -9,6 +9,7 @@ import {
   Stethoscope,
   FolderOpen,
   Calendar,
+  CalendarRange,
   Receipt,
   Heart,
   LogOut,
@@ -39,7 +40,7 @@ const NAV_ADMIN = [
   { href: '/casos',               label: 'Casos',           icon: FolderOpen },
   { href: '/agenda-cuidado',      label: 'Plan de Cuidado', icon: ClipboardList },
   { href: '/turnos',              label: 'Turnos',          icon: Calendar },
-  { href: '/turnos/semana',       label: 'Horarios',        icon: Calendar },
+  { href: '/turnos/semana',       label: 'Horarios',        icon: CalendarRange },
   { href: '/turnos/validacion',   label: 'Validación',      icon: CheckSquare },
   { href: '/cortes',              label: 'Cortes y Pagos',  icon: Wallet },
   { href: '/insumos',             label: 'Insumos',         icon: Package },
@@ -60,7 +61,7 @@ const NAV_COORDINADOR = [
   { href: '/casos',               label: 'Casos',           icon: FolderOpen },
   { href: '/agenda-cuidado',      label: 'Plan de Cuidado', icon: ClipboardList },
   { href: '/turnos',              label: 'Turnos',          icon: Calendar },
-  { href: '/turnos/semana',       label: 'Horarios',        icon: Calendar },
+  { href: '/turnos/semana',       label: 'Horarios',        icon: CalendarRange },
   { href: '/turnos/validacion',   label: 'Validación',      icon: CheckSquare },
   { href: '/cortes',              label: 'Cortes',          icon: Wallet },
   { href: '/insumos',             label: 'Insumos',         icon: Package },
@@ -143,7 +144,11 @@ export function Sidebar({ rol, nombre, apellido }: Props) {
       <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-0.5
         [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + '/')
+          // Active si es exacto, o si ningún otro item del nav es match más específico
+          const isActive = pathname === href || (
+            pathname.startsWith(href + '/') &&
+            !NAV_ITEMS.some(n => n.href !== href && pathname.startsWith(n.href) && n.href.startsWith(href + '/'))
+          )
           return (
             <Link
               key={href}

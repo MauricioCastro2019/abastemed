@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
 import { AccionesCasoMenu } from '@/components/admin/casos/AccionesCasoMenu'
+import { RealtimeRefresh } from '@/components/RealtimeRefresh'
 import type { Caso } from '@/types'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -40,6 +41,7 @@ export default async function CasosPage({
 
   return (
     <div className="space-y-6">
+      <RealtimeRefresh tables={['casos', 'pacientes']} />
       <Suspense><ToastSuccess /></Suspense>
       {/* Header */}
       <div className="flex items-center justify-between">

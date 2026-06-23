@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { AdminDashboard } from '@/components/admin/dashboard/AdminDashboard'
 import { JefeDashboard } from '@/components/admin/dashboard/JefeDashboard'
+import { RealtimeRefresh } from '@/components/RealtimeRefresh'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
@@ -16,8 +17,18 @@ export default async function DashboardPage() {
     .single()
 
   if (perfil?.rol === 'coordinador') {
-    return <JefeDashboard nombre={perfil.nombre} />
+    return (
+      <>
+        <RealtimeRefresh tables={['turnos', 'casos', 'alertas']} />
+        <JefeDashboard nombre={perfil.nombre} />
+      </>
+    )
   }
 
-  return <AdminDashboard />
+  return (
+    <>
+      <RealtimeRefresh tables={['turnos', 'casos', 'alertas', 'levantamientos_paciente', 'cobranza_items']} />
+      <AdminDashboard />
+    </>
+  )
 }

@@ -205,7 +205,7 @@ const METRICAS_CONFIG = [
 
 export async function AdminDashboard() {
   const metricas = await getMetricas()
-  const fechaFormateada = new Date().toLocaleDateString('es-VE', {
+  const fechaFormateada = new Date().toLocaleDateString('es-MX', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
 

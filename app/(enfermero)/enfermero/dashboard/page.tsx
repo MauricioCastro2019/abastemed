@@ -1,6 +1,7 @@
 import { getMiPerfil, getMisTurnos } from '@/lib/actions/enfermero-portal'
 import { Calendar, Star, Briefcase, Clock, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { RealtimeRefresh } from '@/components/RealtimeRefresh'
 import type { Turno } from '@/types'
 
 const STATUS_TURNO: Record<string, { label: string; color: string; bg: string }> = {
@@ -10,7 +11,7 @@ const STATUS_TURNO: Record<string, { label: string; color: string; bg: string }>
 }
 
 function formatFecha(fecha: string) {
-  return new Date(fecha).toLocaleDateString('es-VE', {
+  return new Date(fecha).toLocaleDateString('es-MX', {
     weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
   })
 }
@@ -32,13 +33,14 @@ export default async function EnfermeroDashboardPage() {
 
   return (
     <div className="space-y-8">
+      <RealtimeRefresh tables={['turnos']} />
       {/* Bienvenida */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: '#1B2B4B' }}>
           {enfermero ? `Hola, ${enfermero.nombre}` : 'Bienvenido'}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {new Date().toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
 

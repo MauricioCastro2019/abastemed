@@ -5,6 +5,7 @@ import { Calendar, Clock, MapPin, Plus, Search, User } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
+import { RealtimeRefresh } from '@/components/RealtimeRefresh'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
   programado: { label: 'Programado', color: '#2AABBF', bg: '#EBF8FB', border: '#2AABBF' },
@@ -13,7 +14,7 @@ const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; b
 }
 
 function formatFecha(fecha: string) {
-  return new Date(fecha).toLocaleString('es-VE', {
+  return new Date(fecha).toLocaleString('es-MX', {
     weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit',
   })
@@ -52,6 +53,7 @@ export default async function TurnosPage({
 
   return (
     <div className="space-y-6">
+      <RealtimeRefresh tables={['turnos']} />
       <Suspense><ToastSuccess /></Suspense>
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -178,7 +180,7 @@ function TurnoCard({ turno }: { turno: TurnoRow }) {
             nuevoStatus="completado"
             label="Completar"
             className="px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-all disabled:opacity-50"
-            style={{ backgroundColor: '#1B2B4B' } as React.CSSProperties}
+            style={{ backgroundColor: '#1B2B4B' }}
           />
         </div>
       )}

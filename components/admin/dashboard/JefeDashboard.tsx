@@ -127,7 +127,7 @@ function duracion(inicio: string, fin: string) {
 
 export async function JefeDashboard({ nombre }: Props) {
   const data = await getCoordinadorData()
-  const fecha = new Date().toLocaleDateString('es-VE', {
+  const fecha = new Date().toLocaleDateString('es-MX', {
     weekday: 'long', day: 'numeric', month: 'long',
   })
 
@@ -186,7 +186,7 @@ export async function JefeDashboard({ nombre }: Props) {
             </Link>
           )}
           {data.alertas > 0 && (
-            <Link href="/dashboard"
+            <Link href="/bitacora"
               className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-all hover:shadow-sm"
               style={{ backgroundColor: '#FEF2F2', borderColor: '#fecaca' }}>
               <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
