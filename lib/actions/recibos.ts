@@ -171,6 +171,61 @@ export async function actualizarRecibo(id: string, formData: FormData) {
   redirect(`/recibos/${id}`)
 }
 
+export async function marcarReciboPagado(id: string): Promise<{ error?: string }> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'coordinador')
+
+  const { data: recibo, error: fetchErr } = await supabase
+    .from('recibos')
+    .select('id, folio, paciente_nombre, total, metodo_pago, estado')
+    .eq('id', id)
+    .single()
+
+  if (fetchErr || !recibo) return { error: 'Recibo no encontrado' }
+  if (recibo.estado === 'pagado') return { error: 'El recibo ya está pagado' }
+  if (recibo.estado === 'cancelado') return { error: 'No se puede pagar un recibo cancelado' }
+
+  const hoy = new Date().toISOString().split('T')[0]
+
+  const { error: updateErr } = await supabase
+    .from('recibos')
+    .update({ estado: 'pagado', fecha_pago: hoy })
+    .eq('id', id)
+
+  if (updateErr) return { error: updateErr.message }
+
+  // Integrar en finanzas: crear ingreso automáticamente
+  const metodoPagoMap: Record<string, string> = {
+    efectivo: 'efectivo',
+    transferencia: 'transferencia',
+    otro: 'otro',
+    por_coordinar: 'otro',
+  }
+  const { count } = await supabase
+    .from('financial_incomes')
+    .select('*', { count: 'exact', head: true })
+  const folio = `ING-${String((count ?? 0) + 1).padStart(4, '0')}`
+
+  await supabase.from('financial_incomes').insert({
+    folio,
+    fecha_pago:              hoy,
+    responsable_pago_nombre: recibo.paciente_nombre,
+    concepto:                `Recibo ${recibo.folio} — ${recibo.paciente_nombre}`,
+    tipo_ingreso:            'pago_servicio',
+    monto_total:             recibo.total,
+    monto_recibido:          recibo.total,
+    metodo_pago:             metodoPagoMap[recibo.metodo_pago] ?? 'otro',
+    estatus:                 'pagado',
+    registrado_por:          perfil.id,
+    organization_id:         DEFAULT_ORG_ID,
+  })
+
+  revalidatePath('/recibos')
+  revalidatePath('/finanzas')
+  revalidatePath('/finanzas/ingresos')
+  return {}
+}
+
 export async function eliminarRecibo(id: string) {
   const { supabase, perfil } = await requireAuth()
   requireRole(perfil, 'admin')

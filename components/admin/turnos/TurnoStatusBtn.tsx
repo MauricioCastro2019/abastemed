@@ -15,6 +15,10 @@ export function TurnoStatusBtn({ turnoId, nuevoStatus, label, className, style }
   const [isPending, startTransition] = useTransition()
 
   function handleClick() {
+    if (nuevoStatus === 'completado') {
+      const ok = window.confirm('¿Marcar este turno como completado? Esta acción generará el cobro automáticamente.')
+      if (!ok) return
+    }
     startTransition(async () => {
       await cambiarStatusTurno(turnoId, nuevoStatus)
     })

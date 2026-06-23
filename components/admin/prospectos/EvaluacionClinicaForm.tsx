@@ -29,7 +29,7 @@ const QUESTIONS: ClinicalQuestion[] = [
   { key: 'medication_status', label: '1. ¿El paciente requiere administración o supervisión de medicamentos durante la guardia?', alertText: 'Requiere receta, indicación médica clara y responsable familiar autorizado.',
     options: [{ value: 0, label: 'No requiere medicamentos durante la guardia' }, { value: 1, label: 'Solo recordatorio de medicamentos' }, { value: 2, label: 'Administración de medicamentos vía oral' }, { value: 3, label: 'Medicamentos con horarios estrictos' }, { value: 5, label: 'Medicamentos controlados o de alto riesgo', alert: true }] },
   { key: 'injectable_medications', label: '2. ¿Requiere medicamentos inyectables?', alertText: 'Medicamentos IV: requiere personal de enfermería capacitado.',
-    options: [{ value: 0, label: 'No' }, { value: 2, label: 'Subcutáneos' }, { value: 3, label: 'Intramusculares' }, { value: 5, label: 'Intravenosos', alert: true }, { value: 2, label: 'No se sabe / por confirmar' }] },
+    options: [{ value: 0, label: 'No' }, { value: 2, label: 'Subcutáneos' }, { value: 3, label: 'Intramusculares' }, { value: 5, label: 'Intravenosos', alert: true }, { value: 1, label: 'No se sabe / por confirmar' }] },
   { key: 'vital_signs_frequency', label: '3. ¿Requiere toma de signos vitales?',
     options: [{ value: 0, label: 'No' }, { value: 1, label: 'Una vez por guardia' }, { value: 2, label: 'Cada 8 horas' }, { value: 3, label: 'Cada 4 horas' }, { value: 4, label: 'Monitoreo frecuente o según evento' }] },
   { key: 'glucose_control', label: '4. ¿Requiere control de glucosa capilar?', alertText: 'Requiere indicación médica, horario, dosis y registro de glucosa.',

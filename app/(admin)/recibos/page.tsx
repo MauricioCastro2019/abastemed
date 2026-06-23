@@ -1,6 +1,7 @@
 import { getRecibos } from '@/lib/actions/recibos'
 import { crearReciboDemo } from '@/lib/actions/recibos'
 import { getTituloDocumento, ESTADO_RECIBO_LABELS } from '@/lib/config/pagos'
+import { MarcarPagadoBtn } from '@/components/admin/recibos/MarcarPagadoBtn'
 import { FileText, Plus, ChevronRight, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import type { EstadoRecibo, Recibo } from '@/types'
@@ -130,12 +131,17 @@ export default async function RecibosPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <Link
-                      href={`/recibos/${r.id}`}
-                      className="flex items-center justify-end text-gray-400 hover:text-[#2AABBF] transition-colors"
-                    >
-                      <ChevronRight size={18} />
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      {r.estado === 'pendiente' && (
+                        <MarcarPagadoBtn reciboId={r.id} folio={r.folio} />
+                      )}
+                      <Link
+                        href={`/recibos/${r.id}`}
+                        className="flex items-center text-gray-400 hover:text-[#2AABBF] transition-colors"
+                      >
+                        <ChevronRight size={18} />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
