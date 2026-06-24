@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import {
-  Brain, ScanLine, ListTodo, ShieldAlert, Eye, Clock,
+  Brain, ScanLine, ListTodo, Eye, Clock,
 } from 'lucide-react'
 import { HallazgosPanel }    from '@/components/admin/memoria/HallazgosPanel'
 import { PendientesPanel }   from '@/components/admin/memoria/PendientesPanel'

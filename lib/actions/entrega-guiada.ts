@@ -23,7 +23,7 @@ function generarResumenTurno({
     peor:  'Paciente con deterioro respecto al turno anterior — requiere atención',
   }
 
-  let partes = [estadoMap[estado_paciente] + '.']
+  const partes = [estadoMap[estado_paciente] + '.']
 
   if (cambios_relevantes?.trim()) {
     partes.push(`Cambios durante el turno: ${cambios_relevantes.trim()}.`)

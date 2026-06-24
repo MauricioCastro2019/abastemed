@@ -62,7 +62,7 @@ function agruparPorDia(eventos: EventoTimeline[]): { dia: string; eventos: Event
     if (!grupos[dia]) grupos[dia] = []
     grupos[dia].push(e)
   }
-  return Object.entries(grupos).map(([dia, eventos]) => ({
+  return Object.entries(grupos).map(([_dia, eventos]) => ({
     dia: formatDia(new Date(eventos[0].created_at).toISOString()),
     eventos,
   }))

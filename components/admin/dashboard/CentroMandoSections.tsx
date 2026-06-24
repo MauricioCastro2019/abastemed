@@ -97,7 +97,7 @@ function BandejaSection({ entries }: { entries: EntregaBandeja[] }) {
                 </p>
                 {e.notas_coordinacion && (
                   <p className="text-xs text-purple-800 bg-purple-50 rounded-md px-2.5 py-1.5 mt-2 leading-relaxed">
-                    "{e.notas_coordinacion}"
+                    &ldquo;{e.notas_coordinacion}&rdquo;
                   </p>
                 )}
               </div>

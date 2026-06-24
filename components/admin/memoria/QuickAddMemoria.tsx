@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ScanLine, ListTodo, X, Plus } from 'lucide-react'
+import { ScanLine, ListTodo, X } from 'lucide-react'
 import { crearHallazgo } from '@/lib/actions/hallazgos'
 import { crearPendiente } from '@/lib/actions/pendientes-caso'
 
