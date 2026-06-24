@@ -1,6 +1,6 @@
 import { getMisTurnos } from '@/lib/actions/enfermero-portal'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
-import { Calendar, Clock, MapPin, ClipboardList } from 'lucide-react'
+import { Calendar, Clock, MapPin, ClipboardList, ArrowLeftRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Suspense } from 'react'
 import { ToastSuccess } from '@/components/ToastSuccess'
@@ -115,16 +115,8 @@ function TurnoCard({ turno }: { turno: Turno }) {
         </div>
       )}
 
-      {turno.status !== 'completado' && (
-        <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
-          {turno.status === 'programado' && (
-            <TurnoStatusBtn
-              turnoId={turno.id}
-              nuevoStatus="activo"
-              label="Iniciar turno"
-              className="px-4 py-2 text-xs font-semibold rounded-lg border border-[#059669] text-[#059669] hover:bg-[#ECFDF5] transition-all disabled:opacity-50"
-            />
-          )}
+      {turno.status !== 'programado' && (
+        <div className="flex items-center gap-2 pt-3 border-t border-gray-50 flex-wrap">
           {turno.status === 'activo' && (
             <Link href={`/enfermero/turnos/entrega/${turno.id}`}
               className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-white transition-all"
@@ -133,6 +125,22 @@ function TurnoCard({ turno }: { turno: Turno }) {
               Registrar entrega
             </Link>
           )}
+          <Link href={`/enfermero/turnos/entrega-guiada/${turno.id}`}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border transition-all"
+            style={{ borderColor: '#2AABBF', color: '#2AABBF' }}>
+            <ArrowLeftRight size={13} />
+            Registro clínico
+          </Link>
+        </div>
+      )}
+      {turno.status === 'programado' && (
+        <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
+          <TurnoStatusBtn
+            turnoId={turno.id}
+            nuevoStatus="activo"
+            label="Iniciar turno"
+            className="px-4 py-2 text-xs font-semibold rounded-lg border border-[#059669] text-[#059669] hover:bg-[#ECFDF5] transition-all disabled:opacity-50"
+          />
         </div>
       )}
     </div>

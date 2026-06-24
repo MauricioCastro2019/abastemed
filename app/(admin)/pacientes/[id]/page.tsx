@@ -3,10 +3,13 @@ import { getCasosByPaciente } from '@/lib/actions/casos'
 import { getUltimoReporteByCaso } from '@/lib/actions/reportes-turno'
 import { getKardexActivo } from '@/lib/actions/kardex'
 import { getIncidenciasRecientes } from '@/lib/actions/incidencias'
+import { getAlertasActivasByCaso } from '@/lib/actions/alertas-activas'
+import { getPendientesActivos } from '@/lib/actions/pendientes-caso'
+import { getHallazgosAbiertos } from '@/lib/actions/hallazgos'
 import {
   ArrowLeft, Pencil, Phone, Mail, User, Pill, AlertTriangle,
   MapPin, ClipboardList, FileText, Clock, Activity, Heart,
-  Zap, CheckCircle, FolderOpen, Plus, Stethoscope
+  Zap, CheckCircle, FolderOpen, Plus, Stethoscope, Brain, ShieldAlert
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
@@ -84,10 +87,13 @@ export default async function ExpedientePacientePage({ params }: { params: { id:
   const casos = await getCasosByPaciente(params.id)
   const casoActivo = casos.find(c => c.status === 'activo') ?? casos[0] ?? null
 
-  const [ultimoReporte, kardex, incidenciasRecientes] = await Promise.all([
-    casoActivo ? getUltimoReporteByCaso(casoActivo.id) : Promise.resolve(null),
-    casoActivo ? getKardexActivo(casoActivo.id)        : Promise.resolve([]),
-    casoActivo ? getIncidenciasRecientes(casoActivo.id): Promise.resolve([]),
+  const [ultimoReporte, kardex, incidenciasRecientes, alertasActivas, pendientesActivos, hallazgosAbiertos] = await Promise.all([
+    casoActivo ? getUltimoReporteByCaso(casoActivo.id)    : Promise.resolve(null),
+    casoActivo ? getKardexActivo(casoActivo.id)           : Promise.resolve([]),
+    casoActivo ? getIncidenciasRecientes(casoActivo.id)   : Promise.resolve([]),
+    casoActivo ? getAlertasActivasByCaso(casoActivo.id)   : Promise.resolve([]),
+    casoActivo ? getPendientesActivos(casoActivo.id)      : Promise.resolve([]),
+    casoActivo ? getHallazgosAbiertos(casoActivo.id)      : Promise.resolve([]),
   ])
 
   const edad      = calcEdad(paciente.fecha_nacimiento)
@@ -145,6 +151,18 @@ export default async function ExpedientePacientePage({ params }: { params: { id:
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {casoActivo && (
+            <Link href={`/pacientes/${paciente.id}/memoria`}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white rounded-lg transition-all"
+              style={{ backgroundColor: '#1B2B4B' }}>
+              <Brain size={13} /> Memoria Operativa
+              {alertasActivas.length > 0 && (
+                <span className="w-4 h-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold" style={{ fontSize: 9 }}>
+                  {alertasActivas.length}
+                </span>
+              )}
+            </Link>
+          )}
           <Link href={`/pacientes/${paciente.id}/plan-cuidado`}
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-[#1B2B4B] border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
             <ClipboardList size={13} /> Plan de Cuidado
@@ -168,6 +186,118 @@ export default async function ExpedientePacientePage({ params }: { params: { id:
             <p className="text-xs mt-0.5" style={{ color: '#b91c1c' }}>
               Revisar incidencias y coordinar con el equipo médico.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── ALERTAS ACTIVAS (Memoria Operativa) ─────────────── */}
+      {alertasActivas.length > 0 && (
+        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#dc2626' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <ShieldAlert size={15} style={{ color: '#dc2626' }} />
+              <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Alertas activas</h2>
+              <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+                {alertasActivas.length}
+              </span>
+            </div>
+            {casoActivo && (
+              <Link href={`/pacientes/${paciente.id}/memoria`}
+                className="text-xs text-[#2AABBF] hover:underline">
+                Ver todas →
+              </Link>
+            )}
+          </div>
+          <div className="space-y-2">
+            {alertasActivas.slice(0, 3).map(a => {
+              const nivelColor = a.nivel === 'critico' ? '#7c2d12' : a.nivel === 'alto' ? '#dc2626' : '#d97706'
+              const nivelBg    = a.nivel === 'critico' ? '#fff7ed' : a.nivel === 'alto' ? '#FEF2F2' : '#FEF3C7'
+              const TIPO_LABEL: Record<string, string> = {
+                riesgo_caida: 'Riesgo de caída',
+                riesgo_lesion_cutanea: 'Riesgo de lesión cutánea',
+                riesgo_broncoaspiracion: 'Riesgo de broncoaspiración',
+                riesgo_deshidratacion: 'Riesgo de deshidratación',
+                riesgo_sepsis: 'Riesgo de sepsis',
+                dolor_no_controlado: 'Dolor no controlado',
+                otro: 'Alerta activa',
+              }
+              return (
+                <div key={a.id} className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
+                  style={{ backgroundColor: nivelBg }}>
+                  <span className="animate-pulse font-bold" style={{ color: nivelColor }}>●</span>
+                  <span className="font-medium" style={{ color: '#1B2B4B' }}>
+                    {TIPO_LABEL[a.tipo] ?? a.tipo}
+                  </span>
+                  {a.descripcion && (
+                    <span className="text-gray-400 truncate">· {a.descripcion}</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── PENDIENTES URGENTES (Memoria Operativa) ─────────── */}
+      {pendientesActivos.filter(p => p.prioridad === 'urgente' || p.prioridad === 'alta').length > 0 && (
+        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#d97706' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={15} style={{ color: '#d97706' }} />
+              <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Pendientes prioritarios</h2>
+            </div>
+            {casoActivo && (
+              <Link href={`/pacientes/${paciente.id}/memoria`}
+                className="text-xs text-[#2AABBF] hover:underline">
+                Ver todos →
+              </Link>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            {pendientesActivos
+              .filter(p => p.prioridad === 'urgente' || p.prioridad === 'alta')
+              .slice(0, 4)
+              .map(p => (
+                <div key={p.id} className="flex items-center gap-2 text-xs">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: p.prioridad === 'urgente' ? '#dc2626' : '#d97706' }} />
+                  <span className="font-medium text-gray-700">{p.titulo}</span>
+                  <span className="text-gray-400 ml-auto flex-shrink-0 capitalize">{p.prioridad}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── HALLAZGOS ABIERTOS (Memoria Operativa) ──────────── */}
+      {hallazgosAbiertos.length > 0 && (
+        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#2AABBF' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Brain size={15} style={{ color: '#2AABBF' }} />
+              <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Hallazgos clínicos abiertos</h2>
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#EBF8FB] text-[#1A7A8C] font-medium">
+                {hallazgosAbiertos.length}
+              </span>
+            </div>
+            {casoActivo && (
+              <Link href={`/pacientes/${paciente.id}/memoria`}
+                className="text-xs text-[#2AABBF] hover:underline">
+                Ver todos →
+              </Link>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            {hallazgosAbiertos.slice(0, 3).map(h => {
+              const sevColor = h.severidad === 'grave' ? '#dc2626' : h.severidad === 'moderada' ? '#d97706' : '#059669'
+              return (
+                <div key={h.id} className="flex items-center gap-2 text-xs">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: sevColor }} />
+                  <span className="font-medium text-gray-700">{h.tipo}</span>
+                  <span className="text-gray-400">· {h.descripcion.slice(0, 50)}{h.descripcion.length > 50 ? '...' : ''}</span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -503,13 +633,18 @@ export default async function ExpedientePacientePage({ params }: { params: { id:
       {casoActivo && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { href: `/casos/${casoActivo.id}/kardex`,      icon: <Pill size={18} />,         label: 'Kardex',     color: '#7c3aed' },
-            { href: `/casos/${casoActivo.id}/incidencias`, icon: <AlertTriangle size={18} />, label: 'Incidencias',color: '#dc2626' },
-            { href: `/pacientes/${paciente.id}/plan-cuidado`, icon: <ClipboardList size={18} />, label: 'Plan Cuidado', color: '#2AABBF' },
-            { href: `/casos/${casoActivo.id}`,             icon: <FolderOpen size={18} />,    label: 'Ver Caso',   color: '#1B2B4B' },
+            { href: `/pacientes/${paciente.id}/memoria`,      icon: <Brain size={18} />,          label: 'Memoria',       color: '#1B2B4B', badge: alertasActivas.length + hallazgosAbiertos.length },
+            { href: `/casos/${casoActivo.id}/kardex`,         icon: <Pill size={18} />,            label: 'Kardex',        color: '#7c3aed', badge: 0 },
+            { href: `/casos/${casoActivo.id}/incidencias`,    icon: <AlertTriangle size={18} />,   label: 'Incidencias',   color: '#dc2626', badge: 0 },
+            { href: `/pacientes/${paciente.id}/plan-cuidado`, icon: <ClipboardList size={18} />,   label: 'Plan Cuidado',  color: '#2AABBF', badge: 0 },
           ].map(item => (
             <Link key={item.href} href={item.href}
-              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-center group">
+              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-center group relative">
+              {item.badge > 0 && (
+                <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold" style={{ fontSize: 9 }}>
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
               <div className="w-10 h-10 rounded-full mx-auto flex items-center justify-center mb-2 transition-all"
                 style={{ backgroundColor: `${item.color}15` }}>
                 <span style={{ color: item.color }}>{item.icon}</span>

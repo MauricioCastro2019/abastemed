@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   if (perfil?.rol === 'coordinador') {
     return (
       <>
-        <RealtimeRefresh tables={['turnos', 'casos', 'alertas']} />
+        <RealtimeRefresh tables={['turnos', 'casos', 'alertas', 'alertas_activas', 'pendientes_caso', 'entregas_turno_guiadas']} />
         <JefeDashboard nombre={perfil.nombre} />
       </>
     )

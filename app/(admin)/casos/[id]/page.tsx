@@ -7,7 +7,7 @@ import { EliminarCasoBtn } from '@/components/admin/casos/EliminarCasoBtn'
 import { AsignarCoordinadorForm } from '@/components/admin/casos/AsignarCoordinadorForm'
 import { BitacoraTimeline } from '@/components/admin/bitacora/BitacoraTimeline'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock, ScrollText, UserCheck } from 'lucide-react'
+import { ArrowLeft, Pencil, MapPin, Calendar, DollarSign, FileText, User, Plus, Clock, ScrollText, UserCheck, Brain } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Paciente, PerfilUsuario } from '@/types'
@@ -125,9 +125,17 @@ export default async function CasoDetailPage({ params }: { params: { id: string 
               <User size={15} style={{ color: '#2AABBF' }} />
               <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Paciente</h2>
             </div>
-            <Link href={`/pacientes/${paciente.id}`} className="text-xs text-[#2AABBF] hover:underline">
-              Ver perfil →
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href={`/pacientes/${paciente.id}/memoria`}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-lg transition-all hover:opacity-80"
+                style={{ backgroundColor: '#EEF1F7', color: '#1B2B4B' }}>
+                <Brain size={11} />
+                Memoria
+              </Link>
+              <Link href={`/pacientes/${paciente.id}`} className="text-xs text-[#2AABBF] hover:underline">
+                Ver perfil →
+              </Link>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"

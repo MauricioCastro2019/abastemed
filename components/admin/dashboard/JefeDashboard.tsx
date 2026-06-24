@@ -5,6 +5,7 @@ import {
   Clock, MapPin, ArrowRight, ShieldCheck,
 } from 'lucide-react'
 import Link from 'next/link'
+import { CentroMandoSections } from './CentroMandoSections'
 
 interface Props { nombre: string }
 
@@ -217,6 +218,9 @@ export async function JefeDashboard({ nombre }: Props) {
         ))}
       </div>
 
+      {/* Centro de Mando clínico */}
+      <CentroMandoSections />
+
       {/* CTA: Asignar turno */}
       <Link href="/turnos/nuevo"
         className="flex items-center justify-between gap-4 p-5 rounded-2xl transition-all hover:shadow-md group"
@@ -405,6 +409,8 @@ export async function JefeDashboard({ nombre }: Props) {
             { label: 'Turnos',       href: '/turnos',             icon: Calendar,       color: '#1B2B4B', bg: '#EEF1F7' },
             { label: 'Enfermeros',   href: '/enfermeros',         icon: Stethoscope,    color: '#059669', bg: '#ECFDF5' },
             { label: 'Validación',   href: '/turnos/validacion',  icon: ClipboardCheck, color: '#D97706', bg: '#FFFBEB' },
+            { label: 'Bitácora',     href: '/bitacora',           icon: AlertCircle,    color: '#dc2626', bg: '#FEF2F2' },
+            { label: 'Pacientes',    href: '/pacientes',          icon: Users,          color: '#7c3aed', bg: '#f5f3ff' },
           ].map(({ label, href, icon: Icon, color, bg }) => (
             <Link key={href} href={href}
               className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-[#2AABBF] hover:bg-[#EBF8FB] transition-all group">

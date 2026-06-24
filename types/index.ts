@@ -1450,3 +1450,194 @@ export interface TurnoConValidacion extends Turno {
   reporte?: Pick<ReporteTurno, 'id' | 'created_at'> | null
   entrega?: Pick<EntregaTurno, 'id' | 'created_at'> | null
 }
+
+// ============================================================
+// MÓDULO: MEMORIA OPERATIVA DEL CUIDADO
+// ============================================================
+
+export type CategoriaHallazgo =
+  | 'integridad_piel'
+  | 'respiratorio'
+  | 'neurologico'
+  | 'digestivo'
+  | 'dolor'
+  | 'movilidad'
+  | 'nutricional'
+  | 'otro'
+
+export type SeveridadHallazgo = 'leve' | 'moderada' | 'grave'
+export type EstadoHallazgo = 'abierto' | 'en_seguimiento' | 'resuelto'
+
+export interface HallazgoClinico {
+  id: string
+  caso_id: string
+  turno_id?: string | null
+  enfermero_id?: string | null
+  creado_por?: string | null
+
+  categoria: CategoriaHallazgo
+  tipo: string
+  descripcion: string
+  severidad: SeveridadHallazgo
+  estado: EstadoHallazgo
+
+  requiere_vigilancia: boolean
+  requiere_notificacion: boolean
+  fotos_urls: string[]
+
+  fecha_resolucion?: string | null
+  notas_resolucion?: string | null
+  resuelto_por?: string | null
+
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  turno?: Pick<Turno, 'id' | 'fecha_inicio'>
+  creador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'>
+}
+
+export type PrioridadPendiente = 'urgente' | 'alta' | 'normal' | 'baja'
+export type EstadoPendiente = 'pendiente' | 'en_proceso' | 'resuelto' | 'cancelado'
+export type OrigenPendiente = 'manual' | 'hallazgo' | 'medicamento_omitido' | 'entrega_turno' | 'alerta' | 'automatico'
+
+export interface PendienteCaso {
+  id: string
+  caso_id: string
+  turno_origen_id?: string | null
+  enfermero_creador_id?: string | null
+
+  titulo: string
+  descripcion?: string | null
+  prioridad: PrioridadPendiente
+  estado: EstadoPendiente
+
+  origen: OrigenPendiente
+  origen_id?: string | null
+
+  turno_resolucion_id?: string | null
+  enfermero_resolucion_id?: string | null
+  fecha_resolucion?: string | null
+  notas_resolucion?: string | null
+
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  turno_origen?: Pick<Turno, 'id' | 'fecha_inicio'>
+  creador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'>
+}
+
+export type TipoAlertaActiva =
+  | 'riesgo_caida'
+  | 'riesgo_lesion_cutanea'
+  | 'riesgo_broncoaspiracion'
+  | 'riesgo_deshidratacion'
+  | 'riesgo_sepsis'
+  | 'dolor_no_controlado'
+  | 'otro'
+
+export type NivelAlertaActiva = 'bajo' | 'moderado' | 'alto' | 'critico'
+
+export interface AlertaActiva {
+  id: string
+  caso_id: string
+  turno_activacion_id?: string | null
+  activado_por?: string | null
+
+  tipo: TipoAlertaActiva
+  descripcion?: string | null
+  nivel: NivelAlertaActiva
+  activa: boolean
+
+  turno_desactivacion_id?: string | null
+  desactivado_por?: string | null
+  fecha_desactivacion?: string | null
+  motivo_desactivacion?: string | null
+
+  created_at: string
+  // Relaciones opcionales
+  activador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'>
+}
+
+export type ParametroVigilancia =
+  | 'saturacion'
+  | 'integridad_piel'
+  | 'hidratacion'
+  | 'evacuaciones'
+  | 'presion_arterial'
+  | 'glucosa'
+  | 'dolor'
+  | 'frecuencia_cardiaca'
+  | 'temperatura'
+  | 'peso'
+  | 'otro'
+
+export type FrecuenciaVigilancia =
+  | 'continua'
+  | 'cada_hora'
+  | 'cada_2_horas'
+  | 'cada_4_horas'
+  | 'cada_turno'
+  | 'cada_12_horas'
+  | 'diario'
+  | 'segun_necesidad'
+
+export interface VigilanciaEspecial {
+  id: string
+  caso_id: string
+  creado_por?: string | null
+
+  parametro: ParametroVigilancia
+  descripcion?: string | null
+  frecuencia?: FrecuenciaVigilancia | null
+  instrucciones?: string | null
+  activa: boolean
+
+  desactivado_por?: string | null
+  fecha_desactivacion?: string | null
+
+  created_at: string
+  // Relaciones opcionales
+  creador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'>
+}
+
+export type EstadoPacienteEntrega = 'mejor' | 'igual' | 'peor'
+
+export interface EntregaTurnoGuiada {
+  id: string
+  turno_id: string
+  caso_id: string
+  enfermero_saliente_id?: string | null
+
+  estado_paciente: EstadoPacienteEntrega
+  cambios_relevantes?: string | null
+  pendientes_siguiente?: string | null
+  vigilancia_especial?: string | null
+  notificar_coordinacion: boolean
+  notas_coordinacion?: string | null
+
+  resumen_turno?: string | null
+  resumen_familiar?: string | null
+
+  created_at: string
+  // Relaciones opcionales
+  enfermero_saliente?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'>
+}
+
+export type TipoEventoTimeline =
+  | 'hallazgo'
+  | 'incidencia'
+  | 'pendiente'
+  | 'alerta'
+  | 'reporte_turno'
+  | 'entrega_turno'
+
+export interface EventoTimeline {
+  caso_id: string
+  created_at: string
+  tipo_evento: TipoEventoTimeline
+  origen_id: string
+  subtipo: string
+  texto: string
+  nivel: string
+  estado: string
+}

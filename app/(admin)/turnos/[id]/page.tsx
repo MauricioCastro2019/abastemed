@@ -1,17 +1,20 @@
 import { getTurno } from '@/lib/actions/turnos'
 import { getEntregasByTurno } from '@/lib/actions/entregas'
+import { getEntregaGuiadaByTurno } from '@/lib/actions/entrega-guiada'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { EditarFechasBtn } from '@/components/admin/turnos/EditarFechasBtn'
+import { QuickAddMemoria } from '@/components/admin/memoria/QuickAddMemoria'
+import { RealtimeRefresh } from '@/components/RealtimeRefresh'
 import { Badge } from '@/components/ui/badge'
 import {
   ArrowLeft, User, MapPin, Calendar, Clock, Phone, FileText,
   Heart, AlertTriangle, Star, Briefcase, DollarSign, Pill,
-  ClipboardList, CheckCircle2,
+  ClipboardList, CheckCircle2, ArrowLeftRight, Users, Sparkles,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getReportesByTurno } from '@/lib/actions/reportes-turno'
-import type { Paciente, Enfermero, Caso, SignosVitales, MedicamentoAdministrado, ReporteTurno } from '@/types'
+import type { Paciente, Enfermero, Caso, SignosVitales, MedicamentoAdministrado, ReporteTurno, EstadoPacienteEntrega } from '@/types'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
   programado: { label: 'Programado', color: '#2AABBF', bg: '#EBF8FB',   border: '#2AABBF' },
@@ -49,7 +52,10 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
   let entrega: any = null
   try { entrega = await getEntregasByTurno(params.id) } catch { /* sin entrega */ }
 
-  const reportes = await getReportesByTurno(params.id)
+  const [reportes, entregaGuiada] = await Promise.all([
+    getReportesByTurno(params.id),
+    getEntregaGuiadaByTurno(params.id),
+  ])
 
   const st      = STATUS_STYLE[turno.status] ?? STATUS_STYLE.programado
   const caso     = turno.caso as (Caso & { paciente?: Paciente }) | null
@@ -59,6 +65,7 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
 
   return (
     <div className="space-y-6 max-w-3xl">
+      <RealtimeRefresh tables={['reportes_turno', 'entregas_turno_guiadas', 'hallazgos_clinicos', 'pendientes_caso']} />
 
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -81,6 +88,27 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Quick-add Memoria Operativa — disponible cuando hay caso asignado */}
+          {caso && turno.status !== 'programado' && (
+            <QuickAddMemoria casoId={caso.id} turnoId={turno.id} />
+          )}
+
+          {/* Botón Entrega Guiada */}
+          {turno.status !== 'programado' && (
+            <Link
+              href={`/turnos/${turno.id}/entrega-guiada`}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                entregaGuiada
+                  ? 'bg-green-50 border border-green-200 text-green-700'
+                  : 'border text-white'
+              }`}
+              style={entregaGuiada ? {} : { backgroundColor: '#1B2B4B', borderColor: '#1B2B4B' }}
+            >
+              <ArrowLeftRight size={14} />
+              {entregaGuiada ? 'Entrega registrada ✓' : 'Entrega de turno'}
+            </Link>
+          )}
+
           {/* Botón Registrar Reporte — siempre visible si el turno está activo o completado */}
           {turno.status !== 'programado' && (
             <Link
@@ -279,6 +307,76 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
             </div>
           )}
         </div>
+      )}
+
+      {/* ── ENTREGA GUIADA (Memoria Operativa) ─────────────── */}
+      {entregaGuiada && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border-l-4" style={{ borderLeftColor: '#059669' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ArrowLeftRight size={15} style={{ color: '#059669' }} />
+              <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>Entrega de turno guiada</h2>
+              <span className="text-xs px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1"
+                style={{ backgroundColor: '#ECFDF5', color: '#059669' }}>
+                <Sparkles size={9} /> Generada automáticamente
+              </span>
+            </div>
+            <Link href={`/turnos/${turno.id}/entrega-guiada`}
+              className="text-xs text-[#2AABBF] hover:underline">
+              Ver detalle →
+            </Link>
+          </div>
+
+          {/* Estado del paciente */}
+          {(() => {
+            const ESTADO_MAP: Record<EstadoPacienteEntrega, { label: string; color: string; bg: string }> = {
+              mejor: { label: 'Paciente con mejoría', color: '#059669', bg: '#ECFDF5' },
+              igual: { label: 'Paciente estable',     color: '#2563eb', bg: '#EFF6FF' },
+              peor:  { label: 'Paciente con deterioro', color: '#dc2626', bg: '#FEF2F2' },
+            }
+            const cfg = ESTADO_MAP[entregaGuiada.estado_paciente]
+            return (
+              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium mb-3"
+                style={{ backgroundColor: cfg.bg, color: cfg.color }}>
+                ● {cfg.label}
+              </span>
+            )
+          })()}
+
+          {/* Resumen para siguiente turno */}
+          {entregaGuiada.resumen_turno && (
+            <div className="space-y-1.5 mb-3">
+              <p className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
+                <Users size={11} /> Para siguiente turno
+              </p>
+              <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 leading-relaxed">
+                {entregaGuiada.resumen_turno}
+              </p>
+            </div>
+          )}
+
+          {/* Resumen familiar */}
+          {entregaGuiada.resumen_familiar && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
+                <Heart size={11} /> Para familiar
+              </p>
+              <p className="text-sm text-gray-600 bg-pink-50 rounded-lg px-3 py-2 leading-relaxed">
+                {entregaGuiada.resumen_familiar}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* CTA entrega guiada si no existe */}
+      {!entregaGuiada && turno.status !== 'programado' && (
+        <Link href={`/turnos/${turno.id}/entrega-guiada`}
+          className="flex items-center justify-center gap-2 rounded-xl p-4 border-2 border-dashed text-sm font-medium transition-colors"
+          style={{ borderColor: '#1B2B4B', color: '#1B2B4B' }}>
+          <ArrowLeftRight size={16} />
+          Registrar entrega de turno guiada
+        </Link>
       )}
 
       {/* Entrega de turno */}
