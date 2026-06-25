@@ -323,3 +323,70 @@ export async function editarFechasTurno(id: string, formData: FormData): Promise
   revalidatePath('/casos')
   return {}
 }
+
+export async function reasignarEnfermero(id: string, enfermeroId: string): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'coordinador')
+
+  const { data: turno } = await supabase
+    .from('turnos')
+    .select('status, enfermero_id')
+    .eq('id', id)
+    .single()
+
+  if (!turno) return { error: 'Turno no encontrado' }
+  if (turno.status !== 'programado') return { error: 'Solo se puede reasignar un turno programado' }
+
+  const { error } = await supabase
+    .from('turnos')
+    .update({ enfermero_id: enfermeroId })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  await registrarEvento({
+    accion:     'turno_reasignado',
+    entidad:    'turnos',
+    entidad_id: id,
+    descripcion: 'Enfermero/a reasignado/a',
+    metadata:   { enfermero_anterior: turno.enfermero_id, enfermero_nuevo: enfermeroId },
+  })
+
+  revalidatePath(`/turnos/${id}`)
+  revalidatePath('/turnos')
+  revalidatePath('/turnos/semana')
+  return {}
+}
+
+export async function eliminarTurno(id: string): Promise<ActionResult> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'coordinador')
+
+  const { data: turno } = await supabase
+    .from('turnos')
+    .select('status')
+    .eq('id', id)
+    .single()
+
+  if (!turno) return { error: 'Turno no encontrado' }
+  if (turno.status !== 'programado') return { error: 'Solo se pueden eliminar turnos aún no iniciados' }
+
+  const { count: reporteCount } = await supabase
+    .from('reportes_turno')
+    .select('id', { count: 'exact', head: true })
+    .eq('turno_id', id)
+
+  if ((reporteCount ?? 0) > 0) return { error: 'No se puede eliminar un turno con reportes registrados' }
+
+  const { error } = await supabase
+    .from('turnos')
+    .delete()
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/turnos')
+  revalidatePath('/turnos/semana')
+  revalidatePath('/dashboard')
+  return {}
+}

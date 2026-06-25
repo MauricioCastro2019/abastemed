@@ -1,8 +1,11 @@
 import { getTurno } from '@/lib/actions/turnos'
+import { getEnfermeros } from '@/lib/actions/enfermeros'
 import { getEntregasByTurno } from '@/lib/actions/entregas'
 import { getEntregaGuiadaByTurno } from '@/lib/actions/entrega-guiada'
 import { TurnoStatusBtn } from '@/components/admin/turnos/TurnoStatusBtn'
 import { EditarFechasBtn } from '@/components/admin/turnos/EditarFechasBtn'
+import { ReasignarEnfermeroBtn } from '@/components/admin/turnos/ReasignarEnfermeroBtn'
+import { EliminarTurnoBtn } from '@/components/admin/turnos/EliminarTurnoBtn'
 import { QuickAddMemoria } from '@/components/admin/memoria/QuickAddMemoria'
 import { RealtimeRefresh } from '@/components/RealtimeRefresh'
 import { Badge } from '@/components/ui/badge'
@@ -52,9 +55,10 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
   let entrega: any = null
   try { entrega = await getEntregasByTurno(params.id) } catch { /* sin entrega */ }
 
-  const [reportes, entregaGuiada] = await Promise.all([
+  const [reportes, entregaGuiada, todosEnfermeros] = await Promise.all([
     getReportesByTurno(params.id),
     getEntregaGuiadaByTurno(params.id),
+    turno.status === 'programado' ? getEnfermeros() : Promise.resolve([]),
   ])
 
   const st      = STATUS_STYLE[turno.status] ?? STATUS_STYLE.programado
@@ -173,6 +177,25 @@ export default async function TurnoDetailPage({ params }: { params: { id: string
         fechaInicioActual={turno.fecha_inicio}
         fechaFinActual={turno.fecha_fin}
       />
+
+      {/* Reasignar / Eliminar — solo en turnos programados */}
+      {turno.status === 'programado' && (
+        <div className="flex flex-wrap gap-2">
+          {enfermero && todosEnfermeros.length > 0 && (
+            <ReasignarEnfermeroBtn
+              turnoId={turno.id}
+              enfermeroActualId={enfermero.id}
+              enfermeros={todosEnfermeros.map(e => ({
+                id: e.id,
+                nombre: e.nombre,
+                apellido: e.apellido,
+                cedula: e.cedula ?? '',
+              }))}
+            />
+          )}
+          <EliminarTurnoBtn turnoId={turno.id} />
+        </div>
+      )}
 
       {/* Enfermero */}
       {enfermero && (
