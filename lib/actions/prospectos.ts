@@ -16,21 +16,32 @@ const ProspectoSchema = z.object({
   initial_observations:    z.string().optional(),
 })
 
+const TERMINAL_STATUSES = ['paciente_activo', 'rechazado', 'cancelado'] as const
+
 export async function getProspectos(search?: string, status?: string) {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
 
   let query = supabase
     .from('prospects')
     .select('*')
     .order('created_at', { ascending: false })
 
+  // Coordinadores solo ven sus propios prospectos
+  if (perfil.rol === 'coordinador') {
+    query = query.eq('created_by', perfil.id)
+  }
+
   if (search?.trim()) {
     query = query.or(
       `requester_name.ilike.%${search}%,payment_responsible_name.ilike.%${search}%`
     )
   }
+
   if (status && status !== 'todos') {
     query = query.eq('status', status)
+  } else {
+    // "Todos" = pipeline activo: excluye estados terminales
+    query = query.not('status', 'in', `(${TERMINAL_STATUSES.join(',')})`)
   }
 
   const { data, error } = await query
@@ -39,22 +50,23 @@ export async function getProspectos(search?: string, status?: string) {
 }
 
 export async function getProspecto(id: string) {
-  const { supabase } = await requireAuth()
-  const { data, error } = await supabase
-    .from('prospects')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { supabase, perfil } = await requireAuth()
+  let query = supabase.from('prospects').select('*').eq('id', id)
+  if (perfil.rol === 'coordinador') query = query.eq('created_by', perfil.id)
+  const { data, error } = await query.single()
 
   if (error) throw new Error(error.message)
   return data as Prospect
 }
 
 export async function getProspectoConRelaciones(id: string) {
-  const { supabase } = await requireAuth()
+  const { supabase, perfil } = await requireAuth()
+
+  let prospectQuery = supabase.from('prospects').select('*').eq('id', id)
+  if (perfil.rol === 'coordinador') prospectQuery = prospectQuery.eq('created_by', perfil.id)
 
   const [prospectRes, preassessmentRes, resultRes, quoteRes] = await Promise.all([
-    supabase.from('prospects').select('*').eq('id', id).single(),
+    prospectQuery.single(),
     supabase.from('patient_preassessments').select('*').eq('prospect_id', id).maybeSingle(),
     supabase.from('assessment_results').select('*').eq('prospect_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('care_quotes').select('*').eq('prospect_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle(),

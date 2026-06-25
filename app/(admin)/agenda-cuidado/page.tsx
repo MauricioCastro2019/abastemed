@@ -1,6 +1,6 @@
 import { getEventosByFecha } from '@/lib/actions/plan-cuidado'
 import { EventoRow } from '@/components/plan-cuidado/EventoRow'
-import { CalendarClock, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react'
+import { CalendarClock, ChevronLeft, ChevronRight, ClipboardList, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 function addDays(dateStr: string, days: number): string {
@@ -56,7 +56,16 @@ export default async function AgendaCuidadoPage({
           <h1 className="text-2xl font-bold" style={{ color: '#1B2B4B' }}>Agenda de Cuidado</h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/plan-cuidado/nueva"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-opacity hover:opacity-90"
+            style={{ backgroundColor: '#2AABBF' }}>
+            <Plus size={15} />
+            Nueva indicación
+          </Link>
+
+          <div className="flex items-center gap-2">
           <Link href={`/agenda-cuidado?fecha=${prevFecha}`}
             className="p-2 rounded-lg border border-gray-200 hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all">
             <ChevronLeft size={16} />
@@ -77,6 +86,7 @@ export default async function AgendaCuidadoPage({
               Hoy
             </Link>
           )}
+          </div>
         </div>
       </div>
 

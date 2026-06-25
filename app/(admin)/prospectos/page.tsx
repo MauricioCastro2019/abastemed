@@ -7,14 +7,14 @@ import { ToastSuccess } from '@/components/ToastSuccess'
 import type { Prospect } from '@/types'
 
 const STATUS_FILTER_OPTIONS = [
-  { value: 'todos',                    label: 'Todos' },
+  { value: 'todos',                    label: 'Activos' },
   { value: 'nuevo',                    label: 'Nuevos' },
   { value: 'prelevantamiento_iniciado',label: 'En proceso' },
   { value: 'cotizacion_generada',      label: 'Cotizados' },
   { value: 'propuesta_enviada',        label: 'Propuesta enviada' },
   { value: 'propuesta_aceptada',       label: 'Aceptados' },
   { value: 'listo_para_activar',       label: 'Listos para activar' },
-  { value: 'paciente_activo',          label: 'Paciente activo' },
+  { value: 'paciente_activo',          label: 'Convertidos' },
   { value: 'rechazado',                label: 'Rechazados' },
 ]
 

@@ -107,6 +107,19 @@ async function insertarEventos(supabase: SupabaseClient, indicacion: Indicacion)
 // Queries
 // ============================================================
 
+export async function getAllIndicacionesActivas(): Promise<Indicacion[]> {
+  const { supabase } = await requireAuth()
+  const { data, error } = await supabase
+    .from('indicaciones')
+    .select('*, paciente:pacientes(id, nombre, apellido)')
+    .eq('activa', true)
+    .order('paciente_id', { ascending: true })
+    .order('created_at',  { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return data as Indicacion[]
+}
+
 export async function getIndicacionesByPaciente(pacienteId: string): Promise<Indicacion[]> {
   const { supabase } = await requireAuth()
   const { data, error } = await supabase
@@ -270,6 +283,7 @@ export async function crearIndicacion(
 
   revalidatePath(`/pacientes/${v.paciente_id}/plan-cuidado`)
   revalidatePath('/agenda-cuidado')
+  revalidatePath('/plan-cuidado')
   return { id: (indicacion as Indicacion).id }
 }
 
@@ -296,6 +310,7 @@ export async function toggleIndicacion(
   if (error) return { error: error.message }
 
   revalidatePath(`/pacientes/${(ind as { paciente_id: string }).paciente_id}/plan-cuidado`)
+  revalidatePath('/plan-cuidado')
   return {}
 }
 
