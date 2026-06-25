@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { DemoBanner } from '@/components/DemoBanner'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { LayoutDashboard, Activity, Pill, CalendarDays, CreditCard, Phone } from 'lucide-react'
@@ -42,7 +41,6 @@ export default async function FamiliarLayout({
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F0F4F8' }}>
-      <DemoBanner />
       {/* ─── Barra superior ─── */}
       <header
         className="sticky top-0 z-40 border-b"
