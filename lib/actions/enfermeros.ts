@@ -116,3 +116,40 @@ export async function aprobarEnfermero(id: string) {
   revalidatePath('/enfermeros')
   revalidatePath(`/enfermeros/${id}`)
 }
+
+export async function vincularCuentaEnfermero(
+  enfermeroId: string,
+  email: string
+): Promise<ActionResult & { perfilNombre?: string }> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'superadmin')
+
+  if (!email.trim()) return { error: 'El email es requerido.' }
+
+  // Buscar perfil por email
+  const { data: perfilTarget } = await supabase
+    .from('perfiles')
+    .select('id, nombre, apellido, rol, enfermero_id')
+    .eq('email', email.trim().toLowerCase())
+    .maybeSingle()
+
+  if (!perfilTarget) {
+    return { error: `No existe ninguna cuenta con el email "${email}". El enfermero debe registrarse primero.` }
+  }
+
+  if (perfilTarget.enfermero_id && perfilTarget.enfermero_id !== enfermeroId) {
+    return { error: `Esta cuenta ya está vinculada a otro registro de enfermero.` }
+  }
+
+  const { error } = await supabase
+    .from('perfiles')
+    .update({ enfermero_id: enfermeroId, rol: 'enfermero' })
+    .eq('id', perfilTarget.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/enfermeros/${enfermeroId}`)
+  revalidatePath('/enfermeros')
+
+  return { perfilNombre: `${perfilTarget.nombre} ${perfilTarget.apellido}` }
+}

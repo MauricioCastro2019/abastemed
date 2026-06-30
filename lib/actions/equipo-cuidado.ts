@@ -86,8 +86,18 @@ export async function getEquipoCuidadoByEnfermero(enfermeroIdParam?: string): Pr
 
   if (!enfermeroId) {
     if (perfil.rol === 'enfermero') {
-      if (!perfil.enfermero_id) return { activos: [], pendientes: [], historial: [] }
-      enfermeroId = perfil.enfermero_id
+      if (perfil.enfermero_id) {
+        enfermeroId = perfil.enfermero_id
+      } else {
+        // Fallback: buscar enfermero por email del usuario (cuando aún no está vinculado)
+        const { data: enfPorEmail } = await supabase
+          .from('enfermeros')
+          .select('id')
+          .eq('email', perfil.email)
+          .maybeSingle()
+        if (!enfPorEmail) return { activos: [], pendientes: [], historial: [] }
+        enfermeroId = enfPorEmail.id
+      }
     } else {
       requireRole(perfil, 'admin', 'superadmin', 'coordinador')
       return { activos: [], pendientes: [], historial: [] }

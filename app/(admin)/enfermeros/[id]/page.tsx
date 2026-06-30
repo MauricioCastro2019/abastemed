@@ -1,9 +1,11 @@
 import { getEnfermero } from '@/lib/actions/enfermeros'
 import { getEquipoCuidadoByEnfermero } from '@/lib/actions/equipo-cuidado'
+import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, Phone, Mail, Star, Briefcase, FileText, Download, Users, Heart } from 'lucide-react'
+import { ArrowLeft, Pencil, Phone, Mail, Star, Briefcase, FileText, Download, Users, Heart, Link2 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { VincularCuentaWidget } from './VincularCuentaWidget'
 
 const ROL_LABEL: Record<string, string> = {
   titular: 'Titular', habitual: 'Habitual', suplente: 'Suplente',
@@ -30,10 +32,18 @@ export default async function EnfermeroDetailPage({ params }: { params: { id: st
     notFound()
   }
 
-  const equipo = await getEquipoCuidadoByEnfermero(params.id).catch(() => ({
-    activos: [], pendientes: [], historial: [],
-  }))
+  const [equipo, supabase] = await Promise.all([
+    getEquipoCuidadoByEnfermero(params.id).catch(() => ({ activos: [], pendientes: [], historial: [] })),
+    createClient(),
+  ])
   const pacientesActivos = [...equipo.activos, ...equipo.pendientes]
+
+  // Buscar si ya hay una cuenta de usuario vinculada a este enfermero
+  const { data: perfilVinculado } = await supabase
+    .from('perfiles')
+    .select('id, nombre, apellido, email')
+    .eq('enfermero_id', params.id)
+    .maybeSingle()
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -150,6 +160,21 @@ export default async function EnfermeroDetailPage({ params }: { params: { id: st
           <p className="text-sm text-gray-600 leading-relaxed">{enfermero.bio}</p>
         </div>
       )}
+
+      {/* Cuenta de acceso */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Link2 size={15} style={{ color: '#2AABBF' }} />
+          <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+            Cuenta de acceso al portal
+          </h2>
+        </div>
+        <VincularCuentaWidget
+          enfermeroId={params.id}
+          yaVinculado={!!perfilVinculado}
+          emailVinculado={perfilVinculado?.email}
+        />
+      </div>
 
       {/* Pacientes asignados */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
