@@ -1641,3 +1641,152 @@ export interface EventoTimeline {
   nivel: string
   estado: string
 }
+
+// ============================================================
+// CENTRO PROFESIONAL ABASTEMED
+// Sistema de niveles, competencias y capacitaciones
+// ============================================================
+
+export interface NivelProfesional {
+  id: number
+  nombre: string
+  orden: number
+  descripcion?: string | null
+  horas_minimas: number
+  guardias_minimas: number
+  evaluacion_minima: number
+  competencias_minimas: number
+  incidencias_criticas_max: number
+  requiere_validacion: boolean
+  color: string
+  created_at: string
+}
+
+export type EstadoCompetencia =
+  | 'no_iniciado'
+  | 'capacitacion_vista'
+  | 'evaluacion_aprobada'
+  | 'practica_observada'
+  | 'validado'
+
+export interface Competencia {
+  id: string
+  nombre: string
+  descripcion?: string | null
+  categoria: string
+  nivel_minimo: number
+  tipos_paciente: string[]
+  activa: boolean
+  orden: number
+  created_at: string
+}
+
+export interface EnfermeroCompetencia {
+  id: string
+  enfermero_id: string
+  competencia_id: string
+  estado: EstadoCompetencia
+  modulo_completado_at?: string | null
+  evaluacion_score?: number | null
+  practica_observada_at?: string | null
+  validado_por?: string | null
+  validado_at?: string | null
+  notas?: string | null
+  created_at: string
+  updated_at: string
+  competencia?: Competencia
+}
+
+export type EstadoModuloCapacitacion =
+  | 'no_iniciado'
+  | 'en_progreso'
+  | 'completado'
+  | 'aprobado'
+
+export interface ContenidoModulo {
+  tipo: 'intro' | 'seccion' | 'punto_clave' | 'alerta' | 'frase_cultura' | 'imagen' | 'video'
+  titulo?: string
+  texto?: string
+  contenido?: string
+  url?: string
+}
+
+export interface PreguntaEvaluacion {
+  pregunta: string
+  opciones: string[]
+  respuesta_correcta: number
+}
+
+export interface ModuloCapacitacion {
+  id: string
+  titulo: string
+  descripcion?: string | null
+  duracion_minutos: number
+  contenido: ContenidoModulo[]
+  checklist: string[]
+  evaluacion: PreguntaEvaluacion[]
+  competencia_id?: string | null
+  nivel_requerido: number
+  orden: number
+  obligatorio: boolean
+  activo: boolean
+  created_at: string
+  competencia?: Competencia | null
+}
+
+export interface ProgresoCapacitacion {
+  id: string
+  enfermero_id: string
+  modulo_id: string
+  estado: EstadoModuloCapacitacion
+  progreso_pct: number
+  score?: number | null
+  intentos: number
+  iniciado_at?: string | null
+  completado_at?: string | null
+  aprobado_at?: string | null
+  created_at: string
+  updated_at: string
+  modulo?: ModuloCapacitacion
+}
+
+export interface ManualOperativoPaciente {
+  id: string
+  paciente_id: string
+  resumen?: string | null
+  diagnosticos_relevantes: string[]
+  riesgos_principales: string[]
+  que_observar: string[]
+  que_reportar: string[]
+  que_evitar: string[]
+  indicaciones_familia?: string | null
+  indicaciones_medicas?: string | null
+  observaciones_trato?: string | null
+  activo: boolean
+  actualizado_por?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface EstadisticasProfesionales {
+  guardias_completadas: number
+  horas_acumuladas: number
+  promedio_rating: number
+  reportes_completados: number
+  incidencias_criticas: number
+  competencias_verificadas: number
+  capacitaciones_aprobadas: number
+}
+
+export interface CentroProfesionalData {
+  enfermero: Enfermero
+  nivel_actual: NivelProfesional
+  siguiente_nivel: NivelProfesional | null
+  progreso_nivel_pct: number
+  estadisticas: EstadisticasProfesionales
+  proxima_guardia: (Turno & { caso?: Caso & { paciente?: Pick<Paciente, 'id' | 'nombre' | 'apellido'> } }) | null
+  guardia_activa: (Turno & { caso?: Caso & { paciente?: Pick<Paciente, 'id' | 'nombre' | 'apellido'> } }) | null
+  modulos_obligatorios_pendientes: ModuloCapacitacion[]
+  modulos_sugeridos: (ModuloCapacitacion & { progreso?: ProgresoCapacitacion | null })[]
+  mensaje_cultural: string
+}

@@ -3,17 +3,37 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Calendar, User, LogOut, Menu, X, Package, ClipboardList, KeyRound, Wallet } from 'lucide-react'
+import {
+  LayoutDashboard, Calendar, User, LogOut, Menu, X,
+  Package, ClipboardList, KeyRound, Wallet, BookOpen, Shield
+} from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const NAV = [
-  { href: '/enfermero/dashboard',      label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/enfermero/turnos',         label: 'Mis turnos',      icon: Calendar },
-  { href: '/enfermero/agenda-cuidado', label: 'Plan de Cuidado', icon: ClipboardList },
-  { href: '/enfermero/insumos',        label: 'Insumos',         icon: Package },
-  { href: '/enfermero/mis-pagos',      label: 'Mis pagos',       icon: Wallet },
-  { href: '/enfermero/perfil',         label: 'Mi perfil',       icon: User },
+const NAV_GROUPS = [
+  {
+    titulo: null,
+    items: [
+      { href: '/enfermero/dashboard',      label: 'Inicio',          icon: LayoutDashboard },
+      { href: '/enfermero/turnos',         label: 'Mis turnos',      icon: Calendar },
+    ],
+  },
+  {
+    titulo: 'Desarrollo profesional',
+    items: [
+      { href: '/enfermero/capacitaciones', label: 'Capacitaciones',  icon: BookOpen },
+      { href: '/enfermero/competencias',   label: 'Competencias',    icon: Shield },
+    ],
+  },
+  {
+    titulo: 'Operaciones',
+    items: [
+      { href: '/enfermero/agenda-cuidado', label: 'Plan de Cuidado', icon: ClipboardList },
+      { href: '/enfermero/insumos',        label: 'Insumos',         icon: Package },
+      { href: '/enfermero/mis-pagos',      label: 'Mis pagos',       icon: Wallet },
+      { href: '/enfermero/perfil',         label: 'Mi perfil',       icon: User },
+    ],
+  },
 ]
 
 interface Props {
@@ -37,7 +57,7 @@ export function SidebarEnfermero({ perfil }: Props) {
   const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <div className="flex flex-col h-full overflow-hidden">
 
-      {/* Logo — fijo arriba */}
+      {/* Logo */}
       <div className="flex-shrink-0 px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0">
@@ -64,9 +84,9 @@ export function SidebarEnfermero({ perfil }: Props) {
         </div>
       </div>
 
-      {/* Usuario — fijo */}
+      {/* Usuario */}
       {perfil && (
-        <div className="flex-shrink-0 px-6 py-4 border-b border-white/10">
+        <div className="flex-shrink-0 px-5 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-[#1B2B4B] flex-shrink-0"
               style={{ backgroundColor: '#2AABBF' }}>
@@ -82,45 +102,56 @@ export function SidebarEnfermero({ perfil }: Props) {
         </div>
       )}
 
-      {/* Nav — scrollable */}
-      <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-0.5
+      {/* Nav con grupos */}
+      <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-4
         [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
-        {NAV.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + '/')
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                isActive
-                  ? 'bg-[#2AABBF] text-white'
-                  : 'text-white/60 hover:text-white hover:bg-white/10'
-              )}
-            >
-              <Icon size={18} className="flex-shrink-0" />
-              {label}
-            </Link>
-          )
-        })}
+        {NAV_GROUPS.map((grupo, gi) => (
+          <div key={gi}>
+            {grupo.titulo && (
+              <p className="text-white/25 text-xs uppercase tracking-widest px-3 mb-1 font-medium">
+                {grupo.titulo}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {grupo.items.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname === href || pathname.startsWith(href + '/')
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={onNavigate}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+                      isActive
+                        ? 'bg-[#2AABBF] text-white'
+                        : 'text-white/60 hover:text-white hover:bg-white/10'
+                    )}
+                  >
+                    <Icon size={17} className="flex-shrink-0" />
+                    {label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      {/* Acciones de cuenta — siempre visibles al fondo */}
+      {/* Acciones de cuenta */}
       <div className="flex-shrink-0 px-3 py-4 border-t border-white/10 space-y-0.5">
         <Link
           href="/actualizar-contrasena"
           onClick={onNavigate}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all w-full"
         >
-          <KeyRound size={18} className="flex-shrink-0" />
+          <KeyRound size={17} className="flex-shrink-0" />
           Cambiar contraseña
         </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all w-full"
         >
-          <LogOut size={18} className="flex-shrink-0" />
+          <LogOut size={17} className="flex-shrink-0" />
           Cerrar sesión
         </button>
       </div>
@@ -129,7 +160,7 @@ export function SidebarEnfermero({ perfil }: Props) {
 
   return (
     <>
-      {/* ── DESKTOP: sidebar fijo lateral ─────────────────────── */}
+      {/* DESKTOP */}
       <aside
         className="hidden lg:flex flex-col w-60 flex-shrink-0 h-screen"
         style={{ background: BG }}
@@ -137,7 +168,7 @@ export function SidebarEnfermero({ perfil }: Props) {
         <NavContent />
       </aside>
 
-      {/* ── MOBILE: barra superior fija ───────────────────────── */}
+      {/* MOBILE: barra superior */}
       <header
         className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-3 h-14 px-4 border-b border-white/10"
         style={{ background: BG }}
@@ -158,7 +189,7 @@ export function SidebarEnfermero({ perfil }: Props) {
         )}
       </header>
 
-      {/* ── MOBILE: drawer ────────────────────────────────────── */}
+      {/* MOBILE: drawer */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <aside
