@@ -1,6 +1,6 @@
-import { getMisCompetenciasCompleto } from '@/lib/actions/centro-profesional'
+import { getMisCompetenciasCompleto, type CompetenciaConModulo } from '@/lib/actions/centro-profesional'
 import Link from 'next/link'
-import { Shield, CheckCircle2, Circle, BookOpen, ChevronRight, Award, Info } from 'lucide-react'
+import { Shield, CheckCircle2, Circle, BookOpen, ChevronRight, Award, Info, Clock } from 'lucide-react'
 import type { EstadoCompetencia } from '@/types'
 
 const CATEGORIA_LABELS: Record<string, string> = {
@@ -38,7 +38,7 @@ export default async function CompetenciasPage() {
     const items = competencias.filter(c => c.categoria === cat)
     if (items.length > 0) acc[cat] = items
     return acc
-  }, {} as Record<string, typeof competencias>)
+  }, {} as Record<string, CompetenciaConModulo[]>)
 
   // Categorías sin mapear
   competencias.forEach(c => {
@@ -153,15 +153,36 @@ export default async function CompetenciasPage() {
 
                       {/* CTA si no iniciado o evaluación pendiente */}
                       {(estado === 'no_iniciado' || estado === 'capacitacion_vista') && (
-                        <Link
-                          href="/enfermero/capacitaciones"
-                          className="inline-flex items-center gap-1 mt-2 text-xs font-medium"
-                          style={{ color: '#2AABBF' }}
-                        >
-                          <BookOpen size={11} />
-                          {estado === 'no_iniciado' ? 'Comenzar capacitación' : 'Completar evaluación'}
-                          <ChevronRight size={11} />
-                        </Link>
+                        (() => {
+                          const comp = competencia as CompetenciaConModulo
+                          if (comp.modulo) {
+                            return (
+                              <Link
+                                href={`/enfermero/capacitaciones/${comp.modulo.id}`}
+                                className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium px-2.5 py-1 rounded-lg"
+                                style={{ backgroundColor: '#EBF8FB', color: '#2AABBF' }}
+                              >
+                                <BookOpen size={11} />
+                                {estado === 'no_iniciado' ? 'Comenzar capacitación' : 'Ir a la evaluación'}
+                                <span className="text-gray-400 ml-0.5 flex items-center gap-0.5">
+                                  <Clock size={9} /> {comp.modulo.duracion_minutos} min
+                                </span>
+                                <ChevronRight size={11} />
+                              </Link>
+                            )
+                          }
+                          return (
+                            <Link
+                              href="/enfermero/capacitaciones"
+                              className="inline-flex items-center gap-1 mt-2 text-xs font-medium"
+                              style={{ color: '#2AABBF' }}
+                            >
+                              <BookOpen size={11} />
+                              {estado === 'no_iniciado' ? 'Ver capacitaciones' : 'Completar evaluación'}
+                              <ChevronRight size={11} />
+                            </Link>
+                          )
+                        })()
                       )}
 
                       {/* Mensaje si aprobó pero falta validación */}

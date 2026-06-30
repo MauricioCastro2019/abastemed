@@ -3,6 +3,42 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { ModuloCapacitacion, ProgresoCapacitacion } from '@/types'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// Resuelve el enfermero_id del usuario actual.
+// Primero busca en perfiles.enfermero_id; si no está, busca en enfermeros por email
+// y actualiza el vínculo automáticamente (igual que getMiPerfil).
+async function resolveEnfermeroId(
+  supabase: SupabaseClient,
+  userId: string,
+  userEmail: string
+): Promise<string | null> {
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('enfermero_id')
+    .eq('id', userId)
+    .single()
+
+  if (perfil?.enfermero_id) return perfil.enfermero_id
+
+  // Fallback: buscar por email
+  const { data: enf } = await supabase
+    .from('enfermeros')
+    .select('id')
+    .eq('email', userEmail)
+    .maybeSingle()
+
+  if (enf?.id) {
+    // Auto-link para futuras llamadas
+    await supabase
+      .from('perfiles')
+      .update({ enfermero_id: enf.id })
+      .eq('id', userId)
+    return enf.id
+  }
+
+  return null
+}
 
 export async function getMisCapacitaciones(): Promise<{
   modulos: ModuloCapacitacion[]
@@ -12,11 +48,7 @@ export async function getMisCapacitaciones(): Promise<{
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { modulos: [], progresos: [] }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('enfermero_id')
-    .eq('id', user.id)
-    .single()
+  const enfermeroId = await resolveEnfermeroId(supabase, user.id, user.email ?? '')
 
   const [modulosResult, progresosResult] = await Promise.all([
     supabase
@@ -26,11 +58,11 @@ export async function getMisCapacitaciones(): Promise<{
       .order('obligatorio', { ascending: false })
       .order('orden', { ascending: true }),
 
-    perfil?.enfermero_id
+    enfermeroId
       ? supabase
           .from('progreso_capacitacion')
           .select('*')
-          .eq('enfermero_id', perfil.enfermero_id)
+          .eq('enfermero_id', enfermeroId)
       : Promise.resolve({ data: [] }),
   ])
 
@@ -48,11 +80,7 @@ export async function getModuloConProgreso(moduloId: string): Promise<{
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { modulo: null, progreso: null }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('enfermero_id')
-    .eq('id', user.id)
-    .single()
+  const enfermeroId = await resolveEnfermeroId(supabase, user.id, user.email ?? '')
 
   const [moduloResult, progresoResult] = await Promise.all([
     supabase
@@ -61,12 +89,12 @@ export async function getModuloConProgreso(moduloId: string): Promise<{
       .eq('id', moduloId)
       .single(),
 
-    perfil?.enfermero_id
+    enfermeroId
       ? supabase
           .from('progreso_capacitacion')
           .select('*')
           .eq('modulo_id', moduloId)
-          .eq('enfermero_id', perfil.enfermero_id)
+          .eq('enfermero_id', enfermeroId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
   ])
@@ -82,18 +110,13 @@ export async function iniciarModulo(moduloId: string): Promise<{ ok: boolean; er
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'No autenticado' }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('enfermero_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil?.enfermero_id) return { ok: false, error: 'Perfil de enfermero no encontrado' }
+  const enfermeroId = await resolveEnfermeroId(supabase, user.id, user.email ?? '')
+  if (!enfermeroId) return { ok: false, error: 'Perfil de enfermero no encontrado. Contacta al administrador.' }
 
   const { error } = await supabase
     .from('progreso_capacitacion')
     .upsert({
-      enfermero_id: perfil.enfermero_id,
+      enfermero_id: enfermeroId,
       modulo_id: moduloId,
       estado: 'en_progreso',
       progreso_pct: 10,
@@ -117,13 +140,8 @@ export async function completarModulo(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, score: 0, aprobado: false, error: 'No autenticado' }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('enfermero_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil?.enfermero_id) return { ok: false, score: 0, aprobado: false, error: 'Perfil no encontrado' }
+  const enfermeroId = await resolveEnfermeroId(supabase, user.id, user.email ?? '')
+  if (!enfermeroId) return { ok: false, score: 0, aprobado: false, error: 'Perfil de enfermero no encontrado. Contacta al administrador.' }
 
   // Calcular score
   let correctas = 0
@@ -142,7 +160,7 @@ export async function completarModulo(
     .from('progreso_capacitacion')
     .select('intentos')
     .eq('modulo_id', moduloId)
-    .eq('enfermero_id', perfil.enfermero_id)
+    .eq('enfermero_id', enfermeroId)
     .maybeSingle()
 
   const intentos = (progresoActual?.intentos ?? 0) + 1
@@ -150,7 +168,7 @@ export async function completarModulo(
   const { error } = await supabase
     .from('progreso_capacitacion')
     .upsert({
-      enfermero_id: perfil.enfermero_id,
+      enfermero_id: enfermeroId,
       modulo_id: moduloId,
       estado: aprobado ? 'aprobado' : 'completado',
       progreso_pct: 100,
@@ -175,7 +193,7 @@ export async function completarModulo(
       await supabase
         .from('enfermero_competencias')
         .upsert({
-          enfermero_id: perfil.enfermero_id,
+          enfermero_id: enfermeroId,
           competencia_id: modulo.competencia_id,
           estado: 'evaluacion_aprobada',
           modulo_completado_at: ahora,

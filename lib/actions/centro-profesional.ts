@@ -255,8 +255,12 @@ export async function getNivelesProfesionales(): Promise<NivelProfesional[]> {
   return (data ?? []) as NivelProfesional[]
 }
 
+export type CompetenciaConModulo = Competencia & {
+  modulo?: { id: string; titulo: string; duracion_minutos: number } | null
+}
+
 export async function getMisCompetenciasCompleto(): Promise<{
-  competencias: Competencia[]
+  competencias: CompetenciaConModulo[]
   mis_competencias: EnfermeroCompetencia[]
 }> {
   const supabase = await createClient()
@@ -269,17 +273,39 @@ export async function getMisCompetenciasCompleto(): Promise<{
     .eq('id', user.id)
     .single()
 
+  let enfermeroId = perfil?.enfermero_id ?? null
+  if (!enfermeroId && user.email) {
+    const { data: enf } = await supabase
+      .from('enfermeros').select('id').eq('email', user.email).maybeSingle()
+    if (enf?.id) {
+      enfermeroId = enf.id
+      await supabase.from('perfiles').update({ enfermero_id: enf.id }).eq('id', user.id)
+    }
+  }
+
   const [compResult, misCompResult] = await Promise.all([
-    supabase.from('competencias').select('*').eq('activa', true).order('orden'),
-    perfil?.enfermero_id
+    // Incluye el primer módulo activo asociado a cada competencia
+    supabase
+      .from('competencias')
+      .select('*, modulos_capacitacion(id, titulo, duracion_minutos)')
+      .eq('activa', true)
+      .order('orden'),
+    enfermeroId
       ? supabase.from('enfermero_competencias')
           .select('*, competencia:competencias(*)')
-          .eq('enfermero_id', perfil.enfermero_id)
+          .eq('enfermero_id', enfermeroId)
       : Promise.resolve({ data: [] }),
   ])
 
+  // Aplanar: tomar el primer módulo del array
+  const competencias: CompetenciaConModulo[] = (compResult.data ?? []).map((c: Competencia & { modulos_capacitacion?: { id: string; titulo: string; duracion_minutos: number }[] }) => {
+    const modulos = c.modulos_capacitacion ?? []
+    const { modulos_capacitacion: _, ...rest } = c as typeof c & { modulos_capacitacion?: unknown }
+    return { ...rest, modulo: modulos[0] ?? null } as CompetenciaConModulo
+  })
+
   return {
-    competencias: (compResult.data ?? []) as Competencia[],
+    competencias,
     mis_competencias: (misCompResult.data ?? []) as EnfermeroCompetencia[],
   }
 }
