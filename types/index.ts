@@ -1790,3 +1790,58 @@ export interface CentroProfesionalData {
   modulos_sugeridos: (ModuloCapacitacion & { progreso?: ProgresoCapacitacion | null })[]
   mensaje_cultural: string
 }
+
+// ============================================================
+// MÓDULO: EQUIPO DE CUIDADO
+// Relación muchos-a-muchos entre pacientes y enfermeros
+// ============================================================
+
+export type RolEquipo = 'titular' | 'habitual' | 'suplente' | 'coordinador' | 'apoyo'
+export type EstadoAsignacion = 'pendiente' | 'activa' | 'pausada' | 'finalizada' | 'rechazada'
+export type HorarioEquipo = 'matutino' | 'vespertino' | 'nocturno' | 'mixto' | 'sin_horario_fijo'
+
+export interface EquipoCuidado {
+  id: string
+  paciente_id: string
+  enfermero_id: string
+  rol: RolEquipo
+  estado: EstadoAsignacion
+  es_principal: boolean
+  horario: HorarioEquipo
+  acceso_expediente: boolean
+  fecha_inicio: string                // ISO date
+  fecha_fin?: string | null
+  motivo_asignacion?: string | null
+  motivo_finalizacion?: string | null
+  observaciones?: string | null
+  asignado_por?: string | null
+  aceptado_en?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales (joins)
+  enfermero?: Enfermero
+  paciente?: Paciente
+  asignador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
+}
+
+export interface Notificacion {
+  id: string
+  perfil_id: string
+  tipo: string
+  titulo: string
+  cuerpo: string
+  leida: boolean
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+// Para la vista de sugerencia de enfermeros al asignar
+export interface EnfermeroSugerido {
+  enfermero: Enfermero
+  ya_en_equipo: boolean
+  rol_actual?: RolEquipo | null
+  estado_asignacion?: EstadoAsignacion | null
+  asignacion_id?: string | null
+  competencias_validadas: number
+  guardias_semana: number
+}

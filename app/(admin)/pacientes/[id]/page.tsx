@@ -9,7 +9,7 @@ import { getHallazgosAbiertos } from '@/lib/actions/hallazgos'
 import {
   ArrowLeft, Pencil, Phone, Mail, User, Pill, AlertTriangle,
   MapPin, ClipboardList, FileText, Clock, Activity, Heart,
-  Zap, CheckCircle, FolderOpen, Plus, Stethoscope, Brain, ShieldAlert
+  Zap, CheckCircle, FolderOpen, Plus, Stethoscope, Brain, ShieldAlert, Users
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
@@ -163,6 +163,10 @@ export default async function ExpedientePacientePage({ params }: { params: { id:
               )}
             </Link>
           )}
+          <Link href={`/pacientes/${paciente.id}/equipo`}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-[#1B2B4B] border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
+            <Users size={13} /> Equipo
+          </Link>
           <Link href={`/pacientes/${paciente.id}/plan-cuidado`}
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-[#1B2B4B] border border-gray-200 rounded-lg hover:border-[#2AABBF] hover:text-[#2AABBF] transition-all bg-white">
             <ClipboardList size={13} /> Plan de Cuidado

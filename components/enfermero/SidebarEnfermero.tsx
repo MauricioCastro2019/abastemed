@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, Calendar, User, LogOut, Menu, X,
-  Package, ClipboardList, KeyRound, Wallet, BookOpen, Shield
+  Package, ClipboardList, KeyRound, Wallet, BookOpen, Shield, Heart, Bell
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -14,8 +14,10 @@ const NAV_GROUPS = [
   {
     titulo: null,
     items: [
-      { href: '/enfermero/dashboard',      label: 'Inicio',          icon: LayoutDashboard },
-      { href: '/enfermero/turnos',         label: 'Mis turnos',      icon: Calendar },
+      { href: '/enfermero/dashboard',       label: 'Inicio',          icon: LayoutDashboard },
+      { href: '/enfermero/mis-pacientes',   label: 'Mis pacientes',   icon: Heart },
+      { href: '/enfermero/turnos',          label: 'Mis turnos',      icon: Calendar },
+      { href: '/enfermero/notificaciones',  label: 'Notificaciones',  icon: Bell },
     ],
   },
   {
@@ -38,11 +40,12 @@ const NAV_GROUPS = [
 
 interface Props {
   perfil: { nombre: string; apellido: string; email: string } | null
+  notifNoLeidas?: number
 }
 
 const BG = 'linear-gradient(180deg, #0D1B3E 0%, #162B4C 100%)'
 
-export function SidebarEnfermero({ perfil }: Props) {
+export function SidebarEnfermero({ perfil, notifNoLeidas = 0 }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
   const [open, setOpen] = useState(false)
@@ -115,6 +118,9 @@ export function SidebarEnfermero({ perfil }: Props) {
             <div className="space-y-0.5">
               {grupo.items.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href || pathname.startsWith(href + '/')
+                const badge = href === '/enfermero/notificaciones' && notifNoLeidas > 0
+                  ? notifNoLeidas
+                  : null
                 return (
                   <Link
                     key={href}
@@ -128,7 +134,13 @@ export function SidebarEnfermero({ perfil }: Props) {
                     )}
                   >
                     <Icon size={17} className="flex-shrink-0" />
-                    {label}
+                    <span className="flex-1">{label}</span>
+                    {badge && (
+                      <span className="min-w-[18px] h-[18px] px-1 rounded-full text-xs font-bold flex items-center justify-center"
+                        style={{ backgroundColor: '#EF4444', color: 'white', fontSize: 10 }}>
+                        {badge > 99 ? '99+' : badge}
+                      </span>
+                    )}
                   </Link>
                 )
               })}

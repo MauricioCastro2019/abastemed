@@ -1,8 +1,26 @@
 import { getEnfermero } from '@/lib/actions/enfermeros'
+import { getEquipoCuidadoByEnfermero } from '@/lib/actions/equipo-cuidado'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, Phone, Mail, Star, Briefcase, FileText, Download } from 'lucide-react'
+import { ArrowLeft, Pencil, Phone, Mail, Star, Briefcase, FileText, Download, Users, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+
+const ROL_LABEL: Record<string, string> = {
+  titular: 'Titular', habitual: 'Habitual', suplente: 'Suplente',
+  coordinador: 'Coordinador', apoyo: 'Apoyo',
+}
+const ROL_COLOR: Record<string, { color: string; bg: string }> = {
+  titular:     { color: '#6366F1', bg: '#EEF2FF' },
+  habitual:    { color: '#2AABBF', bg: '#ECFEFF' },
+  suplente:    { color: '#d97706', bg: '#FEF3C7' },
+  coordinador: { color: '#7c3aed', bg: '#F3E8FF' },
+  apoyo:       { color: '#6b7280', bg: '#F3F4F6' },
+}
+const ESTADO_COLOR: Record<string, { color: string; bg: string }> = {
+  activa:     { color: '#059669', bg: '#ECFDF5' },
+  pendiente:  { color: '#d97706', bg: '#FEF3C7' },
+  pausada:    { color: '#6b7280', bg: '#F3F4F6' },
+}
 
 export default async function EnfermeroDetailPage({ params }: { params: { id: string } }) {
   let enfermero
@@ -11,6 +29,11 @@ export default async function EnfermeroDetailPage({ params }: { params: { id: st
   } catch {
     notFound()
   }
+
+  const equipo = await getEquipoCuidadoByEnfermero(params.id).catch(() => ({
+    activos: [], pendientes: [], historial: [],
+  }))
+  const pacientesActivos = [...equipo.activos, ...equipo.pendientes]
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -127,6 +150,66 @@ export default async function EnfermeroDetailPage({ params }: { params: { id: st
           <p className="text-sm text-gray-600 leading-relaxed">{enfermero.bio}</p>
         </div>
       )}
+
+      {/* Pacientes asignados */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users size={15} style={{ color: '#2AABBF' }} />
+            <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+              Pacientes asignados
+            </h2>
+          </div>
+          <span className="text-xs text-gray-400">
+            {pacientesActivos.length} activo{pacientesActivos.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {pacientesActivos.length === 0 ? (
+          <div className="text-center py-6">
+            <Heart size={20} className="text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-400">Sin pacientes asignados actualmente</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {pacientesActivos.map(a => {
+              const p = a.paciente
+              if (!p) return null
+              const rolCfg = ROL_COLOR[a.rol] ?? ROL_COLOR.apoyo
+              const estadoCfg = ESTADO_COLOR[a.estado] ?? ESTADO_COLOR.activa
+              return (
+                <Link
+                  key={a.id}
+                  href={`/pacientes/${p.id}`}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#2AABBF] transition-all group">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                    style={{ backgroundColor: '#1B2B4B' }}>
+                    {p.nombre[0]}{p.apellido[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 group-hover:text-[#1B2B4B]">
+                      {p.nombre} {p.apellido}
+                    </p>
+                    {p.diagnostico && (
+                      <p className="text-xs text-gray-400 truncate">{p.diagnostico}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: rolCfg.bg, color: rolCfg.color }}>
+                      {ROL_LABEL[a.rol] ?? a.rol}
+                    </span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: estadoCfg.bg, color: estadoCfg.color }}>
+                      {a.estado === 'activa' ? 'Activa' : a.estado === 'pendiente' ? 'Pendiente' : a.estado}
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

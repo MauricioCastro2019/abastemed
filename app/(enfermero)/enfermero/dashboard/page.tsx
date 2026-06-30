@@ -1,10 +1,12 @@
 import { getCentroProfesionalData } from '@/lib/actions/centro-profesional'
+import { getEquipoCuidadoByEnfermero } from '@/lib/actions/equipo-cuidado'
+import { getConteoNoLeidas } from '@/lib/actions/notificaciones'
 import { RealtimeRefresh } from '@/components/RealtimeRefresh'
 import Link from 'next/link'
 import {
   Calendar, Clock, MapPin, Star, TrendingUp, Award,
   BookOpen, AlertTriangle, ChevronRight, Zap, CheckCircle2,
-  ArrowRight, Shield
+  ArrowRight, Shield, Heart, Users, Bell
 } from 'lucide-react'
 
 function formatFecha(fecha: string) {
@@ -33,7 +35,11 @@ const ESTADO_MODULO_CONFIG = {
 }
 
 export default async function EnfermeroDashboardPage() {
-  const data = await getCentroProfesionalData()
+  const [data, equipoData, notifCount] = await Promise.all([
+    getCentroProfesionalData(),
+    getEquipoCuidadoByEnfermero().catch(() => ({ activos: [], pendientes: [], historial: [] })),
+    getConteoNoLeidas().catch(() => 0),
+  ])
 
   if (!data) {
     return (
@@ -83,6 +89,25 @@ export default async function EnfermeroDashboardPage() {
           &ldquo;{mensaje_cultural}&rdquo;
         </p>
       </div>
+
+      {/* ── BANNER NOTIFICACIONES NO LEÍDAS ─────────────────── */}
+      {notifCount > 0 && (
+        <Link href="/enfermero/notificaciones"
+          className="flex items-center gap-3 p-3.5 rounded-xl border transition-all hover:shadow-sm"
+          style={{ backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }}>
+          <div className="relative flex-shrink-0">
+            <Bell size={18} style={{ color: '#4F46E5' }} />
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 rounded-full text-white text-xs font-bold flex items-center justify-center"
+              style={{ backgroundColor: '#EF4444', fontSize: 9 }}>
+              {notifCount > 9 ? '9+' : notifCount}
+            </span>
+          </div>
+          <p className="text-sm font-semibold flex-1" style={{ color: '#3730A3' }}>
+            Tienes {notifCount} notificación{notifCount !== 1 ? 'es' : ''} sin leer
+          </p>
+          <ChevronRight size={14} style={{ color: '#6366F1' }} />
+        </Link>
+      )}
 
       {/* ── BANNER PENDIENTE DE APROBACIÓN ──────────────────── */}
       {!enfermero.disponible && (
@@ -176,6 +201,67 @@ export default async function EnfermeroDashboardPage() {
               style={{ color: '#2AABBF' }}
             >
               Comenzar inducción <ArrowRight size={14} />
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* ── MIS PACIENTES ───────────────────────────────────── */}
+      {(equipoData.activos.length > 0 || equipoData.pendientes.length > 0) && (
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Heart size={15} style={{ color: '#2AABBF' }} />
+              <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+                Mis pacientes
+              </h2>
+            </div>
+            <Link href="/enfermero/mis-pacientes"
+              className="text-xs font-medium flex items-center gap-1"
+              style={{ color: '#2AABBF' }}>
+              Ver todos <ArrowRight size={12} />
+            </Link>
+          </div>
+
+          {equipoData.pendientes.length > 0 && (
+            <Link href="/enfermero/mis-pacientes"
+              className="flex items-center gap-3 p-3 rounded-xl mb-3 border-2"
+              style={{ backgroundColor: '#FFFBEB', borderColor: '#FCD34D' }}>
+              <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
+              <p className="text-sm font-semibold text-amber-700 flex-1">
+                {equipoData.pendientes.length} invitación{equipoData.pendientes.length !== 1 ? 'es' : ''} pendiente{equipoData.pendientes.length !== 1 ? 's' : ''} de aceptar
+              </p>
+              <ChevronRight size={14} className="text-amber-500" />
+            </Link>
+          )}
+
+          <div className="space-y-2">
+            {equipoData.activos.slice(0, 3).map(a => {
+              const p = a.paciente
+              if (!p) return null
+              return (
+                <Link key={a.id} href={`/pacientes/${p.id}`}
+                  className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#2AABBF] transition-all group">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                    style={{ backgroundColor: '#1B2B4B' }}>
+                    {p.nombre[0]}{p.apellido[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate group-hover:text-[#1B2B4B]">
+                      {p.nombre} {p.apellido}
+                    </p>
+                    <p className="text-xs text-gray-400 capitalize">{a.rol}</p>
+                  </div>
+                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#2AABBF] transition-colors" />
+                </Link>
+              )
+            })}
+          </div>
+
+          {equipoData.activos.length > 3 && (
+            <Link href="/enfermero/mis-pacientes"
+              className="mt-3 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-xl border border-gray-100 text-gray-500 hover:text-[#2AABBF] hover:border-[#2AABBF] transition-all">
+              <Users size={11} /> Ver {equipoData.activos.length - 3} más
             </Link>
           )}
         </div>

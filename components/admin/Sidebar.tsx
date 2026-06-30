@@ -27,6 +27,7 @@ import {
   CheckSquare,
   Wallet,
   Activity,
+  Layers,
 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -42,6 +43,7 @@ const NAV_ADMIN = [
   { href: '/turnos',              label: 'Turnos',          icon: Calendar },
   { href: '/turnos/semana',       label: 'Horarios',        icon: CalendarRange },
   { href: '/turnos/validacion',   label: 'Validación',      icon: CheckSquare },
+  { href: '/cobertura',           label: 'Cobertura',       icon: Layers },
   { href: '/cortes',              label: 'Cortes y Pagos',  icon: Wallet },
   { href: '/insumos',             label: 'Insumos',         icon: Package },
   { href: '/familiares',          label: 'Familiares',      icon: Heart },
@@ -63,6 +65,7 @@ const NAV_COORDINADOR = [
   { href: '/turnos',              label: 'Turnos',          icon: Calendar },
   { href: '/turnos/semana',       label: 'Horarios',        icon: CalendarRange },
   { href: '/turnos/validacion',   label: 'Validación',      icon: CheckSquare },
+  { href: '/cobertura',           label: 'Cobertura',       icon: Layers },
   { href: '/cortes',              label: 'Cortes',          icon: Wallet },
   { href: '/insumos',             label: 'Insumos',         icon: Package },
   { href: '/familiares',          label: 'Familiares',      icon: Heart },

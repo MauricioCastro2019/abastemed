@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireAuth, requireRole, fd, zodActionError, type ActionResult } from './utils'
+import { requireAuth, requireRole, fd, fdBool, zodActionError, type ActionResult } from './utils'
 import { TurnoSchema } from '@/lib/validations'
 import { registrarEvento } from './bitacora'
 import { crearAlerta } from './alertas'
@@ -62,7 +62,7 @@ export async function getTurnosByCaso(casoId: string) {
   return data ?? []
 }
 
-export async function crearTurno(formData: FormData): Promise<ActionResult> {
+export async function crearTurno(formData: FormData): Promise<ActionResult & { warning?: string }> {
   const { supabase, perfil } = await requireAuth()
   requireRole(perfil, 'admin', 'coordinador')
 
@@ -76,16 +76,73 @@ export async function crearTurno(formData: FormData): Promise<ActionResult> {
   if (!parsed.success) return zodActionError(parsed.error)
 
   const v = parsed.data
-  const { error } = await supabase.from('turnos').insert({
+
+  // ── Detección de conflictos de horario ─────────────────────
+  // Busca turnos programados/activos del mismo enfermero que se solapan.
+  const { data: conflictos } = await supabase
+    .from('turnos')
+    .select('id, fecha_inicio, fecha_fin, caso:casos(titulo)')
+    .eq('enfermero_id', v.enfermero_id)
+    .in('status', ['programado', 'activo'])
+    .lt('fecha_inicio', v.fecha_fin)
+    .gt('fecha_fin', v.fecha_inicio)
+
+  // Si hay conflicto y el formulario NO marcó "confirmar_conflicto", devolver warning
+  const confirmoConflicto = fdBool(formData, 'confirmar_conflicto')
+  if (conflictos && conflictos.length > 0 && !confirmoConflicto) {
+    const primerConflicto = conflictos[0]
+    const titulo = (primerConflicto.caso as { titulo?: string } | null)?.titulo ?? 'otro caso'
+    const inicio = new Date(primerConflicto.fecha_inicio).toLocaleString('es-MX', {
+      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    })
+    return {
+      warning: `Este enfermero ya tiene un turno en "${titulo}" que inicia el ${inicio}. El horario se solapa.`,
+    }
+  }
+
+  const { data: nuevoTurno, error } = await supabase.from('turnos').insert({
     caso_id:       v.caso_id,
     enfermero_id:  v.enfermero_id,
     fecha_inicio:  v.fecha_inicio,
     fecha_fin:     v.fecha_fin,
     notas_entrega: fd(formData, 'notas_entrega') || null,
     status:        'programado',
-  })
+  }).select('id').single()
 
   if (error) return { error: error.message }
+
+  // ── Agregar como suplente si lo solicitaron ─────────────────
+  const agregarSuplente = fdBool(formData, 'agregar_suplente')
+  if (agregarSuplente && nuevoTurno) {
+    const { data: caso } = await supabase
+      .from('casos')
+      .select('paciente_id')
+      .eq('id', v.caso_id)
+      .single()
+
+    if (caso?.paciente_id) {
+      // Solo insertar si no existe ya una asignación activa/pendiente
+      const { data: existente } = await supabase
+        .from('equipo_cuidado')
+        .select('id')
+        .eq('paciente_id', caso.paciente_id)
+        .eq('enfermero_id', v.enfermero_id)
+        .in('estado', ['activa', 'pendiente', 'pausada'])
+        .maybeSingle()
+
+      if (!existente) {
+        await supabase.from('equipo_cuidado').insert({
+          paciente_id:  caso.paciente_id,
+          enfermero_id: v.enfermero_id,
+          rol:          'suplente',
+          estado:       'activa',
+          asignado_por: perfil.id,
+          motivo_asignacion: 'Agregado como suplente al cubrir una guardia',
+        })
+        revalidatePath(`/pacientes/${caso.paciente_id}/equipo`)
+      }
+    }
+  }
 
   revalidatePath('/turnos')
   revalidatePath('/dashboard')
