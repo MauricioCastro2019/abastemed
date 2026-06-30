@@ -67,7 +67,7 @@ export async function getEquipoCuidadoByPaciente(pacienteId: string): Promise<{
 
   if (error) throw new Error(error.message)
 
-  const rows = (data ?? []) as EquipoCuidado[]
+  const rows = (data ?? []) as unknown as EquipoCuidado[]
   return {
     activos:   rows.filter(r => r.estado === 'activa' || r.estado === 'pausada'),
     pendientes: rows.filter(r => r.estado === 'pendiente'),
@@ -108,7 +108,7 @@ export async function getEquipoCuidadoByEnfermero(enfermeroIdParam?: string): Pr
 
   if (error) throw new Error(error.message)
 
-  const rows = (data ?? []) as EquipoCuidado[]
+  const rows = (data ?? []) as unknown as EquipoCuidado[]
   return {
     activos:    rows.filter(r => r.estado === 'activa' || r.estado === 'pausada'),
     pendientes: rows.filter(r => r.estado === 'pendiente'),
@@ -136,7 +136,7 @@ export async function getEquipoCuidadoByCaso(casoId: string): Promise<EquipoCuid
     .order('es_principal', { ascending: false })
     .order('rol')
 
-  return (data ?? []) as EquipoCuidado[]
+  return (data ?? []) as unknown as EquipoCuidado[]
 }
 
 export async function getEnfermerosSugeridos(pacienteId: string): Promise<EnfermeroSugerido[]> {
