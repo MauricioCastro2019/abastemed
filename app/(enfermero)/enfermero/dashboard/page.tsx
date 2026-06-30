@@ -14,12 +14,6 @@ function formatFecha(fecha: string) {
   })
 }
 
-function formatFechaCorta(fecha: string) {
-  return new Date(fecha).toLocaleDateString('es-MX', {
-    weekday: 'long', day: 'numeric', month: 'long',
-  })
-}
-
 const CATEGORIA_LABELS: Record<string, string> = {
   induccion: 'Inducción',
   comunicacion: 'Comunicación',

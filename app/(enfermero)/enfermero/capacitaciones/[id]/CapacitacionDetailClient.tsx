@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { iniciarModulo, completarModulo } from '@/lib/actions/capacitaciones'
 import type { ModuloCapacitacion, ProgresoCapacitacion, ContenidoModulo } from '@/types'
 import {
@@ -66,7 +65,6 @@ function SeccionContenido({ bloque }: { bloque: ContenidoModulo }) {
 }
 
 export function CapacitacionDetailClient({ modulo, progreso }: Props) {
-  const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
   const yaAprobado = progreso?.estado === 'aprobado'

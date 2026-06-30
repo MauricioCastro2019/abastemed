@@ -181,7 +181,7 @@ export default async function CompetenciasPage() {
 
                   {/* Barra de progreso del estado */}
                   <div className="mt-3 flex gap-1">
-                    {(['capacitacion_vista', 'evaluacion_aprobada', 'practica_observada', 'validado'] as EstadoCompetencia[]).map((e, i) => {
+                    {(['capacitacion_vista', 'evaluacion_aprobada', 'practica_observada', 'validado'] as EstadoCompetencia[]).map((e) => {
                       const estados: EstadoCompetencia[] = ['no_iniciado', 'capacitacion_vista', 'evaluacion_aprobada', 'practica_observada', 'validado']
                       const nivelActual = estados.indexOf(estado)
                       const nivelEste   = estados.indexOf(e)
