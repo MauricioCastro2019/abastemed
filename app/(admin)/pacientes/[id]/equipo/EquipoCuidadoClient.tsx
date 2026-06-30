@@ -8,7 +8,7 @@ import {
 } from '@/lib/actions/equipo-cuidado'
 import {
   Users, Plus, Star, Clock, History, ChevronDown, ChevronUp,
-  Pause, Play, XCircle, CheckCircle2, AlertCircle,
+  Pause, Play, XCircle, AlertCircle,
   Calendar, Phone
 } from 'lucide-react'
 import type { EquipoCuidado, EnfermeroSugerido, RolEquipo } from '@/types'

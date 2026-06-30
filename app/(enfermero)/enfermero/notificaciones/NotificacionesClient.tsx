@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { marcarLeida, marcarTodasLeidas } from '@/lib/actions/notificaciones'
 import {
   Bell, BellOff, CheckCheck, Users, Calendar, AlertTriangle,
-  Heart, ChevronRight, Clock
+  Heart, ChevronRight
 } from 'lucide-react'
 import Link from 'next/link'
 import type { Notificacion } from '@/types'

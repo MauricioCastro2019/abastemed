@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { aceptarAsignacion, rechazarAsignacion } from '@/lib/actions/equipo-cuidado'
 import { useRouter } from 'next/navigation'
 import {
-  Clock, CheckCircle2, XCircle, ChevronDown, ChevronUp,
+  CheckCircle2, XCircle, ChevronDown, ChevronUp,
   Heart, AlertTriangle, Calendar, ArrowRight, History
 } from 'lucide-react'
 import Link from 'next/link'

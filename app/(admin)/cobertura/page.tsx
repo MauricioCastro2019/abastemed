@@ -1,7 +1,7 @@
 import { getResumenCobertura } from '@/lib/actions/equipo-cuidado'
 import {
   CheckCircle2, AlertTriangle, XCircle, Calendar,
-  Users, Plus, Filter, Layers
+  Users, Layers
 } from 'lucide-react'
 import Link from 'next/link'
 
