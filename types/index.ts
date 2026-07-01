@@ -1848,3 +1848,273 @@ export interface EnfermeroSugerido {
   // Nombres de competencias procedimentales sin validación práctica confirmada
   advertencias_procedimentales: string[]
 }
+
+// ============================================================
+// NAI — NÚCLEO DE ATENCIÓN INTEGRAL
+// Motor unificado de Plan de Atención + Acciones
+// ============================================================
+
+export type TipoPlanItem =
+  | 'medicamento'
+  | 'rutina'
+  | 'monitoreo'
+  | 'procedimiento'
+  | 'nutricion'
+  | 'eliminacion'
+  | 'movilidad'
+  | 'comunicacion'
+
+export type FrecuenciaPlan =
+  | 'unica'
+  | 'diaria'
+  | 'bid'
+  | 'tid'
+  | 'qid'
+  | 'cada_4h'
+  | 'cada_6h'
+  | 'cada_8h'
+  | 'cada_12h'
+  | 'semanal'
+  | 'segun_necesidad'
+  | 'personalizada'
+
+export type EstadoPlanAtencion = 'borrador' | 'activo' | 'suspendido' | 'archivado'
+
+export type PrioridadAccion = 'critica' | 'urgente' | 'alta' | 'normal' | 'baja'
+
+export type EstadoAccion =
+  | 'pendiente'
+  | 'proxima'
+  | 'en_proceso'
+  | 'realizada'
+  | 'omitida'
+  | 'rechazada'
+  | 'verificada'
+
+export type TipoEvidenciaAccion = 'foto' | 'video' | 'audio' | 'pdf' | 'nota' | 'firma'
+
+// Semáforo NAI del paciente
+export type SemaforoNAI = 'verde' | 'amarillo' | 'rojo' | 'critico'
+
+// ─── Configuración JSONB por tipo de plan_item ───────────────
+
+export interface ConfigMedicamento {
+  nombre: string
+  presentacion?: string
+  dosis: string
+  via: string
+  medico?: string
+  indicacion?: string
+  existencia_domicilio?: boolean
+}
+
+export interface ConfigMonitoreo {
+  parametros: ('ta' | 'fc' | 'spo2' | 'temperatura' | 'glucosa' | 'peso' | 'dolor_eva' | 'fr')[]
+  instrucciones?: string
+}
+
+export interface ConfigProcedimiento {
+  tipo_procedimiento: string
+  checklist?: string[]
+  requiere_competencia_id?: string
+}
+
+export interface ConfigRutina {
+  subtipo: 'bano_completo' | 'higiene_bucal' | 'cambio_posicion' | 'cambio_ropa' | 'cambio_panal' | 'hidratacion_piel' | 'lavado_cabello' | 'acompanamiento' | 'otro'
+  nivel_asistencia?: 'total' | 'parcial' | 'supervision'
+}
+
+// ─── Datos JSONB por tipo de acción (al ejecutarla) ──────────
+
+export interface DatosMedicamentoEjecutado {
+  administrado: boolean
+  dosis_real?: string
+  hora_real?: string
+  via_real?: string
+  motivo_omision?: string
+}
+
+export interface DatosMonitoreoEjecutado {
+  ta_sistolica?: number
+  ta_diastolica?: number
+  fc?: number
+  spo2?: number
+  temperatura?: number
+  glucosa?: number
+  peso?: number
+  dolor_eva?: number
+  fr?: number
+}
+
+export interface DatosProcedimientoEjecutado {
+  items_completados?: string[]
+  dificultades?: string
+  notificado_a?: string
+}
+
+export interface DatosRutinaEjecutada {
+  completado: boolean
+  nivel_asistencia_real?: string
+  observaciones_piel?: string
+}
+
+export interface DatosNutricionEjecutada {
+  porcentaje_ingesta?: number
+  tipo_dieta_real?: string
+  nausea?: boolean
+  vomito?: boolean
+  dificultad_deglucion?: boolean
+}
+
+export interface DatosEliminacionEjecutada {
+  vol_orina_ml?: number
+  color_orina?: string
+  evacuacion?: boolean
+  consistencia?: string
+}
+
+// ─── Interfaces principales ───────────────────────────────────
+
+export interface PlanAtencion {
+  id: string
+  paciente_id: string
+  caso_id?: string | null
+  organization_id: string
+  version: number
+  estado: EstadoPlanAtencion
+  nombre?: string | null
+  notas_generales?: string | null
+  created_by?: string | null
+  activated_at?: string | null
+  suspended_at?: string | null
+  archived_at?: string | null
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  plan_items?: PlanItem[]
+  creador?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
+}
+
+export interface PlanItem {
+  id: string
+  plan_id: string
+  tipo: TipoPlanItem
+  nombre: string
+  descripcion?: string | null
+  frecuencia: FrecuenciaPlan
+  horarios: string[]               // ['08:00', '14:00', '20:00']
+  configuracion: Record<string, unknown>
+  prioridad: PrioridadAccion
+  requiere_evidencia: boolean
+  activo: boolean
+  orden: number
+  inicio_en?: string | null
+  fin_en?: string | null
+  creado_por?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Accion {
+  id: string
+  plan_item_id?: string | null
+  paciente_id: string
+  caso_id?: string | null
+  turno_id?: string | null
+  organization_id: string
+  tipo: TipoPlanItem
+  nombre: string
+  estado: EstadoAccion
+  prioridad: PrioridadAccion
+  programada_para?: string | null  // ISO datetime
+  iniciada_en?: string | null
+  completada_en?: string | null
+  responsable_id?: string | null
+  verificada_por?: string | null
+  verificada_en?: string | null
+  datos: Record<string, unknown>
+  observaciones?: string | null
+  requiere_followup: boolean
+  created_at: string
+  updated_at: string
+  // Relaciones opcionales
+  responsable?: Pick<PerfilUsuario, 'id' | 'nombre' | 'apellido'> | null
+  evidencias?: EvidenciaAccion[]
+}
+
+export interface EvidenciaAccion {
+  id: string
+  accion_id: string
+  tipo: TipoEvidenciaAccion
+  url?: string | null
+  descripcion?: string | null
+  subido_por?: string | null
+  created_at: string
+}
+
+// Para el hub NAI — resumen del estado actual del paciente
+export interface NaiResumenPaciente {
+  semaforo: SemaforoNAI
+  score_cumplimiento: number        // 0–100
+  plan_activo: PlanAtencion | null
+  acciones_hoy: {
+    total: number
+    realizadas: number
+    pendientes: number
+    omitidas: number
+    proxima: Accion | null
+  }
+  alertas_activas_count: number
+  pendientes_urgentes_count: number
+  ultima_actividad: Accion | null
+}
+
+// Evento unificado en v_nai_timeline
+export interface EventoNaiTimeline {
+  paciente_id: string
+  evento_at: string
+  tipo_evento: 'accion' | 'incidencia' | 'hallazgo' | 'entrega_turno'
+  origen_id: string
+  subtipo: string
+  texto: string
+  nivel: string
+  estado: string
+  observaciones?: string | null
+}
+
+// Labels y colores para tipos de plan_item (usados en toda la UI)
+export const TIPO_PLAN_ITEM_CONFIG: Record<TipoPlanItem, { label: string; color: string; bg: string; icon: string }> = {
+  medicamento:  { label: 'Medicamento',  color: '#7c3aed', bg: '#f5f3ff', icon: 'Pill'       },
+  rutina:       { label: 'Rutina',       color: '#0284c7', bg: '#e0f2fe', icon: 'Heart'      },
+  monitoreo:    { label: 'Monitoreo',    color: '#059669', bg: '#ecfdf5', icon: 'Activity'   },
+  procedimiento:{ label: 'Procedimiento',color: '#dc2626', bg: '#fef2f2', icon: 'Stethoscope'},
+  nutricion:    { label: 'Nutrición',    color: '#d97706', bg: '#fef3c7', icon: 'Utensils'   },
+  eliminacion:  { label: 'Eliminación',  color: '#0891b2', bg: '#ecfeff', icon: 'Droplets'   },
+  movilidad:    { label: 'Movilidad',    color: '#65a30d', bg: '#f7fee7', icon: 'MoveHorizontal'},
+  comunicacion: { label: 'Comunicación', color: '#c026d3', bg: '#fdf4ff', icon: 'MessageSquare'},
+}
+
+export const FRECUENCIA_PLAN_LABEL: Record<FrecuenciaPlan, string> = {
+  unica:          'Una vez',
+  diaria:         'Diaria',
+  bid:            '2 veces al día',
+  tid:            '3 veces al día',
+  qid:            '4 veces al día',
+  cada_4h:        'Cada 4 horas',
+  cada_6h:        'Cada 6 horas',
+  cada_8h:        'Cada 8 horas',
+  cada_12h:       'Cada 12 horas',
+  semanal:        'Semanal',
+  segun_necesidad:'Según necesidad',
+  personalizada:  'Personalizada',
+}
+
+export const ESTADO_ACCION_CONFIG: Record<EstadoAccion, { label: string; color: string; bg: string }> = {
+  pendiente:  { label: 'Pendiente',   color: '#6b7280', bg: '#f3f4f6' },
+  proxima:    { label: 'Próxima',     color: '#2563eb', bg: '#eff6ff' },
+  en_proceso: { label: 'En proceso',  color: '#d97706', bg: '#fef3c7' },
+  realizada:  { label: 'Realizada',   color: '#059669', bg: '#ecfdf5' },
+  omitida:    { label: 'Omitida',     color: '#dc2626', bg: '#fef2f2' },
+  rechazada:  { label: 'Rechazada',   color: '#7c2d12', bg: '#fff1f2' },
+  verificada: { label: 'Verificada',  color: '#7c3aed', bg: '#f5f3ff' },
+}

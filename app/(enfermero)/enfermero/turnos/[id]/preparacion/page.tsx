@@ -6,6 +6,8 @@ import {
   Clock, Shield, Eye, CheckCircle2, Activity, Heart,
   MessageSquare, ChevronRight, Info
 } from 'lucide-react'
+import { getAccionesByTurno, generarAccionesParaTurno } from '@/lib/actions/acciones-nai'
+import { ColaNaiSection } from './ColaNaiSection'
 
 async function getTurnoConContexto(turnoId: string) {
   const supabase = await createClient()
@@ -30,7 +32,8 @@ async function getTurnoConContexto(turnoId: string) {
   const pacienteId = (turno.caso as { paciente?: { id: string } })?.paciente?.id
   const casoId = turno.caso_id
 
-  if (!pacienteId || !casoId) return { turno, alertas: [], kardex: [], pendientes: [], vigilancias: [], manual: null, levantamiento: null }
+  if (!pacienteId || !casoId) return { turno, pacienteId: null, alertas: [], kardex: [], pendientes: [], vigilancias: [], manual: null, levantamiento: null }
+
 
   // Paralelo: alertas activas, kardex, pendientes, vigilancias, manual, levantamiento
   const [alertasRes, kardexRes, pendientesRes, vigilanciasRes, manualRes, levantamientoRes] = await Promise.allSettled([
@@ -79,6 +82,7 @@ async function getTurnoConContexto(turnoId: string) {
 
   return {
     turno,
+    pacienteId,
     alertas:      alertasRes.status === 'fulfilled'      ? (alertasRes.value.data ?? [])      : [],
     kardex:       kardexRes.status === 'fulfilled'       ? (kardexRes.value.data ?? [])       : [],
     pendientes:   pendientesRes.status === 'fulfilled'   ? (pendientesRes.value.data ?? [])   : [],
@@ -115,7 +119,14 @@ export default async function PreparacionGuardiaPage({ params }: { params: { id:
   const ctx = await getTurnoConContexto(params.id)
   if (!ctx) notFound()
 
-  const { turno, alertas, kardex, pendientes, vigilancias, manual, levantamiento } = ctx
+  const { turno, pacienteId, alertas, kardex, pendientes, vigilancias, manual, levantamiento } = ctx
+
+  // Generar acciones NAI para este turno (idempotente — no duplica si ya existen)
+  let accionesNai = [] as Awaited<ReturnType<typeof getAccionesByTurno>>
+  if (pacienteId) {
+    await generarAccionesParaTurno(params.id).catch(() => null)
+    accionesNai = await getAccionesByTurno(params.id).catch(() => [])
+  }
   const caso = turno.caso as {
     id: string; titulo: string; direccion: string; contexto: string;
     paciente?: { id: string; nombre: string; apellido: string; fecha_nacimiento?: string; diagnostico: string; medicamentos: string[]; alergias: string[]; contacto_familiar?: { nombre: string; telefono: string; relacion: string } }
@@ -181,6 +192,15 @@ export default async function PreparacionGuardiaPage({ params }: { params: { id:
           </div>
         </div>
       </div>
+
+      {/* ── COLA NAI ──────────────────────────────────── */}
+      {pacienteId && (
+        <ColaNaiSection
+          accionesIniciales={accionesNai}
+          pacienteId={pacienteId}
+          turnoId={params.id}
+        />
+      )}
 
       {/* ── ALERTAS ACTIVAS ────────────────────────────── */}
       {alertas.length > 0 && (
