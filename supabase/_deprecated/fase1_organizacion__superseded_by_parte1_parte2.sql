@@ -1,4 +1,9 @@
 -- ============================================================
+-- Versión monolítica pre-split. Reemplazada por parte1_enum +
+-- parte2_main por el bug de ALTER TYPE en misma transacción.
+-- Conservada solo por historia — NO forma parte de la cadena
+-- de aplicación.
+-- ============================================================
 -- MIGRACIÓN FASE 1: Estructura organizacional y rol coordinador
 -- Abastemed — 2026-06-22
 --
