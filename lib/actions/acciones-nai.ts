@@ -140,7 +140,6 @@ export async function generarAccionesParaTurno(turnoId: string): Promise<{
 
     if (item.frecuencia === 'unica') {
       // Una sola acción al inicio del turno si no existe ya
-      const clave = `${item.id}|unica`
       const yaExiste = (existentes ?? []).some(e => e.plan_item_id === item.id)
       if (!yaExiste) {
         accionesAInsertar.push(buildAccion(item, turnoId, pacienteId, casoId, turnoInicio.toISOString()))

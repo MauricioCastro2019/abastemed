@@ -6,7 +6,6 @@ import { getEquipoCuidadoByPaciente }     from '@/lib/actions/equipo-cuidado'
 import { getPlanActivo }                  from '@/lib/actions/plan-atencion'
 import { getAccionesToday, getResumenNai, getTimelineNai } from '@/lib/actions/acciones-nai'
 import { RealtimeRefresh }                from '@/components/RealtimeRefresh'
-import { Badge }   from '@/components/ui/badge'
 import Link        from 'next/link'
 import { notFound } from 'next/navigation'
 import {
@@ -15,12 +14,11 @@ import {
   ChevronRight, Plus, Zap, Activity, Pill,
   Heart, Stethoscope, Utensils, Droplets,
   MoveHorizontal, MessageSquare, RotateCcw,
-  CalendarClock, ShieldAlert, FileText
+  CalendarClock, ShieldAlert
 } from 'lucide-react'
 import type {
   Accion, AlertaActiva, PendienteCaso,
-  TipoPlanItem, EstadoAccion, SemaforoNAI,
-  ESTADO_ACCION_CONFIG, TIPO_PLAN_ITEM_CONFIG,
+  TipoPlanItem, SemaforoNAI,
 } from '@/types'
 import {
   TIPO_PLAN_ITEM_CONFIG as TIPO_CONFIG,

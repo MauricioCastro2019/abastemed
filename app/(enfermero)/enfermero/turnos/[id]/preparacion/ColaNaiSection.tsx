@@ -1,15 +1,15 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { registrarAccion, omitirAccion, crearAccionManual } from '@/lib/actions/acciones-nai'
+import { registrarAccion, omitirAccion } from '@/lib/actions/acciones-nai'
 import {
   CheckCircle2, XCircle, Clock, Activity, Pill, Heart,
   Stethoscope, Utensils, Droplets, MoveHorizontal,
-  MessageSquare, Plus, ChevronDown, ChevronUp, AlertTriangle,
+  MessageSquare, ChevronDown, ChevronUp,
   Zap
 } from 'lucide-react'
-import type { Accion, TipoPlanItem, EstadoAccion } from '@/types'
-import { TIPO_PLAN_ITEM_CONFIG, ESTADO_ACCION_CONFIG } from '@/types'
+import type { Accion, TipoPlanItem } from '@/types'
+import { TIPO_PLAN_ITEM_CONFIG } from '@/types'
 
 // ─── Ícono de tipo ────────────────────────────────────────────
 
@@ -237,8 +237,8 @@ interface ColaNaiSectionProps {
   turnoId: string
 }
 
-export function ColaNaiSection({ accionesIniciales, pacienteId, turnoId }: ColaNaiSectionProps) {
-  const [acciones, setAcciones] = useState(accionesIniciales)
+export function ColaNaiSection({ accionesIniciales, pacienteId }: ColaNaiSectionProps) {
+  const [acciones] = useState(accionesIniciales)
   const [accionActiva, setAccionActiva] = useState<Accion | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
 
@@ -359,7 +359,6 @@ export function ColaNaiSection({ accionesIniciales, pacienteId, turnoId }: ColaN
               {showCompleted && (
                 <div className="space-y-1.5 mt-2">
                   {realizadas.map(accion => {
-                    const conf = TIPO_PLAN_ITEM_CONFIG[accion.tipo]
                     return (
                       <div key={accion.id}
                         className="flex items-center gap-3 p-3 rounded-xl border border-emerald-100 bg-emerald-50 opacity-70">
@@ -394,7 +393,6 @@ export function ColaNaiSection({ accionesIniciales, pacienteId, turnoId }: ColaN
                 {omitidas.length} omitidas
               </p>
               {omitidas.map(accion => {
-                const conf = TIPO_PLAN_ITEM_CONFIG[accion.tipo]
                 return (
                   <div key={accion.id}
                     className="flex items-center gap-2 p-2.5 rounded-xl bg-red-50 border border-red-100 opacity-70">

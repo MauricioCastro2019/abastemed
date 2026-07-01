@@ -9,7 +9,7 @@ import {
   Plus, ChevronDown, ChevronUp, Power, PowerOff,
   Trash2, ClipboardList, CheckCircle2, AlertTriangle,
   Pill, Heart, Activity, Stethoscope, Utensils,
-  Droplets, MoveHorizontal, MessageSquare, Pencil
+  Droplets, MoveHorizontal, MessageSquare
 } from 'lucide-react'
 import type {
   PlanAtencion, PlanItem, TipoPlanItem, FrecuenciaPlan, PrioridadAccion,
@@ -75,7 +75,7 @@ function AddItemForm({ planId, pacienteId, onDone }: AddItemFormProps) {
   const [horarios, setHorarios]     = useState<string[]>(['08:00'])
   const [prioridad, setPrioridad]   = useState<PrioridadAccion>('normal')
   const [requiereEvidencia, setRE]  = useState(false)
-  const [configJson, setConfigJson] = useState('')
+  const [configJson, _setConfigJson] = useState('')
   const [pending, startT]           = useTransition()
   const [error, setError]           = useState('')
 
@@ -345,8 +345,7 @@ export function PlanAtencionClient({ pacienteId, casoId, planActivo, historial }
   const [showHistorial, setShowHistorial] = useState(false)
   const [pending, startT] = useTransition()
   const [error, setError] = useState('')
-  const [localItems, setLocalItems] = useState<PlanItem[]>(planActivo?.plan_items ?? [])
-  const [plan, setPlan] = useState(planActivo)
+  const [plan] = useState(planActivo)
 
   const handleCrearPlan = () => {
     startT(async () => {
