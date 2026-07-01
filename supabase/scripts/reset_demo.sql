@@ -1,6 +1,6 @@
 -- ============================================================
 -- ABASTEMED — Reset del entorno demo
--- Ejecutar ANTES de volver a correr seed_demo.sql
+-- Ejecutar ANTES de volver a correr supabase/seeds/seed_demo.sql
 -- Cada DELETE está en su propio bloque para que si una tabla
 -- no existe (o ya fue vaciada), el error se ignore y continúe.
 -- ============================================================
@@ -88,5 +88,5 @@ DO $$ BEGIN DELETE FROM recibos            WHERE organization_id = 'dddddddd-000
 DO $$ BEGIN DELETE FROM organizations WHERE id = 'dddddddd-0000-0000-0000-000000000002'::uuid; EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
-  RAISE NOTICE '✓ Reset demo completado. Ahora corre seed_demo.sql.';
+  RAISE NOTICE '✓ Reset demo completado. Ahora corre supabase/seeds/seed_demo.sql.';
 END $$;

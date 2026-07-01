@@ -16,7 +16,7 @@ Esta implementación transforma Abastemed de una colección de pantallas aislada
 ### Base de Datos
 | Archivo | Descripción |
 |---|---|
-| `supabase/migration_payroll_bitacora_alertas.sql` | Migración principal: 4 tablas, 3 funciones helpers, 2 triggers, índices y RLS |
+| `supabase/migrations/016_migration_payroll_bitacora_alertas.sql` | Migración principal: 4 tablas, 3 funciones helpers, 2 triggers, índices y RLS |
 
 ### Server Actions
 | Archivo | Descripción |
@@ -83,7 +83,7 @@ Esta implementación transforma Abastemed de una colección de pantallas aislada
 
 ## Migraciones de Base de Datos
 
-### Archivo: `supabase/migration_payroll_bitacora_alertas.sql`
+### Archivo: `supabase/migrations/016_migration_payroll_bitacora_alertas.sql`
 
 #### Extensiones a tabla `turnos`
 ```sql
@@ -176,7 +176,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_payroll_items_turno_activo
 
 **Opción A — Supabase Dashboard:**
 1. Ir a Dashboard → SQL Editor
-2. Pegar contenido de `supabase/migration_payroll_bitacora_alertas.sql`
+2. Pegar contenido de `supabase/migrations/016_migration_payroll_bitacora_alertas.sql`
 3. Ejecutar
 
 **Opción B — CLI:**
@@ -186,7 +186,7 @@ supabase db push
 
 **Opción C — psql directo:**
 ```bash
-psql "$DATABASE_URL" -f supabase/migration_payroll_bitacora_alertas.sql
+psql "$DATABASE_URL" -f supabase/migrations/016_migration_payroll_bitacora_alertas.sql
 ```
 
 ### Rollback

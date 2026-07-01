@@ -51,7 +51,7 @@ Ejecutar en orden en el SQL Editor de Supabase o con el CLI:
 supabase db push
 
 # Con psql
-psql "$DATABASE_URL" -f supabase/migration_payroll_bitacora_alertas.sql
+psql "$DATABASE_URL" -f supabase/migrations/016_migration_payroll_bitacora_alertas.sql
 ```
 
 Ver [`docs/IMPLEMENTACION_FLUJO_ABASTEMED.md`](docs/IMPLEMENTACION_FLUJO_ABASTEMED.md) para instrucciones detalladas y rollback.
@@ -127,7 +127,7 @@ Módulo mobile-first independiente bajo `/familiar/*`. Acceso restringido exclus
 | `citas_medicas` | Citas programadas del paciente (médico, especialidad, fecha, preparación) |
 | `solicitudes_familia` | Mensajes y solicitudes enviadas por el familiar al equipo |
 
-Migración: [`supabase/migration_portal_familiar.sql`](supabase/migration_portal_familiar.sql)
+Migración: [`supabase/migrations/019_migration_portal_familiar.sql`](supabase/migrations/019_migration_portal_familiar.sql)
 
 ### Sistema
 - **Bitácora** — Registro persistente de todas las acciones críticas
@@ -177,8 +177,11 @@ components/
 types/
   index.ts          # Tipos globales TypeScript
 supabase/
-  migration_*.sql               # Migraciones de BD
-  migration_portal_familiar.sql # Portal Familiar: tablas, RLS, funciones helper
+  migrations/                          # Migraciones numeradas 001-030 (ver README propio)
+    019_migration_portal_familiar.sql  # Portal Familiar: tablas, RLS, funciones helper
+  seeds/seed_demo.sql
+  scripts/reset_demo.sql
+  _deprecated/                         # Drafts superados, no aplicar
 docs/
   AUDITORIA_FLUJO_ABASTEMED.md
   FLUJO_OPERATIVO_ABASTEMED.md

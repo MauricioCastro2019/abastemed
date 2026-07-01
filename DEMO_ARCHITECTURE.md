@@ -76,7 +76,7 @@ Muestra 4 botones de rol que hacen `signInWithPassword` con las credenciales dem
 
 ```sql
 -- Copiar y pegar el contenido completo de:
-supabase/seed_demo.sql
+supabase/seeds/seed_demo.sql
 ```
 
 El seed es **idempotente**: limpia registros demo existentes antes de recrearlos.
@@ -107,7 +107,7 @@ Ir a `/demo` en tu app. Seleccionar "Coordinadora operativa". Debe redirigir al 
 Para restaurar el estado inicial (borrar cambios hechos durante una sesión de demo):
 
 1. Abrir Supabase SQL Editor
-2. Ejecutar `supabase/seed_demo.sql` nuevamente
+2. Ejecutar `supabase/seeds/seed_demo.sql` nuevamente
 
 El script limpia todos los registros demo y los recrea desde cero. Los datos de producción **nunca son tocados** (el script solo borra por `organization_id = dddddddd-...` o por UUIDs fijos de demo).
 
@@ -116,8 +116,8 @@ El script limpia todos los registros demo y los recrea desde cero. Los datos de 
 El PASO 0 del seed usa bloques independientes por tabla, pero si algo sale mal, ejecuta primero el script de limpieza manual:
 
 ```
-supabase/reset_demo.sql   ← ejecutar primero
-supabase/seed_demo.sql    ← ejecutar después
+supabase/scripts/reset_demo.sql   ← ejecutar primero
+supabase/seeds/seed_demo.sql      ← ejecutar después
 ```
 
 `reset_demo.sql` tiene cada DELETE en su propio `DO $$ ... EXCEPTION WHEN OTHERS THEN NULL; END $$` para que un fallo en una tabla no bloquee las demás.
@@ -128,7 +128,7 @@ supabase/seed_demo.sql    ← ejecutar después
 
 | Archivo | Propósito |
 |---------|-----------|
-| `supabase/seed_demo.sql` | Crea auth.users + todos los datos del caso Elena |
+| `supabase/seeds/seed_demo.sql` | Crea auth.users + todos los datos del caso Elena |
 | `app/(auth)/demo/page.tsx` | Página pública de selección de rol |
 | `components/DemoBanner.tsx` | Banner "ENTORNO DEMO" visible en todas las páginas |
 | `app/(admin)/layout.tsx` | Inyecta DemoBanner si usuario es demo |
