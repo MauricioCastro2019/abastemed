@@ -1678,6 +1678,7 @@ export interface Competencia {
   tipos_paciente: string[]
   activa: boolean
   orden: number
+  requiere_validacion_practica: boolean
   created_at: string
 }
 
@@ -1844,4 +1845,6 @@ export interface EnfermeroSugerido {
   asignacion_id?: string | null
   competencias_validadas: number
   guardias_semana: number
+  // Nombres de competencias procedimentales sin validación práctica confirmada
+  advertencias_procedimentales: string[]
 }

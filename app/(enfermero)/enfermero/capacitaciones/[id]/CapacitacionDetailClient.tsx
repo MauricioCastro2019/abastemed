@@ -395,13 +395,26 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
             {resultado.score}%
           </p>
 
-          <p className="text-sm text-gray-500 mb-6 max-w-xs mx-auto">
+          <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
             {resultado.aprobado
-              ? modulo.competencia
-                ? `Has avanzado en la competencia "${modulo.competencia.nombre}". Solicita validación al coordinador para completarla.`
-                : 'Has completado y aprobado este módulo de capacitación.'
+              ? modulo.competencia?.requiere_validacion_practica
+                ? `Evaluación teórica de "${modulo.competencia.nombre}" aprobada. Esta competencia procedimental requiere validación práctica supervisada por coordinación clínica para quedar validada.`
+                : modulo.competencia
+                  ? `Has avanzado en la competencia "${modulo.competencia.nombre}". Solicita validación al coordinador para completarla.`
+                  : 'Has completado y aprobado este módulo de capacitación.'
               : 'Necesitas 70% para aprobar. Puedes repetir el módulo cuando quieras.'}
           </p>
+
+          {resultado.aprobado && modulo.competencia?.requiere_validacion_practica && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left mb-4">
+              <p className="text-xs font-semibold text-amber-800 mb-1">Validación práctica pendiente</p>
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Aprobar la evaluación teórica no habilita para realizar el procedimiento de forma autónoma.
+                Tu competencia permanecerá en estado <span className="font-medium">evaluación aprobada</span> hasta
+                que coordinación clínica confirme la ejecución supervisada del procedimiento.
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             {!resultado.aprobado && (

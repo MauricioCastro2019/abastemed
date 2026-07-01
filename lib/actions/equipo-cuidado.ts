@@ -152,7 +152,11 @@ export async function getEquipoCuidadoByCaso(casoId: string): Promise<EquipoCuid
 export async function getEnfermerosSugeridos(pacienteId: string): Promise<EnfermeroSugerido[]> {
   const { supabase } = await requireAuth()
 
-  const [{ data: enfermeros }, { data: equipoActual }] = await Promise.all([
+  const [
+    { data: enfermeros },
+    { data: equipoActual },
+    { data: compProcedimentales },
+  ] = await Promise.all([
     supabase
       .from('enfermeros')
       .select(`
@@ -166,6 +170,11 @@ export async function getEnfermerosSugeridos(pacienteId: string): Promise<Enferm
       .select('enfermero_id, rol, estado, id')
       .eq('paciente_id', pacienteId)
       .in('estado', ['activa', 'pendiente', 'pausada']),
+    supabase
+      .from('competencias')
+      .select('id, nombre')
+      .eq('requiere_validacion_practica', true)
+      .eq('activa', true),
   ])
 
   const equipoMap = new Map<string, { rol: RolEquipo; estado: EstadoAsignacion; id: string }>()
@@ -177,17 +186,43 @@ export async function getEnfermerosSugeridos(pacienteId: string): Promise<Enferm
     })
   }
 
+  // Cargar validaciones prácticas existentes para competencias procedimentales
+  const procIds = (compProcedimentales ?? []).map(c => c.id)
+  const procNombres = new Map((compProcedimentales ?? []).map(c => [c.id, c.nombre as string]))
+
+  const { data: validacionesPrac } = procIds.length > 0
+    ? await supabase
+        .from('enfermero_competencias')
+        .select('enfermero_id, competencia_id')
+        .in('competencia_id', procIds)
+        .in('estado', ['practica_observada', 'validado'])
+    : { data: [] }
+
+  // Map: enfermero_id → Set de competencia_ids con validación práctica
+  const validadasMap = new Map<string, Set<string>>()
+  for (const v of validacionesPrac ?? []) {
+    if (!validadasMap.has(v.enfermero_id)) validadasMap.set(v.enfermero_id, new Set())
+    validadasMap.get(v.enfermero_id)!.add(v.competencia_id)
+  }
+
   const result: EnfermeroSugerido[] = []
   for (const e of enfermeros ?? []) {
     const enEquipo = equipoMap.get(e.id)
+    const validadasEnfermero = validadasMap.get(e.id) ?? new Set()
+    const advertencias = procIds
+      .filter(id => !validadasEnfermero.has(id))
+      .map(id => procNombres.get(id) ?? '')
+      .filter(Boolean)
+
     result.push({
       enfermero: e,
       ya_en_equipo: !!enEquipo,
       rol_actual: enEquipo?.rol ?? null,
       estado_asignacion: enEquipo?.estado ?? null,
       asignacion_id: enEquipo?.id ?? null,
-      competencias_validadas: 0,  // se puede extender con join a enfermero_competencias
-      guardias_semana: 0,         // se puede extender con count de turnos en la semana
+      competencias_validadas: validadasEnfermero.size,
+      guardias_semana: 0,
+      advertencias_procedimentales: advertencias,
     })
   }
 

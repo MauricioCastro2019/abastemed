@@ -1,11 +1,13 @@
 import { getEnfermero } from '@/lib/actions/enfermeros'
 import { getEquipoCuidadoByEnfermero } from '@/lib/actions/equipo-cuidado'
+import { getCompetenciasDeEnfermero } from '@/lib/actions/centro-profesional'
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, Phone, Mail, Star, Briefcase, FileText, Download, Users, Heart, Link2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Phone, Mail, Star, Briefcase, FileText, Download, Users, Heart, Link2, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { VincularCuentaWidget } from './VincularCuentaWidget'
+import { CompetenciasEnfermeroWidget } from './CompetenciasEnfermeroWidget'
 
 const ROL_LABEL: Record<string, string> = {
   titular: 'Titular', habitual: 'Habitual', suplente: 'Suplente',
@@ -32,8 +34,9 @@ export default async function EnfermeroDetailPage({ params }: { params: { id: st
     notFound()
   }
 
-  const [equipo, supabase] = await Promise.all([
+  const [equipo, competenciasData, supabase] = await Promise.all([
     getEquipoCuidadoByEnfermero(params.id).catch(() => ({ activos: [], pendientes: [], historial: [] })),
+    getCompetenciasDeEnfermero(params.id).catch(() => ({ competencias: [], mis_competencias: [] })),
     createClient(),
   ])
   const pacientesActivos = [...equipo.activos, ...equipo.pendientes]
@@ -173,6 +176,21 @@ export default async function EnfermeroDetailPage({ params }: { params: { id: st
           enfermeroId={params.id}
           yaVinculado={!!perfilVinculado}
           emailVinculado={perfilVinculado?.email}
+        />
+      </div>
+
+      {/* Competencias y validaciones */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield size={15} style={{ color: '#2AABBF' }} />
+          <h2 className="text-sm font-semibold" style={{ color: '#1B2B4B' }}>
+            Competencias y validaciones
+          </h2>
+        </div>
+        <CompetenciasEnfermeroWidget
+          enfermeroId={params.id}
+          competencias={competenciasData.competencias}
+          mis_competencias={competenciasData.mis_competencias}
         />
       </div>
 

@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo } from 'react'
 import { Sheet } from '@/components/ui/sheet'
 import { crearAsignacion } from '@/lib/actions/equipo-cuidado'
 import {
-  Search, Star, CheckCircle2, AlertCircle, Clock, Users
+  Search, Star, CheckCircle2, AlertCircle, Clock, Users, AlertTriangle
 } from 'lucide-react'
 import type { EnfermeroSugerido, RolEquipo, HorarioEquipo } from '@/types'
 
@@ -201,6 +201,31 @@ export function AsignarEnfermeroDrawer({
               <span className="text-sm font-medium" style={{ color: '#059669' }}>
                 {seleccionado.enfermero.nombre} {seleccionado.enfermero.apellido} seleccionado/a
               </span>
+            </div>
+          )}
+
+          {/* Advertencia: competencias procedimentales sin validación práctica */}
+          {seleccionado && seleccionado.advertencias_procedimentales.length > 0 && (
+            <div className="mt-2 p-3 rounded-xl"
+              style={{ backgroundColor: '#FFFBEB', border: '1px solid #FCD34D' }}>
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle size={14} style={{ color: '#D97706' }} className="flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: '#92400E' }}>
+                    Sin validación práctica confirmada
+                  </p>
+                  <ul className="mt-1 space-y-0.5">
+                    {seleccionado.advertencias_procedimentales.map(nombre => (
+                      <li key={nombre} className="text-xs" style={{ color: '#92400E' }}>
+                        · {nombre}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs mt-1.5" style={{ color: '#B45309' }}>
+                    La decisión final corresponde a coordinación. Esta advertencia es informativa.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </section>

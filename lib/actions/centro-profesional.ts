@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { requireAuth, requireRole } from '@/lib/actions/utils'
 import type {
   NivelProfesional,
   EstadisticasProfesionales,
@@ -308,4 +310,78 @@ export async function getMisCompetenciasCompleto(): Promise<{
     competencias,
     mis_competencias: (misCompResult.data ?? []) as EnfermeroCompetencia[],
   }
+}
+
+// ────────────────────────────────────────────────────────────
+// PARA COORDINADORES / ADMIN: competencias de un enfermero específico
+// ────────────────────────────────────────────────────────────
+
+export async function getCompetenciasDeEnfermero(enfermeroId: string): Promise<{
+  competencias: CompetenciaConModulo[]
+  mis_competencias: EnfermeroCompetencia[]
+}> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'superadmin', 'coordinador')
+
+  const [compResult, misCompResult] = await Promise.all([
+    supabase
+      .from('competencias')
+      .select('*, modulos_capacitacion(id, titulo, duracion_minutos)')
+      .eq('activa', true)
+      .order('orden'),
+    supabase
+      .from('enfermero_competencias')
+      .select('*, competencia:competencias(*)')
+      .eq('enfermero_id', enfermeroId),
+  ])
+
+  const competencias: CompetenciaConModulo[] = (compResult.data ?? []).map((c: Competencia & { modulos_capacitacion?: { id: string; titulo: string; duracion_minutos: number }[] }) => {
+    const modulos = c.modulos_capacitacion ?? []
+    const { modulos_capacitacion: _, ...rest } = c as typeof c & { modulos_capacitacion?: unknown }
+    return { ...rest, modulo: modulos[0] ?? null } as CompetenciaConModulo
+  })
+
+  return {
+    competencias,
+    mis_competencias: (misCompResult.data ?? []) as EnfermeroCompetencia[],
+  }
+}
+
+export async function validarCompetenciaEnfermero(
+  enfermeroId: string,
+  competenciaId: string,
+  nuevoEstado: 'practica_observada' | 'validado',
+  notas?: string
+): Promise<{ error?: string }> {
+  const { supabase, perfil } = await requireAuth()
+  requireRole(perfil, 'admin', 'superadmin', 'coordinador')
+
+  const ahora = new Date().toISOString()
+
+  const updates: Record<string, unknown> = {
+    estado: nuevoEstado,
+    notas: notas ?? null,
+    updated_at: ahora,
+  }
+
+  if (nuevoEstado === 'practica_observada') {
+    updates.practica_observada_at = ahora
+  } else if (nuevoEstado === 'validado') {
+    updates.practica_observada_at = ahora
+    updates.validado_por = perfil.id
+    updates.validado_at = ahora
+  }
+
+  const { error } = await supabase
+    .from('enfermero_competencias')
+    .upsert({
+      enfermero_id: enfermeroId,
+      competencia_id: competenciaId,
+      ...updates,
+    }, { onConflict: 'enfermero_id,competencia_id', ignoreDuplicates: false })
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/enfermeros/${enfermeroId}`)
+  return {}
 }
