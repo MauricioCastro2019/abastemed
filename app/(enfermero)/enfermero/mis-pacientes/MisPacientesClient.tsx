@@ -75,7 +75,7 @@ function PacienteCard({ asignacion }: { asignacion: EquipoCuidado }) {
       </div>
 
       <Link
-        href={`/pacientes/${p.id}`}
+        href={`/enfermero/pacientes/${p.id}`}
         className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all"
         style={{ backgroundColor: '#1B2B4B', color: 'white' }}>
         Ver paciente <ArrowRight size={12} />
