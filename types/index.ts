@@ -1679,8 +1679,18 @@ export interface Competencia {
   activa: boolean
   orden: number
   requiere_validacion_practica: boolean
+  codigo?: string | null
+  vigencia_meses?: number | null
+  version: number
+  firmada_por?: string | null
+  cedula_responsable?: string | null
+  fecha_firma?: string | null
+  notas?: string | null
   created_at: string
 }
+
+export type OrigenCompetencia = 'curso' | 'manual' | 'externa'
+export type EstadoVigenciaCompetencia = 'vigente' | 'caducada' | 'revocada'
 
 export interface EnfermeroCompetencia {
   id: string
@@ -1692,6 +1702,35 @@ export interface EnfermeroCompetencia {
   practica_observada_at?: string | null
   validado_por?: string | null
   validado_at?: string | null
+  notas?: string | null
+  origen: OrigenCompetencia
+  modulo_id_origen?: string | null
+  fecha_otorgada?: string | null
+  fecha_caducidad?: string | null
+  estado_vigencia: EstadoVigenciaCompetencia
+  certificado_url?: string | null
+  otorgada_por?: string | null
+  justificacion?: string | null
+  version_otorgada?: number | null
+  created_at: string
+  updated_at: string
+  competencia?: Competencia
+}
+
+export interface CompetenciaRevocacion {
+  id: string
+  enfermero_competencia_id: string
+  revocada_por?: string | null
+  fecha: string
+  motivo: string
+  created_at: string
+}
+
+export interface PacienteCompetenciaRequerida {
+  id: string
+  paciente_id: string
+  competencia_id: string
+  agregado_por?: string | null
   notas?: string | null
   created_at: string
   updated_at: string
@@ -1731,6 +1770,7 @@ export interface ModuloCapacitacion {
   orden: number
   obligatorio: boolean
   activo: boolean
+  evaluacion_minima: number
   created_at: string
   competencia?: Competencia | null
 }
