@@ -5,6 +5,7 @@ import { requireAuth, requireRole, fd, fdBool, zodActionError, type ActionResult
 import { TurnoSchema } from '@/lib/validations'
 import { registrarEvento } from './bitacora'
 import { crearAlerta } from './alertas'
+import { verificarCompetenciasParaAsignacion, type CompetenciaRequerida } from './competencias/gate-asignacion'
 import type { TurnoConValidacion } from '@/types'
 
 export async function getTurnos(search?: string) {
@@ -62,7 +63,9 @@ export async function getTurnosByCaso(casoId: string) {
   return data ?? []
 }
 
-export async function crearTurno(formData: FormData): Promise<ActionResult & { warning?: string }> {
+export async function crearTurno(
+  formData: FormData
+): Promise<ActionResult & { warning?: string; competenciasFaltantes?: CompetenciaRequerida[] }> {
   const { supabase, perfil } = await requireAuth()
   requireRole(perfil, 'admin', 'coordinador')
 
@@ -76,6 +79,24 @@ export async function crearTurno(formData: FormData): Promise<ActionResult & { w
   if (!parsed.success) return zodActionError(parsed.error)
 
   const v = parsed.data
+
+  // ── Gate de competencias requeridas por el paciente ─────────
+  // Bloqueo duro, sin posibilidad de override desde la UI (a
+  // diferencia del warning de conflicto de horario, más abajo).
+  const { data: casoParaGate } = await supabase
+    .from('casos')
+    .select('paciente_id')
+    .eq('id', v.caso_id)
+    .single()
+
+  if (!casoParaGate?.paciente_id) {
+    return { error: 'No se pudo verificar el paciente del caso. Intenta de nuevo.' }
+  }
+
+  const gate = await verificarCompetenciasParaAsignacion(v.enfermero_id, casoParaGate.paciente_id)
+  if (!gate.permitido) {
+    return { competenciasFaltantes: gate.faltantes }
+  }
 
   // ── Detección de conflictos de horario ─────────────────────
   // Busca turnos programados/activos del mismo enfermero que se solapan.
