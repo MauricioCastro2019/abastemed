@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireAuth, requireRole } from '@/lib/actions/utils'
+import { calcularOtorgamiento } from '@/lib/actions/competencias/otorgamiento'
 import type {
   NivelProfesional,
   EstadisticasProfesionales,
@@ -370,6 +371,27 @@ export async function validarCompetenciaEnfermero(
     updates.practica_observada_at = ahora
     updates.validado_por = perfil.id
     updates.validado_at = ahora
+
+    const { data: competencia } = await supabase
+      .from('competencias')
+      .select('requiere_validacion_practica, vigencia_meses, version')
+      .eq('id', competenciaId)
+      .single()
+
+    if (competencia) {
+      const otorgamiento = calcularOtorgamiento(
+        {
+          requiereValidacionPractica: competencia.requiere_validacion_practica,
+          vigenciaMeses: competencia.vigencia_meses,
+          version: competencia.version,
+        },
+        'validado'
+      )
+      updates.fecha_otorgada = otorgamiento.fechaOtorgada
+      updates.fecha_caducidad = otorgamiento.fechaCaducidad
+      updates.version_otorgada = otorgamiento.versionOtorgada
+      updates.estado_vigencia = 'vigente'
+    }
   }
 
   const { error } = await supabase

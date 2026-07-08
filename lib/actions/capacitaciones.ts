@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { calcularAprobacion, calcularOtorgamiento } from './competencias/otorgamiento'
 import type { ModuloCapacitacion, ProgresoCapacitacion } from '@/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -143,6 +144,18 @@ export async function completarModulo(
   const enfermeroId = await resolveEnfermeroId(supabase, user.id, user.email ?? '')
   if (!enfermeroId) return { ok: false, score: 0, aprobado: false, error: 'Perfil de enfermero no encontrado. Contacta al administrador.' }
 
+  // Traer el módulo (con umbral de aprobación y competencia asociada) antes
+  // de calcular si aprobó — el umbral es configurable por módulo.
+  const { data: modulo } = await supabase
+    .from('modulos_capacitacion')
+    .select('competencia_id, evaluacion_minima, competencia:competencias(requiere_validacion_practica, vigencia_meses, version)')
+    .eq('id', moduloId)
+    .single()
+
+  type CompetenciaJoin = { requiere_validacion_practica: boolean; vigencia_meses: number | null; version: number }
+  const competenciaJoin = (modulo?.competencia ?? null) as unknown as CompetenciaJoin | CompetenciaJoin[] | null
+  const competencia = Array.isArray(competenciaJoin) ? competenciaJoin[0] ?? null : competenciaJoin
+
   // Calcular score
   let correctas = 0
   for (let i = 0; i < evaluacion.length; i++) {
@@ -151,7 +164,7 @@ export async function completarModulo(
   const score = evaluacion.length > 0
     ? Math.round((correctas / evaluacion.length) * 100)
     : 100
-  const aprobado = score >= 70
+  const aprobado = calcularAprobacion(score, modulo?.evaluacion_minima ?? 70)
 
   const ahora = new Date().toISOString()
 
@@ -181,26 +194,36 @@ export async function completarModulo(
 
   if (error) return { ok: false, score, aprobado, error: error.message }
 
-  // Si aprobó y el módulo tiene competencia asociada, actualizar estado de competencia
-  if (aprobado) {
-    const { data: modulo } = await supabase
-      .from('modulos_capacitacion')
-      .select('competencia_id')
-      .eq('id', moduloId)
-      .single()
+  // Si aprobó y el módulo tiene competencia asociada, actualizar estado de
+  // competencia + estampar otorgamiento (fecha_otorgada/fecha_caducidad) si
+  // esta aprobación ya es el estado terminal (competencias que no requieren
+  // validación práctica).
+  if (aprobado && modulo?.competencia_id && competencia) {
+    const otorgamiento = calcularOtorgamiento(
+      {
+        requiereValidacionPractica: competencia.requiere_validacion_practica,
+        vigenciaMeses: competencia.vigencia_meses,
+        version: competencia.version,
+      },
+      'evaluacion_aprobada'
+    )
 
-    if (modulo?.competencia_id) {
-      await supabase
-        .from('enfermero_competencias')
-        .upsert({
-          enfermero_id: enfermeroId,
-          competencia_id: modulo.competencia_id,
-          estado: 'evaluacion_aprobada',
-          modulo_completado_at: ahora,
-          evaluacion_score: score,
-          updated_at: ahora,
-        }, { onConflict: 'enfermero_id,competencia_id', ignoreDuplicates: false })
-    }
+    await supabase
+      .from('enfermero_competencias')
+      .upsert({
+        enfermero_id: enfermeroId,
+        competencia_id: modulo.competencia_id,
+        estado: 'evaluacion_aprobada',
+        modulo_completado_at: ahora,
+        evaluacion_score: score,
+        origen: 'curso',
+        modulo_id_origen: moduloId,
+        fecha_otorgada: otorgamiento.fechaOtorgada,
+        fecha_caducidad: otorgamiento.fechaCaducidad,
+        version_otorgada: otorgamiento.versionOtorgada,
+        estado_vigencia: 'vigente',
+        updated_at: ahora,
+      }, { onConflict: 'enfermero_id,competencia_id', ignoreDuplicates: false })
   }
 
   revalidatePath('/enfermero/capacitaciones')
