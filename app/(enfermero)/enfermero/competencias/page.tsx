@@ -12,6 +12,7 @@ const CATEGORIA_LABELS: Record<string, string> = {
   cuidado_basico: 'Cuidado básico',
   procedimientos: 'Procedimientos',
   especializado: 'Especializado',
+  especialidades_clinicas: 'Especialidades clínicas',
 }
 
 const ESTADO_CONFIG: Record<EstadoCompetencia, { label: string; color: string; bg: string; icono: typeof Circle }> = {
@@ -25,6 +26,7 @@ const ESTADO_CONFIG: Record<EstadoCompetencia, { label: string; color: string; b
 const CATEGORIAS_ORDEN = [
   'induccion', 'operativo', 'clinico', 'medicacion',
   'cuidado_basico', 'procedimientos', 'comunicacion', 'especializado',
+  'especialidades_clinicas',
 ]
 
 export default async function CompetenciasPage() {
@@ -141,6 +143,23 @@ export default async function CompetenciasPage() {
                       {miComp?.validado_at && (
                         <p className="text-xs text-emerald-600 mt-1">
                           Validado el {new Date(miComp.validado_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      )}
+
+                      {/* Vigencia — solo competencias con fecha_otorgada (la mayoría no vencen) */}
+                      {miComp?.fecha_otorgada && (
+                        <p className={`text-xs mt-1 ${
+                          miComp.estado_vigencia === 'revocada' ? 'text-red-600'
+                          : miComp.fecha_caducidad && new Date(miComp.fecha_caducidad) <= new Date() ? 'text-amber-600'
+                          : 'text-emerald-600'
+                        }`}>
+                          {miComp.estado_vigencia === 'revocada'
+                            ? 'Competencia revocada'
+                            : miComp.fecha_caducidad
+                              ? (new Date(miComp.fecha_caducidad) <= new Date()
+                                  ? `Caducó el ${new Date(miComp.fecha_caducidad).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                                  : `Vigente hasta el ${new Date(miComp.fecha_caducidad).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}`)
+                              : 'Vigente sin fecha de vencimiento'}
                         </p>
                       )}
 

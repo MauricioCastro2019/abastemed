@@ -5,7 +5,10 @@ import { getPendientesActivos }           from '@/lib/actions/pendientes-caso'
 import { getEquipoCuidadoByPaciente }     from '@/lib/actions/equipo-cuidado'
 import { getPlanActivo }                  from '@/lib/actions/plan-atencion'
 import { getAccionesToday, getResumenNai, getTimelineNai } from '@/lib/actions/acciones-nai'
+import { getCompetenciasRequeridasPaciente } from '@/lib/actions/competencias/paciente-competencias.actions'
+import { getCompetenciasCatalogo } from '@/lib/actions/competencias/competencias.actions'
 import { RealtimeRefresh }                from '@/components/RealtimeRefresh'
+import { CompetenciasRequeridasWidget }   from './CompetenciasRequeridasWidget'
 import Link        from 'next/link'
 import { notFound } from 'next/navigation'
 import {
@@ -188,6 +191,8 @@ export default async function NaiHubPage({ params }: { params: { id: string } })
     pendientesActivos,
     equipoCuidado,
     timelineData,
+    competenciasRequeridas,
+    competenciasCatalogo,
   ] = await Promise.all([
     getPlanActivo(params.id),
     getAccionesToday(params.id),
@@ -195,6 +200,8 @@ export default async function NaiHubPage({ params }: { params: { id: string } })
     casoActivo ? getPendientesActivos(casoActivo.id)     : Promise.resolve([]),
     getEquipoCuidadoByPaciente(params.id).catch(() => ({ activos: [], historial: [] })),
     getTimelineNai(params.id, 20),
+    getCompetenciasRequeridasPaciente(params.id).catch(() => []),
+    getCompetenciasCatalogo(true).catch(() => []),
   ])
 
   const resumenNai = await getResumenNai(params.id)
@@ -592,6 +599,21 @@ export default async function NaiHubPage({ params }: { params: { id: string } })
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* COMPETENCIAS REQUERIDAS */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-2">
+              <ShieldAlert size={14} style={{ color: '#1B2B4B' }} />
+              <h3 className="text-sm font-semibold text-[#1B2B4B]">Competencias requeridas</h3>
+            </div>
+            <div className="p-3">
+              <CompetenciasRequeridasWidget
+                pacienteId={params.id}
+                requeridas={competenciasRequeridas}
+                catalogo={competenciasCatalogo}
+              />
             </div>
           </div>
 

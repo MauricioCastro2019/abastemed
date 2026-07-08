@@ -2,8 +2,9 @@
 
 import { useState, useTransition, useEffect, useCallback } from 'react'
 import { crearTurno } from '@/lib/actions/turnos'
-import { AlertTriangle, Users, CheckCircle2, Clock, Loader2 } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, Users, CheckCircle2, Clock, Loader2 } from 'lucide-react'
 import type { Caso, Enfermero, EquipoCuidado } from '@/types'
+import type { CompetenciaRequerida } from '@/lib/actions/competencias/gate-asignacion'
 
 function calcHoras(inicio: string, fin: string): string | null {
   if (!inicio || !fin) return null
@@ -36,6 +37,7 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId, equipoHabitual = [
   const [isPending, startTransition] = useTransition()
   const [error, setError]         = useState<string | null>(null)
   const [warning, setWarning]     = useState<string | null>(null)
+  const [competenciasFaltantes, setCompetenciasFaltantes] = useState<CompetenciaRequerida[] | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const [selectedCasoId,      setSelectedCasoId]      = useState(defaultCasoId ?? '')
@@ -84,6 +86,7 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId, equipoHabitual = [
     setSelectedEnfermeroId('')
     setAgregarSuplente(false)
     setWarning(null)
+    setCompetenciasFaltantes(null)
     fetchEquipo(casoId)
   }
 
@@ -92,6 +95,7 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId, equipoHabitual = [
     setAgregarSuplente(false)
     setConfirmarConflicto(false)
     setWarning(null)
+    setCompetenciasFaltantes(null)
   }
 
   function inp(name: string) {
@@ -106,6 +110,7 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId, equipoHabitual = [
 
     setError(null)
     setWarning(null)
+    setCompetenciasFaltantes(null)
     setFieldErrors({})
 
     const formData = new FormData(e.currentTarget)
@@ -119,6 +124,8 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId, equipoHabitual = [
         const result = await crearTurno(formData)
         if (result?.fieldErrors) {
           setFieldErrors(result.fieldErrors)
+        } else if (result?.competenciasFaltantes?.length) {
+          setCompetenciasFaltantes(result.competenciasFaltantes)
         } else if (result?.warning) {
           setWarning(result.warning)
         } else if (result?.error) {
@@ -284,6 +291,41 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId, equipoHabitual = [
           </div>
         </div>
 
+        {/* Bloqueo por competencias faltantes — sin posibilidad de override */}
+        {competenciasFaltantes && competenciasFaltantes.length > 0 && (
+          <div className="rounded-xl border p-4 space-y-2.5"
+            style={{ backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }}>
+            <div className="flex items-start gap-2.5">
+              <ShieldAlert size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-800">
+                  Este enfermero no puede tomar esta guardia
+                </p>
+                <p className="text-xs text-red-700 mt-0.5">
+                  El paciente requiere competencias que el enfermero no tiene vigentes. Falta:
+                </p>
+              </div>
+            </div>
+            <ul className="ml-6 space-y-1">
+              {competenciasFaltantes.map(c => (
+                <li key={c.id} className="text-xs text-red-700 list-disc">
+                  {c.nombre}
+                  {c.modulo_id && (
+                    <a
+                      href={`/enfermero/capacitaciones/${c.modulo_id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-2 underline font-medium"
+                    >
+                      Ver capacitación
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Advertencia de conflicto de horario */}
         {warning && (
           <div className="rounded-xl border p-4 space-y-3"
@@ -328,7 +370,7 @@ export function TurnoForm({ casos, enfermeros, defaultCasoId, equipoHabitual = [
           </a>
           <button
             type="submit"
-            disabled={isPending || (!!warning && !confirmarConflicto)}
+            disabled={isPending || (!!warning && !confirmarConflicto) || !!(competenciasFaltantes && competenciasFaltantes.length > 0)}
             className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all disabled:opacity-50"
             style={{ backgroundColor: '#2AABBF' }}>
             {isPending ? (
