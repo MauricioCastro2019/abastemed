@@ -135,3 +135,41 @@ export const SalidaSchema = z.object({
   estatus:               z.enum(['pendiente','pagado','por_comprobar','en_revision']).optional(),
   observaciones:         z.string().max(500).optional().or(z.literal('')),
 })
+
+// ============================================================
+// MÓDULO: COMPETENCIAS ESPECIALIZADAS
+// ============================================================
+
+export const CompetenciaSchema = z.object({
+  nombre:            z.string().min(3, 'Mínimo 3 caracteres').max(150, 'Máximo 150 caracteres'),
+  descripcion:       z.string().max(500).optional().or(z.literal('')),
+  categoria:         z.string().min(2, 'Categoría requerida').max(60),
+  codigo:            z.string().regex(/^[a-z0-9_]+$/, 'Solo minúsculas, números y guion bajo').max(80).optional().or(z.literal('')),
+  vigencia_meses:    z.union([z.number().int().min(1, 'Mínimo 1 mes'), z.null()]).optional(),
+  requiere_validacion_practica: z.boolean().optional(),
+  notas:             z.string().max(500).optional().or(z.literal('')),
+})
+
+export const PublicarCompetenciaSchema = z.object({
+  firmada_por:        z.string().min(2, 'Nombre del responsable clínico requerido').max(150),
+  cedula_responsable: z.string().min(3, 'Cédula profesional requerida').max(40),
+  fecha_firma:        z.string().min(1, 'Fecha de firma requerida'),
+})
+
+export const OtorgarCompetenciaManualSchema = z.object({
+  enfermero_id:   z.string().uuid('Selecciona un enfermero válido'),
+  competencia_id: z.string().uuid('Selecciona una competencia válida'),
+  justificacion:  z.string().min(10, 'La justificación debe tener al menos 10 caracteres').max(500),
+  certificado_url: z.string().url('URL inválida').optional().or(z.literal('')),
+  notas:          z.string().max(500).optional().or(z.literal('')),
+})
+
+export const RevocarCompetenciaSchema = z.object({
+  motivo: z.string().min(10, 'El motivo debe tener al menos 10 caracteres').max(500),
+})
+
+export const PacienteCompetenciaRequeridaSchema = z.object({
+  paciente_id:    z.string().uuid('Paciente requerido'),
+  competencia_id: z.string().uuid('Selecciona una competencia válida'),
+  notas:          z.string().max(500).optional().or(z.literal('')),
+})
