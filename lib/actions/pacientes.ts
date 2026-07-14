@@ -45,6 +45,7 @@ export async function crearPaciente(formData: FormData): Promise<ActionResult> {
     fecha_nacimiento:  fd(formData, 'fecha_nacimiento'),
     diagnostico:       fd(formData, 'diagnostico'),
     contexto:          fd(formData, 'contexto'),
+    tipo_sanguineo:    fd(formData, 'tipo_sanguineo'),
     contacto_nombre:   fd(formData, 'contacto_nombre'),
     contacto_telefono: fd(formData, 'contacto_telefono'),
     contacto_relacion: fd(formData, 'contacto_relacion'),
@@ -61,6 +62,7 @@ export async function crearPaciente(formData: FormData): Promise<ActionResult> {
     diagnostico:      v.diagnostico,
     medicamentos:     fdLines(formData, 'medicamentos'),
     alergias:         fdLines(formData, 'alergias'),
+    tipo_sanguineo:   v.tipo_sanguineo || null,
     contacto_familiar: {
       nombre:   v.contacto_nombre,
       telefono: v.contacto_telefono,
@@ -88,6 +90,7 @@ export async function actualizarPaciente(id: string, formData: FormData): Promis
     fecha_nacimiento:  fd(formData, 'fecha_nacimiento'),
     diagnostico:       fd(formData, 'diagnostico'),
     contexto:          fd(formData, 'contexto'),
+    tipo_sanguineo:    fd(formData, 'tipo_sanguineo'),
     contacto_nombre:   fd(formData, 'contacto_nombre'),
     contacto_telefono: fd(formData, 'contacto_telefono'),
     contacto_relacion: fd(formData, 'contacto_relacion'),
@@ -104,6 +107,7 @@ export async function actualizarPaciente(id: string, formData: FormData): Promis
     diagnostico:      v.diagnostico,
     medicamentos:     fdLines(formData, 'medicamentos'),
     alergias:         fdLines(formData, 'alergias'),
+    tipo_sanguineo:   v.tipo_sanguineo || null,
     contacto_familiar: {
       nombre:   v.contacto_nombre,
       telefono: v.contacto_telefono,

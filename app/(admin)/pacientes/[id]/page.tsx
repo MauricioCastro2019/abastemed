@@ -271,6 +271,17 @@ export default async function NaiHubPage({ params }: { params: { id: string } })
                     {alertasActivasHoy.length} alerta{alertasActivasHoy.length > 1 ? 's' : ''} activa{alertasActivasHoy.length > 1 ? 's' : ''}
                   </span>
                 )}
+                {paciente.tipo_sanguineo ? (
+                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                    <Droplets size={10} />
+                    Tipo {paciente.tipo_sanguineo}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold border bg-amber-50 text-amber-700 border-amber-200">
+                    <Droplets size={10} />
+                    Falta tipo sanguíneo
+                  </span>
+                )}
               </div>
             </div>
           </div>

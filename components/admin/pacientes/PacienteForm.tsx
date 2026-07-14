@@ -96,6 +96,21 @@ export function PacienteForm({ paciente }: Props) {
               className={inp('diagnostico')} placeholder="Descripción del diagnóstico principal..." />
             {fieldErrors.diagnostico && <p className={FIELD_ERR}>{fieldErrors.diagnostico}</p>}
           </div>
+          <div>
+            <label className={LABEL}>Tipo sanguíneo</label>
+            <select name="tipo_sanguineo" defaultValue={paciente?.tipo_sanguineo ?? ''} className={inp('tipo_sanguineo')}>
+              <option value="">Sin registrar</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+            </select>
+            {fieldErrors.tipo_sanguineo && <p className={FIELD_ERR}>{fieldErrors.tipo_sanguineo}</p>}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={LABEL}>Medicamentos (uno por línea)</label>

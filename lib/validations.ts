@@ -6,6 +6,7 @@ export const PacienteSchema = z.object({
   fecha_nacimiento:  z.string().min(1, 'Fecha de nacimiento requerida'),
   diagnostico:       z.string().min(5, 'Describe brevemente el diagnóstico'),
   contexto:          z.enum(['domicilio', 'hospital', 'casa_reposo'], { message: 'Contexto inválido' }),
+  tipo_sanguineo:    z.union([z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']), z.literal('')]).optional(),
   contacto_nombre:   z.string().min(2, 'Nombre del familiar requerido'),
   contacto_telefono: z.string().min(7, 'Teléfono requerido'),
   contacto_relacion: z.string().min(2, 'Relación requerida'),

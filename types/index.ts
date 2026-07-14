@@ -10,6 +10,7 @@ export type StatusTurno = 'programado' | 'activo' | 'completado'
 export type ValidacionStatusTurno = 'pendiente' | 'en_revision' | 'validado' | 'rechazado' | 'en_aclaracion'
 export type StatusCobranza = 'pendiente' | 'pagado'
 export type RolUsuario = 'admin' | 'coordinador' | 'enfermero' | 'familiar' | 'superadmin' | 'administrativo' | 'auditor'
+export type TipoSanguineo = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-'
 
 // ----------------------------------------------------------------
 export interface Paciente {
@@ -20,6 +21,7 @@ export interface Paciente {
   diagnostico: string
   medicamentos: string[]
   alergias: string[]
+  tipo_sanguineo?: TipoSanguineo | null
   contacto_familiar: ContactoFamiliar
   contexto: ContextoPaciente
   status: StatusPaciente
