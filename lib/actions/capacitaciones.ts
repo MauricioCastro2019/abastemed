@@ -76,14 +76,15 @@ export async function getMisCapacitaciones(): Promise<{
 export async function getModuloConProgreso(moduloId: string): Promise<{
   modulo: ModuloCapacitacion | null
   progreso: ProgresoCapacitacion | null
+  perfilNombre: string | null
 }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { modulo: null, progreso: null }
+  if (!user) return { modulo: null, progreso: null, perfilNombre: null }
 
   const enfermeroId = await resolveEnfermeroId(supabase, user.id, user.email ?? '')
 
-  const [moduloResult, progresoResult] = await Promise.all([
+  const [moduloResult, progresoResult, perfilResult] = await Promise.all([
     supabase
       .from('modulos_capacitacion')
       .select('*, competencia:competencias(*)')
@@ -98,12 +99,56 @@ export async function getModuloConProgreso(moduloId: string): Promise<{
           .eq('enfermero_id', enfermeroId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+
+    supabase
+      .from('perfiles')
+      .select('nombre, apellido')
+      .eq('id', user.id)
+      .single(),
   ])
+
+  const perfil = perfilResult.data as { nombre: string | null; apellido: string | null } | null
+  const perfilNombre = perfil ? [perfil.nombre, perfil.apellido].filter(Boolean).join(' ') || null : null
 
   return {
     modulo: moduloResult.data as ModuloCapacitacion | null,
     progreso: progresoResult.data as ProgresoCapacitacion | null,
+    perfilNombre,
   }
+}
+
+export async function actualizarLeccionActual(
+  moduloId: string,
+  leccionIdx: number,
+  totalLecciones: number
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'No autenticado' }
+
+  const enfermeroId = await resolveEnfermeroId(supabase, user.id, user.email ?? '')
+  if (!enfermeroId) return { ok: false, error: 'Perfil de enfermero no encontrado. Contacta al administrador.' }
+
+  // Progreso de contenido acotado a 10–90%: el resto (checklist + evaluación)
+  // se completa en completarModulo(). Evita que avanzar lecciones marque el
+  // módulo como terminado antes de aprobar la evaluación.
+  const progresoPct = totalLecciones > 0
+    ? Math.min(90, 10 + Math.round((80 * (leccionIdx + 1)) / totalLecciones))
+    : 10
+
+  const { error } = await supabase
+    .from('progreso_capacitacion')
+    .upsert({
+      enfermero_id: enfermeroId,
+      modulo_id: moduloId,
+      estado: 'en_progreso',
+      leccion_actual: leccionIdx,
+      progreso_pct: progresoPct,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'enfermero_id,modulo_id', ignoreDuplicates: false })
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
 }
 
 export async function iniciarModulo(moduloId: string): Promise<{ ok: boolean; error?: string }> {
@@ -136,7 +181,7 @@ export async function completarModulo(
   moduloId: string,
   respuestas: number[],
   evaluacion: { pregunta: string; opciones: string[]; respuesta_correcta: number }[]
-): Promise<{ ok: boolean; score: number; aprobado: boolean; error?: string }> {
+): Promise<{ ok: boolean; score: number; aprobado: boolean; progresoId?: string; aprobadoAt?: string | null; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, score: 0, aprobado: false, error: 'No autenticado' }
@@ -178,7 +223,7 @@ export async function completarModulo(
 
   const intentos = (progresoActual?.intentos ?? 0) + 1
 
-  const { error } = await supabase
+  const { data: progresoActualizado, error } = await supabase
     .from('progreso_capacitacion')
     .upsert({
       enfermero_id: enfermeroId,
@@ -191,6 +236,8 @@ export async function completarModulo(
       aprobado_at: aprobado ? ahora : null,
       updated_at: ahora,
     }, { onConflict: 'enfermero_id,modulo_id', ignoreDuplicates: false })
+    .select('id')
+    .single()
 
   if (error) return { ok: false, score, aprobado, error: error.message }
 
@@ -229,5 +276,5 @@ export async function completarModulo(
   revalidatePath('/enfermero/capacitaciones')
   revalidatePath('/enfermero/dashboard')
   revalidatePath('/enfermero/competencias')
-  return { ok: true, score, aprobado }
+  return { ok: true, score, aprobado, progresoId: progresoActualizado?.id, aprobadoAt: aprobado ? ahora : null }
 }

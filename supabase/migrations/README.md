@@ -45,7 +45,11 @@ numérico de esta tabla.
 | 027 | `027_migration_centro_profesional.sql` | 2026-06-30 | |
 | 028 | `028_migration_equipo_cuidado.sql` | 2026-06-30 | |
 | 029 | `029_migration_capacitacion_cateterismo_intermitente.sql` | 2026-07-01 | |
-| 030 | `030_migration_nai_fase1.sql` | 2026-07-01 | La más reciente |
+| 030 | `030_migration_nai_fase1.sql` | 2026-07-01 | |
+| 031 | `031_migration_competencias_especializadas.sql` | 2026-07-08 | requiere 027 |
+| 032 | `032_migration_capacitacion_ruta_renal.sql` | 2026-07-08 | requiere 031 |
+| 033 | `033_migration_fix_nurse_self_update_rls.sql` | 2026-07-08 | H3 — WITH CHECK + trigger en enfermeros_update |
+| 034 | `034_migration_capacitacion_hipotension_arterial.sql` | 2026-07-13 | Capacitación hipotensión arterial + columna leccion_actual. La más reciente |
 
 ## Deprecadas / no aplicar
 

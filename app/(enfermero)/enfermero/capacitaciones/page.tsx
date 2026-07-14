@@ -1,6 +1,7 @@
 import { getMisCapacitaciones } from '@/lib/actions/capacitaciones'
 import Link from 'next/link'
-import { BookOpen, Clock, CheckCircle2, ChevronRight, Lock, Zap, TrendingUp } from 'lucide-react'
+import type { ModuloCapacitacion } from '@/types'
+import { BookOpen, Clock, CheckCircle2, ChevronRight, Lock, Zap, TrendingUp, HeartPulse, Layers, type LucideIcon } from 'lucide-react'
 
 const CATEGORIA_LABELS: Record<string, string> = {
   induccion: 'Inducción',
@@ -11,6 +12,20 @@ const CATEGORIA_LABELS: Record<string, string> = {
   cuidado_basico: 'Cuidado básico',
   procedimientos: 'Procedimientos',
   especializado: 'Especializado',
+  urgencias: 'Signos vitales y urgencias',
+}
+
+const CATEGORIA_ICONOS: Record<string, LucideIcon> = {
+  urgencias: HeartPulse,
+}
+
+function iconoModulo(modulo: ModuloCapacitacion): LucideIcon {
+  const categoria = modulo.competencia?.categoria
+  return (categoria && CATEGORIA_ICONOS[categoria]) || BookOpen
+}
+
+function contarLecciones(modulo: ModuloCapacitacion): number {
+  return new Set(modulo.contenido.filter(b => b.leccion != null).map(b => b.leccion)).size
 }
 
 const ESTADO_CONFIG = {
@@ -78,6 +93,8 @@ export default async function CapacitacionesPage() {
               const estado = progreso?.estado ?? 'no_iniciado'
               const cfg = ESTADO_CONFIG[estado]
               const aprobado = estado === 'aprobado'
+              const Icono = iconoModulo(modulo)
+              const numLecciones = contarLecciones(modulo)
 
               return (
                 <Link
@@ -90,7 +107,7 @@ export default async function CapacitacionesPage() {
                     style={{ backgroundColor: aprobado ? '#ECFDF5' : '#F5F5F0' }}>
                     {aprobado
                       ? <CheckCircle2 size={20} style={{ color: '#059669' }} />
-                      : <BookOpen size={20} style={{ color: '#2AABBF' }} />
+                      : <Icono size={20} style={{ color: '#2AABBF' }} />
                     }
                   </div>
 
@@ -104,6 +121,11 @@ export default async function CapacitacionesPage() {
                           <span className="text-xs text-gray-400 flex items-center gap-1">
                             <Clock size={10} /> {modulo.duracion_minutos} min
                           </span>
+                          {numLecciones > 0 && (
+                            <span className="text-xs text-gray-400 flex items-center gap-1">
+                              <Layers size={10} /> {numLecciones} lecciones
+                            </span>
+                          )}
                           {modulo.competencia && (
                             <span className="text-xs px-1.5 py-0.5 rounded-full"
                               style={{ backgroundColor: '#EBF8FB', color: '#2AABBF' }}>
@@ -153,6 +175,8 @@ export default async function CapacitacionesPage() {
               const estado = progreso?.estado ?? 'no_iniciado'
               const cfg = ESTADO_CONFIG[estado]
               const aprobado = estado === 'aprobado'
+              const Icono = iconoModulo(modulo)
+              const numLecciones = contarLecciones(modulo)
 
               return (
                 <Link
@@ -164,7 +188,7 @@ export default async function CapacitacionesPage() {
                     style={{ backgroundColor: aprobado ? '#ECFDF5' : '#F5F5F0' }}>
                     {aprobado
                       ? <CheckCircle2 size={20} style={{ color: '#059669' }} />
-                      : <BookOpen size={20} className="text-gray-400" />
+                      : <Icono size={20} className="text-gray-400" />
                     }
                   </div>
 
@@ -176,6 +200,11 @@ export default async function CapacitacionesPage() {
                           <span className="text-xs text-gray-400 flex items-center gap-1">
                             <Clock size={10} /> {modulo.duracion_minutos} min
                           </span>
+                          {numLecciones > 0 && (
+                            <span className="text-xs text-gray-400 flex items-center gap-1">
+                              <Layers size={10} /> {numLecciones} lecciones
+                            </span>
+                          )}
                           {modulo.competencia && (
                             <span className="text-xs px-1.5 py-0.5 rounded-full"
                               style={{ backgroundColor: '#EBF8FB', color: '#2AABBF' }}>

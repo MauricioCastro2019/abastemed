@@ -1743,12 +1743,69 @@ export type EstadoModuloCapacitacion =
   | 'completado'
   | 'aprobado'
 
+export interface ComparadorItem {
+  titulo: string
+  items: string[]
+  critico?: boolean
+}
+
+export interface ComparadorBloque {
+  izquierda: ComparadorItem
+  derecha: ComparadorItem
+}
+
+export interface FilaRango {
+  etiqueta: string
+  valor: string
+  nivel: 'normal' | 'atencion' | 'alerta' | 'critico'
+}
+
+export interface EtapaProgresion {
+  titulo: string
+  items: string[]
+}
+
+export interface CategoriaLista {
+  titulo: string
+  items: string[]
+  advertencia?: boolean
+}
+
+export interface TarjetaCausa {
+  titulo: string
+  descripcion?: string
+  items: string[]
+}
+
+export interface PreguntaCasoInteractivo {
+  pregunta: string
+  respuesta: string
+  explicacion: string
+}
+
+export interface CasoInteractivoBloque {
+  escenario: string
+  preguntas: PreguntaCasoInteractivo[]
+}
+
 export interface ContenidoModulo {
-  tipo: 'intro' | 'seccion' | 'punto_clave' | 'alerta' | 'frase_cultura' | 'imagen' | 'video'
+  tipo:
+    | 'intro' | 'seccion' | 'punto_clave' | 'alerta' | 'frase_cultura' | 'imagen' | 'video'
+    | 'comparador' | 'tabla_rangos' | 'linea_progresion' | 'lista_categorias' | 'tarjetas'
+    | 'calculadora_pam' | 'checklist_reporte' | 'caso_interactivo' | 'resumen_final'
   titulo?: string
   texto?: string
   contenido?: string
   url?: string
+  leccion?: number
+  leccionTitulo?: string
+  comparador?: ComparadorBloque
+  filas?: FilaRango[]
+  etapas?: EtapaProgresion[]
+  categorias?: CategoriaLista[]
+  tarjetas?: TarjetaCausa[]
+  caso?: CasoInteractivoBloque
+  resumenPuntos?: string[]
 }
 
 export interface PreguntaEvaluacion {
@@ -1783,6 +1840,7 @@ export interface ProgresoCapacitacion {
   progreso_pct: number
   score?: number | null
   intentos: number
+  leccion_actual?: number | null
   iniciado_at?: string | null
   completado_at?: string | null
   aprobado_at?: string | null

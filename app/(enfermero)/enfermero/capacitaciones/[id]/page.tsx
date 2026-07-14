@@ -7,8 +7,8 @@ export default async function CapacitacionDetailPage({
 }: {
   params: { id: string }
 }) {
-  const { modulo, progreso } = await getModuloConProgreso(params.id)
+  const { modulo, progreso, perfilNombre } = await getModuloConProgreso(params.id)
   if (!modulo) notFound()
 
-  return <CapacitacionDetailClient modulo={modulo} progreso={progreso} />
+  return <CapacitacionDetailClient modulo={modulo} progreso={progreso} perfilNombre={perfilNombre} />
 }

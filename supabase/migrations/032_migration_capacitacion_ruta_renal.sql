@@ -57,7 +57,7 @@ SELECT
     'Conozco las restricciones de líquidos y dieta habituales del paciente renal.',
     'Sé identificar signos de sobrecarga de volumen y de deshidratación.',
     'Entiendo cuándo un hallazgo requiere notificación inmediata a coordinación clínica.',
-    'Sé cómo documentar la vigilancia del paciente renal en Abastemed.',
+    'Sé cómo documentar la vigilancia del paciente renal en Abastemed.'
   ],
 
   '[

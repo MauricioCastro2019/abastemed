@@ -1,18 +1,30 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { iniciarModulo, completarModulo } from '@/lib/actions/capacitaciones'
+import { iniciarModulo, completarModulo, actualizarLeccionActual } from '@/lib/actions/capacitaciones'
 import type { ModuloCapacitacion, ProgresoCapacitacion, ContenidoModulo } from '@/types'
 import {
   ArrowLeft, Clock, BookOpen, CheckCircle2, CheckSquare, Square,
-  ChevronRight, AlertTriangle, Star, RefreshCw, Award
+  ChevronRight, ChevronLeft, AlertTriangle, Star, RefreshCw, Award, Layers
 } from 'lucide-react'
+import { BloqueComparador } from '@/components/enfermero/capacitaciones/BloqueComparador'
+import { TablaRangos } from '@/components/enfermero/capacitaciones/TablaRangos'
+import { LineaProgresion } from '@/components/enfermero/capacitaciones/LineaProgresion'
+import { ListaCategorias } from '@/components/enfermero/capacitaciones/ListaCategorias'
+import { TarjetasCausas } from '@/components/enfermero/capacitaciones/TarjetasCausas'
+import { CalculadoraPAM } from '@/components/enfermero/capacitaciones/CalculadoraPAM'
+import { CasoInteractivo } from '@/components/enfermero/capacitaciones/CasoInteractivo'
+import { ChecklistReporte } from '@/components/enfermero/capacitaciones/ChecklistReporte'
+import { ResumenFinalCapacitacion } from '@/components/enfermero/capacitaciones/ResumenFinalCapacitacion'
+import { LeccionNavigator } from '@/components/enfermero/capacitaciones/LeccionNavigator'
+import { ConstanciaCapacitacion } from '@/components/enfermero/capacitaciones/ConstanciaCapacitacion'
 
 const CATEGORIA_LABELS: Record<string, string> = {
   induccion: 'Inducción', comunicacion: 'Comunicación', operativo: 'Operativo',
   clinico: 'Clínico', medicacion: 'Medicación', cuidado_basico: 'Cuidado básico',
   procedimientos: 'Procedimientos', especializado: 'Especializado',
+  urgencias: 'Signos vitales y urgencias',
 }
 
 type Fase = 'inicio' | 'contenido' | 'checklist' | 'evaluacion' | 'resultado'
@@ -20,6 +32,7 @@ type Fase = 'inicio' | 'contenido' | 'checklist' | 'evaluacion' | 'resultado'
 interface Props {
   modulo: ModuloCapacitacion
   progreso: ProgresoCapacitacion | null
+  perfilNombre: string | null
 }
 
 function SeccionContenido({ bloque }: { bloque: ContenidoModulo }) {
@@ -59,12 +72,77 @@ function SeccionContenido({ bloque }: { bloque: ContenidoModulo }) {
           <p className="text-sm italic text-gray-500 leading-relaxed">&ldquo;{bloque.texto}&rdquo;</p>
         </div>
       )
+    case 'comparador':
+      return bloque.comparador ? (
+        <div>
+          {bloque.titulo && <h3 className="font-semibold text-sm mb-2" style={{ color: '#1B2B4B' }}>{bloque.titulo}</h3>}
+          <BloqueComparador bloque={bloque.comparador} />
+        </div>
+      ) : null
+    case 'tabla_rangos':
+      return bloque.filas ? (
+        <div>
+          {bloque.titulo && <h3 className="font-semibold text-sm mb-2" style={{ color: '#1B2B4B' }}>{bloque.titulo}</h3>}
+          <TablaRangos filas={bloque.filas} />
+        </div>
+      ) : null
+    case 'linea_progresion':
+      return bloque.etapas ? (
+        <div>
+          {bloque.titulo && <h3 className="font-semibold text-sm mb-3" style={{ color: '#1B2B4B' }}>{bloque.titulo}</h3>}
+          <LineaProgresion etapas={bloque.etapas} />
+        </div>
+      ) : null
+    case 'lista_categorias':
+      return bloque.categorias ? (
+        <div>
+          {bloque.titulo && <h3 className="font-semibold text-sm mb-2" style={{ color: '#1B2B4B' }}>{bloque.titulo}</h3>}
+          <ListaCategorias categorias={bloque.categorias} />
+        </div>
+      ) : null
+    case 'tarjetas':
+      return bloque.tarjetas ? (
+        <div>
+          {bloque.titulo && <h3 className="font-semibold text-sm mb-2" style={{ color: '#1B2B4B' }}>{bloque.titulo}</h3>}
+          <TarjetasCausas tarjetas={bloque.tarjetas} />
+        </div>
+      ) : null
+    case 'calculadora_pam':
+      return <CalculadoraPAM />
+    case 'checklist_reporte':
+      return <ChecklistReporte />
+    case 'caso_interactivo':
+      return bloque.caso ? <CasoInteractivo caso={bloque.caso} /> : null
+    case 'resumen_final':
+      return bloque.resumenPuntos && bloque.texto
+        ? <ResumenFinalCapacitacion puntos={bloque.resumenPuntos} frase={bloque.texto} />
+        : null
     default:
       return null
   }
 }
 
-export function CapacitacionDetailClient({ modulo, progreso }: Props) {
+interface Leccion {
+  numero: number
+  titulo: string
+  bloques: ContenidoModulo[]
+}
+
+function agruparPorLeccion(contenido: ContenidoModulo[]): Leccion[] {
+  const lecciones: Leccion[] = []
+  for (const bloque of contenido) {
+    if (bloque.leccion == null) continue
+    let leccion = lecciones.find(l => l.numero === bloque.leccion)
+    if (!leccion) {
+      leccion = { numero: bloque.leccion, titulo: bloque.leccionTitulo ?? `Lección ${bloque.leccion}`, bloques: [] }
+      lecciones.push(leccion)
+    }
+    leccion.bloques.push(bloque)
+  }
+  return lecciones.sort((a, b) => a.numero - b.numero)
+}
+
+export function CapacitacionDetailClient({ modulo, progreso, perfilNombre }: Props) {
   const [isPending, startTransition] = useTransition()
 
   const yaAprobado = progreso?.estado === 'aprobado'
@@ -73,6 +151,15 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
   const [fase, setFase] = useState<Fase>(
     yaAprobado ? 'resultado' : yaCompletado ? 'evaluacion' : 'inicio'
   )
+
+  const lecciones = useMemo(() => agruparPorLeccion(modulo.contenido), [modulo.contenido])
+  const modoLecciones = lecciones.length > 0
+
+  const [leccionIdx, setLeccionIdx] = useState(() => {
+    const guardada = progreso?.leccion_actual ?? 0
+    return Math.min(Math.max(guardada, 0), Math.max(lecciones.length - 1, 0))
+  })
+  const [maxVisitado, setMaxVisitado] = useState(leccionIdx)
 
   // Checklist state
   const [checkItems, setCheckItems] = useState<boolean[]>(
@@ -94,11 +181,32 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
   )
   const [error, setError] = useState('')
 
+  // Datos para la constancia: arrancan con lo que vino del servidor y se
+  // actualizan si la aprobación ocurre en esta misma sesión.
+  const [progresoId, setProgresoId] = useState<string | null>(progreso?.id ?? null)
+  const [aprobadoAt, setAprobadoAt] = useState<string | null>(progreso?.aprobado_at ?? null)
+
   function handleIniciar() {
     startTransition(async () => {
       await iniciarModulo(modulo.id)
       setFase(modulo.contenido.length > 0 ? 'contenido' : 'checklist')
     })
+  }
+
+  function irALeccion(idx: number) {
+    setLeccionIdx(idx)
+    setMaxVisitado(prev => Math.max(prev, idx))
+    startTransition(async () => {
+      await actualizarLeccionActual(modulo.id, idx, lecciones.length)
+    })
+  }
+
+  function handleSiguienteLeccion() {
+    if (leccionIdx < lecciones.length - 1) {
+      irALeccion(leccionIdx + 1)
+    } else {
+      handleCompletarContenido()
+    }
   }
 
   function handleCompletarContenido() {
@@ -128,6 +236,8 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
       const result = await completarModulo(modulo.id, resp, modulo.evaluacion)
       if (result.ok) {
         setResultado({ score: result.score, aprobado: result.aprobado })
+        if (result.progresoId) setProgresoId(result.progresoId)
+        if (result.aprobadoAt !== undefined) setAprobadoAt(result.aprobadoAt)
         setFase('resultado')
       } else {
         setError(result.error ?? 'Error al enviar evaluación')
@@ -138,6 +248,9 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
   const categoria = modulo.competencia
     ? (CATEGORIA_LABELS[modulo.competencia.categoria] ?? modulo.competencia.categoria)
     : 'General'
+
+  const leccionActualData = modoLecciones ? lecciones[leccionIdx] : null
+  const folio = progresoId ? `AB-${progresoId.slice(0, 8).toUpperCase()}` : '—'
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
@@ -170,8 +283,9 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">{modulo.descripcion}</p>
         )}
 
-        <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
+        <div className="flex items-center gap-4 mt-3 text-xs text-gray-400 flex-wrap">
           <span className="flex items-center gap-1"><Clock size={11} /> {modulo.duracion_minutos} min estimados</span>
+          {modoLecciones && <span className="flex items-center gap-1"><Layers size={11} /> {lecciones.length} lecciones</span>}
           {modulo.checklist.length > 0 && <span>{modulo.checklist.length} puntos de verificación</span>}
           {modulo.evaluacion.length > 0 && <span>{modulo.evaluacion.length} preguntas</span>}
           {modulo.obligatorio && <span className="text-amber-500 font-medium">Obligatorio</span>}
@@ -234,8 +348,69 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
         </div>
       )}
 
-      {/* ── FASE: CONTENIDO ──────────────────────────────── */}
-      {fase === 'contenido' && (
+      {/* ── FASE: CONTENIDO (modo lecciones) ─────────────── */}
+      {fase === 'contenido' && modoLecciones && leccionActualData && (
+        <div className="lg:flex lg:items-start lg:gap-4 space-y-4 lg:space-y-0">
+          <LeccionNavigator
+            lecciones={lecciones.map(l => ({ numero: l.numero, titulo: l.titulo }))}
+            leccionIdx={leccionIdx}
+            maxVisitado={maxVisitado}
+            onSelect={irALeccion}
+          />
+
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* Barra de progreso de lecciones */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+                <span>Lección {leccionIdx + 1} de {lecciones.length}</span>
+                <span>{Math.round(((leccionIdx + 1) / lecciones.length) * 100)}%</span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${((leccionIdx + 1) / lecciones.length) * 100}%`, backgroundColor: '#2AABBF' }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+              <h2 className="font-bold text-base" style={{ color: '#1B2B4B' }}>
+                {leccionActualData.numero}. {leccionActualData.titulo}
+              </h2>
+              {leccionActualData.bloques.map((bloque, i) => (
+                <SeccionContenido key={i} bloque={bloque} />
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              {leccionIdx > 0 && (
+                <button
+                  onClick={() => irALeccion(leccionIdx - 1)}
+                  className="flex items-center justify-center gap-2 py-3 px-5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all"
+                >
+                  <ChevronLeft size={15} /> Anterior
+                </button>
+              )}
+              <button
+                onClick={handleSiguienteLeccion}
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold text-white transition-all"
+                style={{ backgroundColor: '#2AABBF' }}
+              >
+                {leccionIdx < lecciones.length - 1
+                  ? <>Siguiente lección <ChevronRight size={15} /></>
+                  : modulo.checklist.length > 0
+                  ? <>Continuar a verificación <ChevronRight size={15} /></>
+                  : modulo.evaluacion.length > 0
+                  ? <>Ir a evaluación <ChevronRight size={15} /></>
+                  : <>Finalizar <CheckCircle2 size={15} /></>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── FASE: CONTENIDO (scroll plano, módulos existentes) ── */}
+      {fase === 'contenido' && !modoLecciones && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
             {modulo.contenido.map((bloque, i) => (
@@ -312,7 +487,7 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
         <div className="space-y-4">
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <h2 className="font-semibold mb-1" style={{ color: '#1B2B4B' }}>Evaluación</h2>
-            <p className="text-sm text-gray-400 mb-5">Responde correctamente al menos 70% para aprobar</p>
+            <p className="text-sm text-gray-400 mb-5">Responde correctamente al menos {modulo.evaluacion_minima}% para aprobar</p>
 
             <div className="space-y-6">
               {modulo.evaluacion.map((pregunta, qi) => (
@@ -377,82 +552,106 @@ export function CapacitacionDetailClient({ modulo, progreso }: Props) {
 
       {/* ── FASE: RESULTADO ──────────────────────────────── */}
       {fase === 'resultado' && resultado && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-            resultado.aprobado ? 'bg-emerald-100' : 'bg-amber-100'
-          }`}>
-            {resultado.aprobado
-              ? <Award size={36} style={{ color: '#059669' }} />
-              : <RefreshCw size={36} style={{ color: '#D97706' }} />
-            }
-          </div>
-
-          <h2 className={`text-xl font-bold mb-1 ${resultado.aprobado ? 'text-emerald-700' : 'text-amber-700'}`}>
-            {resultado.aprobado ? '¡Módulo aprobado!' : 'Sigue practicando'}
-          </h2>
-
-          <p className="text-3xl font-black my-3" style={{ color: resultado.aprobado ? '#059669' : '#D97706' }}>
-            {resultado.score}%
-          </p>
-
-          <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
-            {resultado.aprobado
-              ? modulo.competencia?.requiere_validacion_practica
-                ? `Evaluación teórica de "${modulo.competencia.nombre}" aprobada. Esta competencia procedimental requiere validación práctica supervisada por coordinación clínica para quedar validada.`
-                : modulo.competencia
-                  ? `Has avanzado en la competencia "${modulo.competencia.nombre}". Solicita validación al coordinador para completarla.`
-                  : 'Has completado y aprobado este módulo de capacitación.'
-              : 'Necesitas 70% para aprobar. Puedes repetir el módulo cuando quieras.'}
-          </p>
-
-          {resultado.aprobado && modulo.competencia?.requiere_validacion_practica && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left mb-4">
-              <p className="text-xs font-semibold text-amber-800 mb-1">Validación práctica pendiente</p>
-              <p className="text-xs text-amber-700 leading-relaxed">
-                Aprobar la evaluación teórica no habilita para realizar el procedimiento de forma autónoma.
-                Tu competencia permanecerá en estado <span className="font-medium">evaluación aprobada</span> hasta
-                que coordinación clínica confirme la ejecución supervisada del procedimiento.
-              </p>
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+              resultado.aprobado ? 'bg-emerald-100' : 'bg-amber-100'
+            }`}>
+              {resultado.aprobado
+                ? <Award size={36} style={{ color: '#059669' }} />
+                : <RefreshCw size={36} style={{ color: '#D97706' }} />
+              }
             </div>
-          )}
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {!resultado.aprobado && (
-              <button
-                onClick={() => {
-                  setFase('inicio')
-                  setRespuestas(new Array(modulo.evaluacion.length).fill(null))
-                  setCheckItems(new Array(modulo.checklist.length).fill(false))
-                  setResultado(null)
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50"
-              >
-                <RefreshCw size={14} /> Repetir módulo
-              </button>
+            <h2 className={`text-xl font-bold mb-1 ${resultado.aprobado ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {resultado.aprobado ? '¡Módulo aprobado!' : 'Sigue practicando'}
+            </h2>
+
+            <p className="text-3xl font-black my-3" style={{ color: resultado.aprobado ? '#059669' : '#D97706' }}>
+              {resultado.score}%
+            </p>
+
+            <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
+              {resultado.aprobado
+                ? modulo.competencia?.requiere_validacion_practica
+                  ? `Evaluación teórica de "${modulo.competencia.nombre}" aprobada. Esta competencia procedimental requiere validación práctica supervisada por coordinación clínica para quedar validada.`
+                  : modulo.competencia
+                    ? `Has avanzado en la competencia "${modulo.competencia.nombre}". Solicita validación al coordinador para completarla.`
+                    : 'Has completado y aprobado este módulo de capacitación.'
+                : `Necesitas ${modulo.evaluacion_minima}% para aprobar. Puedes repetir el módulo cuando quieras.`}
+            </p>
+
+            {resultado.aprobado && modulo.competencia?.requiere_validacion_practica && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left mb-4">
+                <p className="text-xs font-semibold text-amber-800 mb-1">Validación práctica pendiente</p>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  Aprobar la evaluación teórica no habilita para realizar el procedimiento de forma autónoma.
+                  Tu competencia permanecerá en estado <span className="font-medium">evaluación aprobada</span> hasta
+                  que coordinación clínica confirme la ejecución supervisada del procedimiento.
+                </p>
+              </div>
             )}
-            <Link
-              href="/enfermero/capacitaciones"
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: '#2AABBF' }}
-            >
-              <ChevronRight size={14} /> Ver todas las capacitaciones
-            </Link>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {!resultado.aprobado && (
+                <button
+                  onClick={() => {
+                    setFase('inicio')
+                    setRespuestas(new Array(modulo.evaluacion.length).fill(null))
+                    setCheckItems(new Array(modulo.checklist.length).fill(false))
+                    setResultado(null)
+                  }}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50"
+                >
+                  <RefreshCw size={14} /> Repetir módulo
+                </button>
+              )}
+              <Link
+                href="/enfermero/capacitaciones"
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ backgroundColor: '#2AABBF' }}
+              >
+                <ChevronRight size={14} /> Ver todas las capacitaciones
+              </Link>
+            </div>
           </div>
+
+          {resultado.aprobado && (
+            <ConstanciaCapacitacion
+              nombreUsuario={perfilNombre}
+              tituloCapacitacion={modulo.titulo}
+              fechaAprobacion={aprobadoAt}
+              calificacion={resultado.score}
+              folio={folio}
+            />
+          )}
         </div>
       )}
 
       {/* Resultado vacío / aprobado previo sin datos */}
       {fase === 'resultado' && !resultado && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
-          <CheckCircle2 size={36} className="text-emerald-500 mx-auto mb-3" />
-          <h2 className="font-bold text-lg mb-2 text-emerald-700">Módulo completado</h2>
-          <Link
-            href="/enfermero/capacitaciones"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-3"
-            style={{ backgroundColor: '#2AABBF' }}
-          >
-            Ver todas las capacitaciones
-          </Link>
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
+            <CheckCircle2 size={36} className="text-emerald-500 mx-auto mb-3" />
+            <h2 className="font-bold text-lg mb-2 text-emerald-700">Módulo completado</h2>
+            <Link
+              href="/enfermero/capacitaciones"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-3"
+              style={{ backgroundColor: '#2AABBF' }}
+            >
+              Ver todas las capacitaciones
+            </Link>
+          </div>
+
+          {yaAprobado && (
+            <ConstanciaCapacitacion
+              nombreUsuario={perfilNombre}
+              tituloCapacitacion={modulo.titulo}
+              fechaAprobacion={aprobadoAt}
+              calificacion={progreso?.score ?? null}
+              folio={folio}
+            />
+          )}
         </div>
       )}
     </div>
