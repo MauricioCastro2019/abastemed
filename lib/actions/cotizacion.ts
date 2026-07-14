@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { CareQuote, GeneratedDocument, ActivationChecklist, RiskColor } from '@/types'
-import { requireAuth, requireRole, fd, fdNum, type ActionResult } from './utils'
+import { requireAuth, requireRole, fd, fdNum, DEFAULT_ORG_ID, type ActionResult } from './utils'
 import { calculatePrice, validateFinalPrice, type PriceCalculationInput } from '@/lib/pricing'
 
 // ─── COTIZACIÓN ───────────────────────────────────────────────
@@ -615,6 +615,7 @@ export async function convertirAPaciente(
     : null
 
   const { data: paciente, error: pacienteError } = await supabase.from('pacientes').insert({
+    organization_id:  DEFAULT_ORG_ID,
     nombre:           firstName,
     apellido:         lastName,
     fecha_nacimiento: fechaNac ?? '1950-01-01',
