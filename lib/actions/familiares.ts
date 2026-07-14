@@ -108,6 +108,53 @@ export async function invitarFamiliar(formData: FormData): Promise<{ error?: str
   }
 
   const admin = createServiceClient()
+  const whatsapp = d.whatsapp_igual_tel ? (d.telefono ?? null) : (d.telefono_whatsapp ?? null)
+
+  // Un mismo correo puede ser familiar de varios pacientes: si ya existe una
+  // cuenta con ese email, no se crea otra, solo se vincula el paciente nuevo.
+  const { data: existente } = await admin
+    .from('perfiles')
+    .select('id, rol')
+    .eq('email', d.email)
+    .maybeSingle()
+
+  if (existente) {
+    if (existente.rol !== 'familiar') {
+      return { error: 'Este correo ya está registrado con otro rol (enfermero/admin/coordinador) y no puede usarse como familiar.' }
+    }
+    if (!d.paciente_id) {
+      return { error: 'Este familiar ya existe. Selecciona un paciente para vincularlo.' }
+    }
+
+    const { error: relError } = await admin
+      .from('familiar_paciente')
+      .upsert({
+        familiar_id: existente.id,
+        paciente_id: d.paciente_id,
+        paciente_principal: false,
+        parentesco: d.parentesco ?? null,
+        activo: true,
+      }, { onConflict: 'familiar_id,paciente_id' })
+
+    if (relError) return { error: `Error vinculando paciente: ${relError.message}` }
+
+    await admin
+      .from('perfiles')
+      .update({
+        telefono: d.telefono ?? null,
+        telefono_whatsapp: whatsapp,
+        whatsapp_igual_tel: d.whatsapp_igual_tel,
+        es_contacto_principal: d.es_contacto_principal,
+        es_contacto_emergencia: d.es_contacto_emergencia,
+        es_responsable_pagos: d.es_responsable_pagos,
+        observaciones_familiar: d.observaciones_familiar ?? null,
+        activo_familiar: true,
+      })
+      .eq('id', existente.id)
+
+    revalidatePath('/familiares')
+    return {}
+  }
 
   const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(d.email, {
     data: { nombre: d.nombre, apellido: d.apellido },
@@ -115,7 +162,6 @@ export async function invitarFamiliar(formData: FormData): Promise<{ error?: str
   if (inviteError) return { error: `Error al enviar invitación: ${inviteError.message}` }
 
   const userId = inviteData.user.id
-  const whatsapp = d.whatsapp_igual_tel ? (d.telefono ?? null) : (d.telefono_whatsapp ?? null)
 
   const { error: perfilError } = await admin
     .from('perfiles')

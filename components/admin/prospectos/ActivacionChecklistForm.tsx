@@ -72,6 +72,12 @@ export function ActivacionChecklistForm({ prospectId, preassessmentId, quoteId, 
   async function handleConvert() {
     setError('')
     setConverting(async () => {
+      const fd = new FormData()
+      ITEMS.forEach(item => fd.set(item.key as string, String(checks[item.key as string] ?? false)))
+
+      const saveRes = await upsertActivationChecklist(prospectId, preassessmentId, quoteId, fd)
+      if (saveRes.error) { setError(saveRes.error); return }
+
       const res = await convertirAPaciente(prospectId)
       if (res.error) { setError(res.error); return }
       router.push(`/pacientes/${res.pacienteId}?success=1`)
